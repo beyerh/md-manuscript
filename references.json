@@ -1,0 +1,135 @@
+[
+  {
+    "id": "chenSenescencePathways2025",
+    "type": "article-journal",
+    "title": "The senescence-associated secretory phenotype in aging neurons",
+    "container-title": "Cell",
+    "volume": "188",
+    "issue": "4",
+    "page": "890-912",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Chen",
+        "given": "Li"
+      },
+      {
+        "family": "Muller",
+        "given": "Hans"
+      }
+    ],
+    "DOI": "10.1016/j.cell.2025.01.012"
+  },
+  {
+    "id": "smithDeepTissueImaging2024",
+    "type": "article-journal",
+    "title": "Deep-tissue imaging with transparent mice using light-sheet microscopy",
+    "container-title": "Nature Methods",
+    "volume": "21",
+    "page": "112-120",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Smith",
+        "given": "Sarah J."
+      },
+      {
+        "family": "Johnson",
+        "given": "Mark"
+      }
+    ],
+    "DOI": "10.1038/s41592-024-01000-x"
+  },
+  {
+    "id": "doeQuantumCoherence2025",
+    "type": "article-journal",
+    "title": "Quantum coherence in photosynthesis at room temperature",
+    "container-title": "Nature Communications",
+    "volume": "16",
+    "page": "4501",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Doe",
+        "given": "John"
+      },
+      {
+        "family": "Ray",
+        "given": "Sanjit"
+      }
+    ],
+    "DOI": "10.1038/s41467-025-22105-z"
+  },
+  {
+    "id": "leeCarbonCapture2026",
+    "type": "article-journal",
+    "title": "Carbon capture using novel metal-organic frameworks",
+    "container-title": "Science Advances",
+    "volume": "12",
+    "issue": "2",
+    "page": "eaaz1234",
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Lee",
+        "given": "Min-Su"
+      },
+      {
+        "family": "Park",
+        "given": "Ji-Hoon"
+      }
+    ],
+    "DOI": "10.1126/sciadv.aaz1234"
+  },
+  {
+    "id": "garciaRemoteWorkDynamics2023",
+    "type": "article-journal",
+    "title": "Social dynamics in remote work environments: A global survey",
+    "container-title": "PLOS ONE",
+    "volume": "18",
+    "issue": "5",
+    "page": "e0285678",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Garcia",
+        "given": "Maria"
+      },
+      {
+        "family": "Dubois",
+        "given": "Jean"
+      }
+    ],
+    "DOI": "10.1371/journal.pone.0285678"
+  }
+]

@@ -1,0 +1,46 @@
+# config.yaml - The Single Source of Truth
+
+# --- Input/Output Settings ---
+reader: markdown
+
+# --- Bibliography ---
+filters:
+  - pandoc-crossref
+  - citeproc
+bibliography: references.json
+
+# --- Metadata ---
+metadata:
+  csl: citation_style.csl
+  link-citations: true
+  figureTitle: "Figure"
+  tableTitle: "Table"
+  figPrefix: ["Figure", "Figures"]
+  tblPrefix: ["Table", "Tables"]
+  linkReferences: true
+  nameInLink: true
+
+# --- PDF Specifics ---
+pdf-engine: xelatex
+variables:
+  papersize: a4
+  geometry: ["top=2.5cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm"]
+  mainfont: "Linux Libertine O"
+  fontsize: 11pt
+  linestretch: 1.5
+  
+  # Configure linenumbers:
+  header-includes:
+    - \usepackage{lineno}
+  #  - \linenumbers
+
+  # Colors
+  colorlinks: true
+  linkcolor: blue
+  urlcolor: blue
+  citecolor: blue
+
+# --- Word Specifics ---
+reference-doc: reference_doc.docx
+dpi: 600
+toc: false

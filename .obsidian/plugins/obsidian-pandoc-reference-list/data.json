@@ -1,0 +1,11 @@
+{
+  "pathToPandoc": "/opt/homebrew/bin/pandoc",
+  "tooltipDelay": 400,
+  "zoteroGroups": [],
+  "renderCitations": true,
+  "renderCitationsReadingMode": true,
+  "renderLinkCitations": true,
+  "pathToBibliography": "/home/hbeyer/work/ddorf/zettlr/markdown_template/references.json",
+  "cslStylePath": "",
+  "cslStyleURL": "https://raw.githubusercontent.com/citation-style-language/styles/master/biomed-central.csl"
+}

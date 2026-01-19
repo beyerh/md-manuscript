@@ -1,4 +1,6 @@
 # config.yaml - The Single Source of Truth
+# This config is used for BOTH main text and Supporting Information
+# SI-specific overrides (figure prefixes, S-numbering) are applied via build script
 
 # --- Input/Output Settings ---
 reader: markdown
@@ -7,11 +9,11 @@ reader: markdown
 filters:
   - pandoc-crossref
   - citeproc
-bibliography: references.json
+bibliography: resources/references.json
 
 # --- Metadata ---
 metadata:
-  csl: citation_style.csl
+  csl: resources/citation_style.csl
   link-citations: true
   figureTitle: "Figure"
   tableTitle: "Table"
@@ -21,7 +23,7 @@ metadata:
   nameInLink: true
 
 # --- PDF Specifics ---
-pdf-engine: xelatex
+pdf-engine: tectonic
 variables:
   papersize: a4
   geometry: ["top=2.5cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm"]
@@ -41,6 +43,6 @@ variables:
   citecolor: blue
 
 # --- Word Specifics ---
-reference-doc: reference_doc.docx
+reference-doc: resources/reference_doc.docx
 dpi: 600
 toc: false

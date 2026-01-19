@@ -1,211 +1,267 @@
-# Scientific Paper Template (Markdown -> Word & PDF)
+# Scientific Manuscript Template (Markdown → PDF & DOCX)
 
-This project provides a unified workflow for writing scientific manuscripts in Markdown. It uses a **shared configuration file** (`config.yaml`) to ensure identical output whether you export from **Obsidian** (supporting Track Changes), **Zettlr** (simpler workflow), or any other editor and the **Terminal**.
+Write scientific manuscripts in Markdown with Obsidianand export to Word and PDF documents using a build script.
 
-It generates:
-1.  **Submission-Ready Word Doc (`.docx`):** Using a reference *.docx document with formatted styles.
-2.  **Review PDF (`.pdf`):** LaTeX rendered professional PDF.
+**Key Features:**
+- Unified configuration for consistent output
+- Automatic cross-referencing for figures, tables, and citations
+- Supporting Information with proper numbering (Figure S1, Table S1)
+- Optional unified bibliography (include SI references in main text)
+- Interactive build script with wizard
 
 ---
 
-## 1. Prerequisites (Arch Linux)
+## Prerequisites
 
-You must install Pandoc, the cross-reference filter, the LaTeX environment, and ImageMagick (for figure conversion).
+### Arch Linux
 
 ```bash
-# 1. Install Pandoc, Cross-ref, and ImageMagick (Required for PNG conversion)
-sudo pacman -S pandoc pandoc-crossref imagemagick
-
-# 2a. Install a minimal LaTeX (Required for PDF)
-# Note: You can also use 'tectonic' if you prefer a smaller install.
-sudo pacman -S texlive-basic texlive-latexextra texlive-fontsrecommended texlive-xetex
-
-# 2b. Alternatively, install full LaTeX
-# sudo pacman -S texlive-meta
-
-# 3. Install Fonts (Crucial for PDF export)
-sudo pacman -S ttf-linux-libertine
+# Install Pandoc, pandoc-crossref, ImageMagick, Tectonic, and Linux Libertine fonts
+sudo pacman -S pandoc pandoc-crossref imagemagick tectonic ttf-linux-libertine
 ```
 
----
+### macOS
 
-## 2. Project Structure
+```bash
+# Install Homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-Ensure your folder contains these files:
+# Install required packages
+brew install pandoc pandoc-crossref imagemagick tectonic
 
-* `template.md`: Your manuscript file.
-* `references.json`: Exported from Zotero (BetterBibTeX).
-* `citation_style.csl`: The journal style file.
-* `reference_doc.docx`: The Word styling template.
-* `config.yaml`: The master configuration file (fonts, margins, citations).
-* `build.sh`: The automation script (Wizard & Build logic).
-* `pdf2png.lua`: Helper script to swap PDF images for PNGs in Word.
-* `figures/`: Folder for images (PDFs recommended for source).
+# Download and install Linux Libertine fonts from https://sourceforge.net/projects/linuxlibertine/
+```
 
----
+### Windows
 
-## 3. Zotero Setup (References)
+1. **Install Pandoc:** Download from [pandoc.org](https://pandoc.org/installing.html)
+2. **Install pandoc-crossref:** Download from [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases)
+3. **Install ImageMagick:** Download from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
+4. **Install Tectonic:** Download from [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io/install.html)
+5. **Install Linux Libertine fonts:** Download from [sourceforge.net](https://sourceforge.net/projects/linuxlibertine/)
 
-To keep your `references.json` file automatically updated, you must use Zotero with the **Better BibTeX** plugin.
-
-1.  **Install Better BibTeX (BBT):**
-    * Download the latest `.xpi` file from the [Better BibTeX GitHub](https://github.com/retorquere/zotero-better-bibtex/releases).
-    * In Zotero, go to **Tools -> Add-ons**, click the gear icon, and "Install Add-on From File".
-2.  **Set Citation Key Format:**
-    * Go to **Edit -> Settings -> Better BibTeX**.
-    * Set the "Citation key formula" to: `auth.lower + year` (e.g., `smith2023`).
-3.  **Setup Auto-Export:**
-    * Right-click your project collection in the left sidebar -> **Export Collection**.
-    * Format: **BetterBibTeX JSON**.
-    * Check **Keep updated** (This is crucial!).
-    * Save the file as `references.json` inside your project folder.
-4.  **How to Cite:**
-    * In your Markdown file, use the citation key: `text text text [@smith2023]`.
-    * For multiple citations: `[@smith2023; @jones2024]`. 
-    * Juse Zotero plugins for automatic insertions.
+**Note:** On Windows, use Git Bash, WSL, or PowerShell to run the build script
 
 ---
 
-### A. Obsidian Setup
+## Project Structure
 
-**Note:** All plugins and settings are already included in the hidden `.obsidian` folder and Obsidian should work out of the box. Read below how to configure it or change settings.
+```
+├── 01_maintext.md          # Main manuscript
+├── 02_supp_info.md         # Supporting Information
+├── build.sh                # Build script (interactive wizard)
+├── export/                 # Output folder (created automatically)
+├── figures/                # Images (PDF format recommended)
+└── resources/
+    ├── config.yaml         # Pandoc configuration
+    ├── references.json     # Zotero bibliography (auto-updated)
+    ├── citation_style.csl  # Citation style file
+    ├── reference_doc.docx  # Word template
+    └── pdf2png.lua         # Figure conversion filter
+```
 
-**Required Plugins:**
-1.  **Shell commands** (Community Plugin) – To run the build script.
-2.  **Zotero Integration** (Community Plugin) – To insert citations.
-3. **Pandoc plugin** (Community Plugin) – For export.
-4.  **Pandoc Reference List** (Community Plugin) – To view formatted references in the sidebar.
-5.  **Commentator** (Community Plugin) – For "Track Changes" (Suggest Mode).
-6. Consider: **Editing Toolbar, Git, Advanced Tables** (Community Plugin) – optional. 
-
-**Configuration:**
-
-**1. Shell Commands:**
-Go to **Settings -> Shell commands** and add these three distinct commands.
-*Note: We use specific arguments (`pdf`, `safe`, `native`) to bypass the wizard menu for one-click builds.* You can assign an alias in the settings of each command.
-
-* **Command 1:** `Export Journal PDF`
-    * Command: `bash {{folder_path:absolute}}/build.sh {{file_path:absolute}} pdf`
-* **Command 2:** `Export Journal Word (PNG figures)`
-    * Command: `{{folder_path:absolute}}/build.sh {{file_path:absolute}} safe`
-    * *Description: Converts figures to PNG. Best for sharing with Windows/LibreOffice users.*
-* **Command 3:** `Export Journal Word (PDF figures)`
-    * Command: `{{folder_path:absolute}}/build.sh {{file_path:absolute}} native`
-    * *Description: Keeps PDF vectors. Best for macOS Word users.*
-
-**2. Zotero Integration (Citation Insertion):**
-* Go to **Settings -> Zotero Integration**.
-* **Citation Format:** Select "Pandoc/Scrivener" (`@AuthorYear`).
-* **Import Format:** Select "Better BibTeX JSON".
-* **Usage:** Set a hotkey (e.g., `Alt+Z`) -> Press hotkey -> Search paper -> Enter.
-
-**3. Pandoc Reference List (Sidebar View):**
-* Go to **Settings -> Pandoc Reference List**.
-* **Bibliography files:** Enter `references.json`.
-* **Show citations:** Enable "Show citations in sidebar".
-
-**4. Commentator:**
-* Enable "Suggest Mode" via the ribbon icon to track edits.
+**Note:** If you rename `01_maintext.md` or `02_supp_info.md`, update the filenames at the top of `build.sh` in the `# --- Configuration ---` section.
 
 ---
 
-### B. Terminal / Manual Usage
-The `build.sh` script includes an interactive wizard if run without arguments.
+## Zotero Setup (Auto-Updating References)
 
-1.  Open your terminal.
-2.  Navigate to the project folder.
-3.  Run:
-    ```bash
-    ./build.sh
-    ```
-4.  Follow the on-screen menu to select your output format and figure handling.
+1. **Install Better BibTeX plugin** from [GitHub](https://github.com/retorquere/zotero-better-bibtex/releases)
+2. **Setup auto-export:**
+   - Right-click collection → Export Collection
+   - Format: **BetterBibTeX JSON**
+   - ✓ **Keep updated**
+   - Save as `resources/references.json`
 
----
-
-## 4. Application Setup (Zettlr)
-Instructions on how to configure Zettlr to use the `config.yaml` file.
-
-1.  Open **Assets Manager** (`Ctrl+M`).
-2.  **Create Profile 1 (PDF):**
-    * Category: **PDF Document**
-    * Name: `Shared Config PDF`
-    * Content:
-        ```yaml
-        defaults: "config.yaml"
-        reader: markdown
-        writer: pdf
-        ```
-3.  **Create Profile 2 (Word):**
-    * Category: **Word / Docx**
-    * Name: `Shared Config Word`
-    * Content:
-        ```yaml
-        defaults: "config.yaml"
-        reader: markdown
-        writer: docx
-        ```
-*Note: Zettlr's built-in exporter does not currently support the `safe` mode image conversion logic. Use the Terminal or Obsidian for complex figure handling.*
+**Citation syntax:** `[@smith2023]` or `[@smith2023; @jones2024]`. Use Zotero plugins for automatization.
 
 ---
 
-## 5. Customizing the Word Template (`reference_doc.docx`)
+## Obsidian Setup
 
-If you need to adapt this template for a different journal:
+### Required Plugins
+- **Terminal** - Run ./build.sh script with interactive wizard
+- **Zotero Integration** - Insert citations
+- **Pandoc Plugin** - PDF, DOCX export
+- **Pandoc Reference List** - View formatted references
 
-1.  **Generate a generic base file:**
-    ```bash
-    pandoc -o new_reference.docx --print-default-data-file reference.docx
-    ```
-2.  **Edit Styles in Word:**
-    Open `new_reference.docx` and open the **Styles Pane** (`Alt+Ctrl+Shift+S`). Modify **Normal**, **Headings 1-3**, and **Table Caption**.
-3.  **Create the "FrontMatter" Style (Crucial):**
-    * **New Style** -> Name: `FrontMatter` -> Based on: `Normal`.
-    * Settings: **Left Aligned** (prevents title page distortion).
-4.  **Save:** Save as `reference_doc.docx` overwriting the old file.
+**Optional:** Editing Toolbar (text formatting), commentator (Track changes), Git (version control), languagetool (spellcheck)
+
+### Terminal Plugin Configuration
+
+1. Install **Terminal** plugin from Community Plugins
+2. Open terminal in Obsidian (ribbon icon)
+3. Run the build script: `./build.sh`
+4. Follow the interactive wizard prompts
+
+**Alternative: Direct commands** (see below)
+### Zotero Integration
+
+Settings → Zotero Integration:
+- Citation Format: **Pandoc/Scrivener** (`@AuthorYear`)
+- Import Format: **Better BibTeX JSON**
+- Set hotkey (e.g., `Alt+Z`) for quick citation insertion
+
+### Pandoc Reference List
+
+Settings → Pandoc Reference List:
+- Bibliography files: `full/path/to/resources/references.json`
+- ✓ Show citations in sidebar
 
 ---
 
-## 6. Writing Rules (The "Air Gap")
+## Build Script Usage
 
-To avoid layout bugs, follow these spacing rules strictly.
+### Interactive Wizard (Recommended in Obsidian)
 
-**1. Title Page (FrontMatter)**
-Use the `FrontMatter` custom style block for authors/affiliations.
+```bash
+./build.sh
+```
+
+Follow prompts to select:
+1. Document type (Main text / Supporting Information)
+2. Output format (PDF / DOCX)
+3. Options (PDF to PNG conversion, include SI refs)
+
+### Command-Line Arguments
+
+```bash
+./build.sh main pdf                      # Main text PDF
+./build.sh main docx --png               # Main text DOCX with PNG figures
+./build.sh si pdf                        # Supporting Information PDF
+./build.sh main pdf --include-si-refs    # Unified bibliography
+```
+
+**Options:**
+- `--png` - Convert PDF figures to PNG for Word compatibility
+- `--include-si-refs` - Include SI citations in main text bibliography
+
+**Output:** All files are created in `export/` folder
+
+---
+
+## Writing Guidelines
+
+### Title Page (Authors & Affiliations)
 
 ```markdown
 # Manuscript Title
 
 ::: {custom-style="FrontMatter"}
-**Author Name**^1^
-^1^ Department, University
+**Author Name**^1,2^, **Co-Author**^2^
+
+^1^ Department, University, City, Country  
+^2^ Institute, Organization
 :::
 ```
 
-**2. Figures (`@Fig:id`)**
-Always put an empty line after the image. **Use PDF figures** in your markdown (`image.pdf`); the build script will handle conversion for Word automatically.
+### Figures
+
+**Always use PDF format** - build script converts to PNG for Word automatically.
 
 ```markdown
-As seen in **@Fig:results**...
+As shown in **@Fig:results**...
 
 ![**Title.** Legend text.](figures/image.pdf){#fig:results}
 
+Next paragraph...
 ```
 
-**3. Tables (`@Tbl:id`)**
-Caption goes **ABOVE**. Empty line between Caption and Table is **mandatory**.
+**Important:** Empty line after figure is required.
+
+### Tables
+
+Caption goes **above** table. Empty line between caption and table is mandatory.
 
 ```markdown
 See **@Tbl:stats** for details.
 
 Table: **Title.** Description text. {#tbl:stats}
 
-| Col A | Col B |
-| :--- | :--- |
-| Val 1 | Val 2 |
+| Column A | Column B |
+| :------- | :------- |
+| Value 1  | Value 2  |
 ```
 
-**4. Track Changes**
-Use **Commentator** in Obsidian (Suggest Mode).
+### Cross-References
 
-**5. Highlighting**
-Use `==highlighted text==` for <mark style="background:#fff88f">drafting</mark> notes.
+**Within document:**
+- Figures: `**@Fig:results**` → "Figure 1"
+- Tables: `**@Tbl:data**` → "Table 1"
+- Citations: `[@smith2023]` → "(Smith 2023)"
+
+**Cross-document (SI from main text):**
+- Use plain text: `**Figure S1**`, `**Table S1**`
+- Cross-references only work within same document
+
+---
+
+## Supporting Information
+
+The SI document (`02_supp_info.md`) automatically:
+- Numbers figures as S1, S2, S3...
+- Numbers tables as S1, S2, S3...
+- Has its own bibliography
+
+Use same syntax as main text:
+```markdown
+See **@Fig:s1** and **@Tbl:s1**...
+
+![**Title.** Legend.](figures/si_image.pdf){#fig:s1}
+```
+
+### Unified Bibliography Option
+
+Some journals require all references (main + SI) in the main text bibliography:
+
+```bash
+./build.sh main docx --png --include-si-refs
+```
+
+This automatically extracts literature citations from SI and includes them in main text bibliography.
+
+---
+
+## Customizing Word Template
+
+To adapt `reference_doc.docx` for different journals:
+
+1. **Generate base:** (fully compatible with Pandoc)
+   ```bash
+   pandoc -o custom_reference.docx --print-default-data-file reference.docx
+   ```
+
+2. **Edit styles in Word:**
+   - Open Styles Pane (`Alt+Ctrl+Shift+S`)
+   - Modify: Normal, Heading 1-3, Table Caption, Figure Caption
+
+3. **Create FrontMatter style:**
+   - New Style → Name: `FrontMatter`
+   - Based on: Normal
+   - Alignment: Left
+
+4. **Save as:** `resources/reference_doc.docx`
+
+---
+## Advanced Features
+
+### Math Equations
+Inline: `$E = mc^2$`  
+Display: `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$`
+
+### Footnotes
+`Text with footnote^[This is the footnote content.]`
+
+### Highlighting (for drafts)
+`==highlighted text==` renders as yellow highlighted text.
+
+### Definition Lists
+```markdown
+Term 1
+:   Definition of term 1
+
+Term 2
+:   Definition of term 2
+```
+
+---

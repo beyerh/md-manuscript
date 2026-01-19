@@ -131,5 +131,32 @@
       }
     ],
     "DOI": "10.1371/journal.pone.0285678"
+  },
+  {
+    "id": "wilsonStatisticalMethods2023",
+    "type": "article-journal",
+    "title": "Advanced statistical methods for biological data analysis",
+    "container-title": "Bioinformatics",
+    "volume": "39",
+    "issue": "8",
+    "page": "1234-1245",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Wilson",
+        "given": "Robert"
+      },
+      {
+        "family": "Thompson",
+        "given": "Emily"
+      }
+    ],
+    "DOI": "10.1093/bioinformatics/btad123"
   }
 ]

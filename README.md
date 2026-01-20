@@ -1,8 +1,9 @@
 # Scientific Manuscript Template (Markdown → PDF & DOCX)
 
-Write scientific manuscripts in Markdown with Obsidianand export to Word and PDF documents using a build script.
+Write scientific manuscripts in Markdown with Obsidian and export to Word and PDF documents using a cross-platform build script.
 
 **Key Features:**
+- Cross-platform support (macOS, Linux, Windows)
 - Unified configuration for consistent output
 - Automatic cross-referencing for figures, tables, and citations
 - Supporting Information with proper numbering (Figure S1, Table S1)
@@ -13,11 +14,21 @@ Write scientific manuscripts in Markdown with Obsidianand export to Word and PDF
 
 ## Prerequisites
 
+### All Platforms
+
+- **Python 3.6+** (required to run the build script)
+
 ### Arch Linux
 
 ```bash
-# Install Pandoc, pandoc-crossref, ImageMagick, Tectonic, and Linux Libertine fonts
-sudo pacman -S pandoc pandoc-crossref imagemagick tectonic ttf-linux-libertine
+sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
+```
+
+### Debian/Ubuntu
+
+```bash
+sudo apt install python3 pandoc pandoc-crossref imagemagick fonts-libertinus
+# Install Tectonic: https://tectonic-typesetting.github.io/install.html
 ```
 
 ### macOS
@@ -27,18 +38,18 @@ sudo pacman -S pandoc pandoc-crossref imagemagick tectonic ttf-linux-libertine
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install required packages
-brew install pandoc pandoc-crossref imagemagick tectonic font-linux-libertine
+brew install pandoc pandoc-crossref imagemagick tectonic
+brew install --cask font-libertinus
 ```
 
 ### Windows
 
-1. **Install Pandoc:** Download from [pandoc.org](https://pandoc.org/installing.html)
-2. **Install pandoc-crossref:** Download from [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases)
-3. **Install ImageMagick:** Download from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
-4. **Install Tectonic:** Download from [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io/install.html)
-5. **Install Linux Libertine fonts:** Download from [sourceforge.net](https://sourceforge.net/projects/linuxlibertine/)
-
-**Note:** On Windows, use Git Bash, WSL, or PowerShell to run the build script
+1. **Install Python:** Download from [python.org](https://www.python.org/downloads/)
+2. **Install Pandoc:** Download from [pandoc.org](https://pandoc.org/installing.html)
+3. **Install pandoc-crossref:** Download from [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases)
+4. **Install ImageMagick:** Download from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
+5. **Install Tectonic:** Download from [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io/install.html)
+6. **Install Libertinus fonts:** Download from [GitHub releases](https://github.com/alerque/libertinus/releases)
 
 ---
 
@@ -48,7 +59,7 @@ brew install pandoc pandoc-crossref imagemagick tectonic font-linux-libertine
 ├── 00_frontmatter.md       # Common frontmatter (authors, affiliations)
 ├── 01_maintext.md          # Main manuscript content
 ├── 02_supp_info.md         # Supporting Information content
-├── build.sh                # Build script (interactive wizard)
+├── build.py                # Build script (cross-platform, Python)
 ├── export/                 # Output folder (created automatically)
 ├── figures/                # Images (PDF format recommended)
 └── resources/
@@ -61,7 +72,7 @@ brew install pandoc pandoc-crossref imagemagick tectonic font-linux-libertine
 
 **Frontmatter Workflow:** The build script automatically merges `00_frontmatter.md` with both `01_maintext.md` and `02_supp_info.md` during each build. This ensures consistent author information across both documents. You can disable this with the `--no-frontmatter` option.
 
-**Note:** If you rename manuscript files, update the filenames at the top of `build.sh` in the `# --- Configuration ---` section.
+**Note:** If you rename manuscript files, update the filenames at the top of `build.py` in the `# --- Configuration ---` section.
 
 ---
 
@@ -81,7 +92,7 @@ brew install pandoc pandoc-crossref imagemagick tectonic font-linux-libertine
 ## Obsidian Setup
 
 ### Required Plugins
-- **Terminal** - Run ./build.sh script with interactive wizard
+- **Terminal** - Run build script with interactive wizard
 - **Zotero Integration** - Insert citations
 - **Pandoc Plugin** - PDF, DOCX export
 - **Pandoc Reference List** - View formatted references
@@ -92,7 +103,7 @@ brew install pandoc pandoc-crossref imagemagick tectonic font-linux-libertine
 
 1. Install **Terminal** plugin from Community Plugins
 2. Open terminal in Obsidian (ribbon icon)
-3. Run the build script: `./build.sh`
+3. Run the build script: `python build.py`
 4. Follow the interactive wizard prompts
 
 **Alternative: Direct commands** (see below)
@@ -116,7 +127,7 @@ Settings → Pandoc Reference List:
 ### Interactive Wizard (Recommended in Obsidian)
 
 ```bash
-./build.sh
+python build.py
 ```
 
 Follow prompts to select:
@@ -128,11 +139,11 @@ Follow prompts to select:
 ### Command-Line Arguments
 
 ```bash
-./build.sh main pdf                      # Main text PDF (with frontmatter)
-./build.sh main docx --png               # Main text DOCX with PNG figures
-./build.sh si pdf                        # Supporting Information PDF
-./build.sh main pdf --include-si-refs    # Unified bibliography
-./build.sh main pdf --no-frontmatter     # Build without frontmatter
+python build.py main pdf                      # Main text PDF (with frontmatter)
+python build.py main docx --png               # Main text DOCX with PNG figures
+python build.py si pdf                        # Supporting Information PDF
+python build.py main pdf --include-si-refs    # Unified bibliography
+python build.py main pdf --no-frontmatter     # Build without frontmatter
 ```
 
 **Options:**
@@ -238,7 +249,7 @@ See **@Fig:s1** and **@Tbl:s1**...
 Some journals require all references (main + SI) in the main text bibliography:
 
 ```bash
-./build.sh main docx --png --include-si-refs
+python build.py main docx --png --include-si-refs
 ```
 
 This automatically extracts literature citations from SI and includes them in main text bibliography.

@@ -5,7 +5,7 @@
   "renderCitations": true,
   "renderCitationsReadingMode": true,
   "renderLinkCitations": true,
-  "pathToBibliography": "/home/hbeyer/work/ddorf/zettlr/markdown_manuscript_template/references.json",
+  "pathToBibliography": "/Users/hbeyer/repos/md-manuscript/resources/references.json",
   "cslStylePath": "",
   "cslStyleURL": "https://raw.githubusercontent.com/citation-style-language/styles/master/biomed-central.csl"
 }

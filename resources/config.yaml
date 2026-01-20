@@ -27,7 +27,7 @@ pdf-engine: tectonic
 variables:
   papersize: a4
   geometry: ["top=2.5cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm"]
-  mainfont: "Linux Libertine O"
+  mainfont: "Libertinus Serif"
   fontsize: 11pt
   linestretch: 1.5
   

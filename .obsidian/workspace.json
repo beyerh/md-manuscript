@@ -10,7 +10,7 @@
           {
             "id": "421e99309b0fd9d4",
             "type": "tabs",
-            "dimension": 87.49218261413382,
+            "dimension": 75.61121049493143,
             "children": [
               {
                 "id": "0fc045450d666033",
@@ -47,27 +47,29 @@
             ]
           },
           {
-            "id": "9bfa7fa7811fca70",
+            "id": "ee7930e9775f11c7",
             "type": "tabs",
-            "dimension": 12.507817385866165,
+            "dimension": 24.388789505068576,
             "children": [
               {
-                "id": "82b583b0d54e7ad3",
+                "id": "968a8974dc8ffa6b",
                 "type": "leaf",
                 "pinned": true,
                 "state": {
                   "type": "terminal:terminal",
                   "state": {
                     "terminal:terminal": {
-                      "cwd": "/home/hbeyer/work/ddorf/zettlr/md-manuscript",
+                      "cwd": "/Users/hbeyer/repos/md-manuscript",
                       "focus": false,
                       "profile": {
-                        "args": [],
-                        "executable": "/bin/sh",
+                        "args": [
+                          "--login"
+                        ],
+                        "executable": "/bin/zsh",
                         "followTheme": true,
                         "name": "",
                         "platforms": {
-                          "linux": true
+                          "darwin": true
                         },
                         "pythonExecutable": "python3",
                         "restoreHistory": false,
@@ -88,7 +90,7 @@
                   },
                   "pinned": true,
                   "icon": "terminal",
-                  "title": "Terminal: sh"
+                  "title": "Terminal: hbeyer@Hanness-MacBook-Pro:~/repos/md-manuscript"
                 }
               }
             ]
@@ -256,21 +258,21 @@
       "terminal:Open terminal": false
     }
   },
-  "active": "82b583b0d54e7ad3",
+  "active": "968a8974dc8ffa6b",
   "lastOpenFiles": [
     "_temp_merged.md",
+    "export/01_maintext.pdf",
+    "export/01_maintext_lmodern.pdf",
+    "export/01_maintext_linux_font.pdf",
+    "export/~$_maintext.docx",
+    "export/01_maintext.docx",
+    "export",
     "figures/figure.png~",
     "_si_header.tex",
     "export/02_supp_info.pdf",
     "sedESqwpP",
-    "export/01_maintext.pdf",
-    "sedbqJSr4",
     "README.md",
     "02_supp_info.md",
-    "README.md.backup",
-    "quick_build_si.sh",
-    "quick_build_main.sh",
-    "export/02_supp_info.docx",
     "01_maintext.md",
     "CROSSREF_EXAMPLES.md",
     "_temp_combined.md",

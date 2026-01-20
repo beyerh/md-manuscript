@@ -1,6 +1,9 @@
 # Build outputs
 export/
 
+# Converted PNG figures (generated from PDFs)
+figures/*.png
+
 # Temporary build files
 _temp_merged.md
 _temp_si_merged.md

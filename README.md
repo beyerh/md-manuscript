@@ -27,9 +27,7 @@ sudo pacman -S pandoc pandoc-crossref imagemagick tectonic ttf-linux-libertine
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install required packages
-brew install pandoc pandoc-crossref imagemagick tectonic
-
-# Download and install Linux Libertine fonts from https://sourceforge.net/projects/linuxlibertine/
+brew install pandoc pandoc-crossref imagemagick tectonic font-linux-libertine
 ```
 
 ### Windows
@@ -108,7 +106,7 @@ Settings → Zotero Integration:
 ### Pandoc Reference List
 
 Settings → Pandoc Reference List:
-- Bibliography files: `full/path/to/resources/references.json`
+- ***You have to set/update the path to your Bibliography file:*** `full/path/to/resources/references.json`
 - ✓ Show citations in sidebar
 
 ---

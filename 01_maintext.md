@@ -1,15 +1,3 @@
-# Manuscript
-
-::: {custom-style="FrontMatter"}
-**First Author**^1,†^, **Second Author**^2,†^, **Third Author**^1^, and **Corresponding Author**^2,\*^
-
-^1^ Department of Biology, University of Example, City, Country \
-^2^ Department of Medicine, Another University, City, Country
-
-^\*^ Correspondence: corresponding.author@email.com \
-^†^ Equal contribution
-:::
-
 # Abstract
 **Objective:** Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 **Results:** Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.
@@ -54,7 +42,7 @@ $$
 ## Main Findings
 Fusce convallis metus id felis luctus adipiscing. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus. As shown in **@Fig:results**, phasellus ultrices nulla quis nibh. Raw unprocessed data for this analysis are provided in **Figure S1** (Supporting Information).
 
-![**Title of the Figure.** Lorem ipsum dolor sit amet, consectetur adipiscing elit.](figures/figure.pdf){#fig:results width=100%}
+![**Title of the Figure.** Lorem ipsum dolor sit amet, consectetur adipiscing elit.](figures/figure1.pdf){#fig:results width=100%}
 
 ## Statistical Analysis
 Curabitur malesuada erat sit amet massa. Fusce ac convallis erat, vel aliquet diam. The data is summarized in **@Tbl:data** below.

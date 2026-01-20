@@ -1,16 +1,5 @@
 # Supporting Information
 
-::: {custom-style="FrontMatter"}
-**First Author**^1,†^, **Second Author**^2,†^, **Third Author**^1^, and **Corresponding Author**^2,\*^
-
-^1^ Department of Biology, University of Example, City, Country \
-^2^ Department of Medicine, Another University, City, Country
-
-^\*^ Correspondence: corresponding.author@email.com \
-^†^ Equal contribution
-:::
-
-
 **This PDF file includes:**
 
 * Supplementary Text
@@ -31,11 +20,11 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Representativ
 
 # Supplementary Figures
 
-![**Raw Western Blot Data.** This figure shows the unprocessed western blot data corresponding to **Figure 1** in the main manuscript.](figures/figure.pdf){#fig:s1 width=90%}
+![**Raw Western Blot Data.** This figure shows the unprocessed western blot data corresponding to **Figure 1** in the main manuscript.](figures/figure1.pdf){#fig:s1 width=90%}
 
 \newpage
 
-![**Title of Second Supplementary Figure.** Histology samples at 40x magnification.](figures/figure.pdf){#fig:s2 width=90%}
+![**Title of Second Supplementary Figure.** Histology samples at 40x magnification.](figures/figure2.pdf){#fig:s2 width=90%}
 
 \newpage
 

@@ -7,6 +7,7 @@ set -e  # Exit on error
 
 # --- Configuration ---
 # IMPORTANT: If you rename your manuscript files, update these paths:
+FRONTMATTER="00_frontmatter.md"     # Common frontmatter file
 MAINTEXT="01_maintext.md"           # Main manuscript file
 SUPPINFO="02_supp_info.md"          # Supporting Information file
 CONFIG="resources/config.yaml"      # Pandoc configuration
@@ -22,6 +23,7 @@ DOC_TYPE=""
 FORMAT=""
 USE_PNG=false
 INCLUDE_SI_REFS=false
+INCLUDE_FRONTMATTER=true  # Default to including frontmatter
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -29,13 +31,16 @@ while [[ $# -gt 0 ]]; do
         pdf|docx) FORMAT="$1" ;;
         --png) USE_PNG=true ;;
         --include-si-refs) INCLUDE_SI_REFS=true ;;
-        *) echo "Usage: ./build.sh [main|si] [pdf|docx] [--png] [--include-si-refs]"; exit 1 ;;
+        --no-frontmatter) INCLUDE_FRONTMATTER=false ;;
+        *) echo "Usage: ./build.sh [main|si] [pdf|docx] [--png] [--include-si-refs] [--no-frontmatter]"; exit 1 ;;
     esac
     shift
 done
 
 # --- Interactive Menu ---
+INTERACTIVE_MODE=false
 if [[ -z "$DOC_TYPE" ]]; then
+    INTERACTIVE_MODE=true
     echo "=========================================="
     echo "   Manuscript Build System"
     echo "=========================================="
@@ -51,6 +56,7 @@ if [[ -z "$DOC_TYPE" ]]; then
 fi
 
 if [[ -z "$FORMAT" ]]; then
+    INTERACTIVE_MODE=true
     echo "Select output format:"
     echo "1) PDF"
     echo "2) DOCX (Word)"
@@ -62,14 +68,23 @@ if [[ -z "$FORMAT" ]]; then
     esac
 fi
 
-if [[ "$FORMAT" == "docx" && "$USE_PNG" == false ]]; then
-    read -p "Convert PDF figures to PNG? [y/n]: " png_choice
-    [[ "$png_choice" == "y" || "$png_choice" == "Y" ]] && USE_PNG=true
-fi
-
-if [[ "$DOC_TYPE" == "main" && "$INCLUDE_SI_REFS" == false ]]; then
-    read -p "Include SI references in bibliography? [y/n]: " si_refs_choice
-    [[ "$si_refs_choice" == "y" || "$si_refs_choice" == "Y" ]] && INCLUDE_SI_REFS=true
+# Only ask additional questions in interactive mode
+if [[ "$INTERACTIVE_MODE" == true ]]; then
+    if [[ "$FORMAT" == "docx" && "$USE_PNG" == false ]]; then
+        read -p "Convert PDF figures to PNG? [y/n]: " png_choice
+        [[ "$png_choice" == "y" || "$png_choice" == "Y" ]] && USE_PNG=true
+    fi
+    
+    if [[ "$DOC_TYPE" == "main" && "$INCLUDE_SI_REFS" == false ]]; then
+        read -p "Include SI references in bibliography? [y/n]: " si_refs_choice
+        [[ "$si_refs_choice" == "y" || "$si_refs_choice" == "Y" ]] && INCLUDE_SI_REFS=true
+    fi
+    
+    # Ask about frontmatter inclusion (default: yes)
+    read -p "Include frontmatter from $FRONTMATTER? [Y/n]: " frontmatter_choice
+    if [[ "$frontmatter_choice" == "n" || "$frontmatter_choice" == "N" ]]; then
+        INCLUDE_FRONTMATTER=false
+    fi
 fi
 
 # --- Functions ---
@@ -97,9 +112,23 @@ build_main() {
     
     echo ">> Building Main Text ($FORMAT)..."
     
+    # Merge frontmatter if requested
+    if [[ "$INCLUDE_FRONTMATTER" == true ]]; then
+        echo "   Merging frontmatter from $FRONTMATTER..."
+        cat "$FRONTMATTER" > "$temp_merged"
+        echo "" >> "$temp_merged"  # Add blank line
+        cat "$MAINTEXT" >> "$temp_merged"
+        input_file="$temp_merged"
+    fi
+    
     if [[ "$INCLUDE_SI_REFS" == true ]]; then
         echo "   Including SI references in bibliography..."
-        cat "$MAINTEXT" > "$temp_merged"
+        
+        # If we haven't created temp_merged yet, create it now
+        if [[ "$INCLUDE_FRONTMATTER" == false ]]; then
+            cat "$MAINTEXT" > "$temp_merged"
+            input_file="$temp_merged"
+        fi
         
         # Extract only literature citations, exclude figure/table cross-references
         # Add them in a hidden paragraph using markdown citation syntax
@@ -109,8 +138,6 @@ build_main() {
             # Add before References section using pandoc's nocite metadata
             sed -i '1i ---\nnocite: |\n  '"$si_cites"'\n---\n' "$temp_merged"
         fi
-        
-        input_file="$temp_merged"
     fi
     
     if [[ "$FORMAT" == "docx" && "$USE_PNG" == true ]]; then
@@ -129,8 +156,19 @@ build_main() {
 
 build_si() {
     local output_file="$EXPORT_DIR/02_supp_info.${FORMAT}"
+    local input_file="$SUPPINFO"
+    local temp_merged="_temp_si_merged.md"
     
     echo ">> Building Supporting Information ($FORMAT)..."
+    
+    # Merge frontmatter if requested
+    if [[ "$INCLUDE_FRONTMATTER" == true ]]; then
+        echo "   Merging frontmatter from $FRONTMATTER..."
+        cat "$FRONTMATTER" > "$temp_merged"
+        echo "" >> "$temp_merged"  # Add blank line
+        cat "$SUPPINFO" >> "$temp_merged"
+        input_file="$temp_merged"
+    fi
     
     create_si_header
     
@@ -139,21 +177,21 @@ build_si() {
     fi
     
     if [[ "$FORMAT" == "docx" ]]; then
-        pandoc "$SUPPINFO" -o "$output_file" \
+        pandoc "$input_file" -o "$output_file" \
             --defaults="$CONFIG" \
             --metadata figPrefix='["Fig.","Figs."]' \
             --metadata tblPrefix='["Table","Tables"]' \
             --include-in-header="$SI_HEADER" \
             --lua-filter="$LUA_FILTER"
     else
-        pandoc "$SUPPINFO" -o "$output_file" \
+        pandoc "$input_file" -o "$output_file" \
             --defaults="$CONFIG" \
             --metadata figPrefix='["Fig.","Figs."]' \
             --metadata tblPrefix='["Table","Tables"]' \
             --include-in-header="$SI_HEADER" 2>/dev/null
     fi
     
-    rm -f "$SI_HEADER"
+    rm -f "$SI_HEADER" "$temp_merged"
     echo "   ✓ $output_file created"
 }
 
@@ -162,6 +200,7 @@ echo ""
 echo "=========================================="
 echo "   Document: ${DOC_TYPE^^}"
 echo "   Format: ${FORMAT^^}"
+echo "   Include Frontmatter: $INCLUDE_FRONTMATTER"
 [[ "$FORMAT" == "docx" ]] && echo "   PNG Conversion: $USE_PNG"
 [[ "$DOC_TYPE" == "main" ]] && echo "   Include SI Refs: $INCLUDE_SI_REFS"
 echo "=========================================="

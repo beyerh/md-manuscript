@@ -1,0 +1,25 @@
+# Build outputs
+export/
+
+# Temporary build files
+_temp_merged.md
+_temp_si_merged.md
+_si_header.tex
+
+# Pandoc cache (if created)
+.pandoc/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Obsidian workspace files (user-specific, but keep plugins/themes/config)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json

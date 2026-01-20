@@ -47,8 +47,9 @@ brew install pandoc pandoc-crossref imagemagick tectonic
 ## Project Structure
 
 ```
-├── 01_maintext.md          # Main manuscript
-├── 02_supp_info.md         # Supporting Information
+├── 00_frontmatter.md       # Common frontmatter (authors, affiliations)
+├── 01_maintext.md          # Main manuscript content
+├── 02_supp_info.md         # Supporting Information content
 ├── build.sh                # Build script (interactive wizard)
 ├── export/                 # Output folder (created automatically)
 ├── figures/                # Images (PDF format recommended)
@@ -60,7 +61,9 @@ brew install pandoc pandoc-crossref imagemagick tectonic
     └── pdf2png.lua         # Figure conversion filter
 ```
 
-**Note:** If you rename `01_maintext.md` or `02_supp_info.md`, update the filenames at the top of `build.sh` in the `# --- Configuration ---` section.
+**Frontmatter Workflow:** The build script automatically merges `00_frontmatter.md` with both `01_maintext.md` and `02_supp_info.md` during each build. This ensures consistent author information across both documents. You can disable this with the `--no-frontmatter` option.
+
+**Note:** If you rename manuscript files, update the filenames at the top of `build.sh` in the `# --- Configuration ---` section.
 
 ---
 
@@ -121,26 +124,48 @@ Settings → Pandoc Reference List:
 Follow prompts to select:
 1. Document type (Main text / Supporting Information)
 2. Output format (PDF / DOCX)
-3. Options (PDF to PNG conversion, include SI refs)
+3. Include frontmatter (default: yes)
+4. Options (PDF to PNG conversion, include SI refs)
 
 ### Command-Line Arguments
 
 ```bash
-./build.sh main pdf                      # Main text PDF
+./build.sh main pdf                      # Main text PDF (with frontmatter)
 ./build.sh main docx --png               # Main text DOCX with PNG figures
 ./build.sh si pdf                        # Supporting Information PDF
 ./build.sh main pdf --include-si-refs    # Unified bibliography
+./build.sh main pdf --no-frontmatter     # Build without frontmatter
 ```
 
 **Options:**
 - `--png` - Convert PDF figures to PNG for Word compatibility
 - `--include-si-refs` - Include SI citations in main text bibliography
+- `--no-frontmatter` - Skip merging frontmatter (content files only)
 
 **Output:** All files are created in `export/` folder
 
 ---
 
 ## Writing Guidelines
+
+### Frontmatter Workflow (DRY Principle)
+
+The repository uses a **single source of truth** for author information and frontmatter:
+
+- **`00_frontmatter.md`** - Contains the complete manuscript with title, authors, affiliations, abstract, and all content
+- **`01_maintext.md`** - Contains only the content (Abstract onwards, no title/authors)
+- **`02_supp_info.md`** - Contains only the content (Supporting Information onwards, no title/authors)
+
+During each build, the script automatically merges `00_frontmatter.md` with the content files:
+- `00_frontmatter.md` + `01_maintext.md` → `export/01_maintext.pdf`
+- `00_frontmatter.md` + `02_supp_info.md` → `export/02_supp_info.pdf`
+
+**Benefits:**
+- Update author information in one place only
+- Consistent frontmatter across main text and SI
+- Cleaner content files focused on writing
+
+**To disable:** Use `--no-frontmatter` flag or answer "n" when prompted.
 
 ### Title Page (Authors & Affiliations)
 

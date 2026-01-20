@@ -198,8 +198,8 @@ build_si() {
 # --- Main ---
 echo ""
 echo "=========================================="
-echo "   Document: ${DOC_TYPE^^}"
-echo "   Format: ${FORMAT^^}"
+echo "   Document: $(echo "$DOC_TYPE" | tr '[:lower:]' '[:upper:]')"
+echo "   Format: $(echo "$FORMAT" | tr '[:lower:]' '[:upper:]')"
 echo "   Include Frontmatter: $INCLUDE_FRONTMATTER"
 [[ "$FORMAT" == "docx" ]] && echo "   PNG Conversion: $USE_PNG"
 [[ "$DOC_TYPE" == "main" ]] && echo "   Include SI Refs: $INCLUDE_SI_REFS"

@@ -35,6 +35,14 @@ variables:
   header-includes:
     - \usepackage{lineno}
   #  - \linenumbers
+  
+  # Paragraph style: Choose ONE option
+  # Option A: American style (indented paragraphs, no gap)
+    - \setlength{\parindent}{1.5em}
+    - \setlength{\parskip}{0pt}
+  # Option B: European style (no indent, gap between paragraphs) - uncomment below, comment above
+  #  - \setlength{\parindent}{0pt}
+  #  - \setlength{\parskip}{0.5\baselineskip}
 
   # Colors
   colorlinks: true

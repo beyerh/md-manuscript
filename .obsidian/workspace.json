@@ -90,7 +90,7 @@
                   },
                   "pinned": true,
                   "icon": "terminal",
-                  "title": "Terminal: hbeyer@Hanness-MacBook-Pro:~/repos/md-manuscript"
+                  "title": "Terminal: hbeyer@localhost:~/repos/md-manuscript"
                 }
               }
             ]
@@ -260,17 +260,17 @@
   },
   "active": "968a8974dc8ffa6b",
   "lastOpenFiles": [
-    "export/01_maintext.docx",
-    "_temp_merged.md",
-    "export",
     "export/01_maintext.pdf",
+    "_temp_merged.md",
+    "resources/reference_doc.docx",
+    "resources/reference_doc_noindent.docx",
+    "export/~$_maintext.docx",
+    "export/01_maintext.docx",
+    "export",
     "export/01_maintext_lmodern.pdf",
     "export/01_maintext_linux_font.pdf",
-    "export/~$_maintext.docx",
     "figures/figure.png~",
     "_si_header.tex",
-    "export/02_supp_info.pdf",
-    "sedESqwpP",
     "README.md",
     "02_supp_info.md",
     "01_maintext.md",

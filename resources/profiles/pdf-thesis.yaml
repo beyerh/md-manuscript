@@ -5,7 +5,7 @@
 #              Chapter-style headings, 1.5 spacing, page numbers.
 
 profile:
-  name: "Thesis/Dissertation"
+  name: "Thesis"
   description: "Formal thesis format with binding margins"
   format: pdf
 
@@ -34,9 +34,11 @@ variables:
     - \setlength{\parindent}{1.5em}
     - \setlength{\parskip}{0pt}
     - \newenvironment{noindentstyle}{\setlength{\parindent}{0pt}}{\setlength{\parindent}{1.5em}}
-    # Chapter title formatting
+    # Chapter/section formatting - number inline with title (e.g., "1 Introduction")
     - \usepackage{titlesec}
-    - \titleformat{\chapter}[display]{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+    - \titleformat{\chapter}[hang]{\normalfont\Huge\bfseries}{\thechapter}{1em}{}
+    - \titleformat{\section}{\normalfont\Large\bfseries}{\thesection}{1em}{}
+    - \titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{1em}{}
   
   # Colors - more subtle for formal documents
   colorlinks: true
@@ -48,3 +50,7 @@ variables:
   # Table of contents - disabled, use \tableofcontents in frontmatter instead
   toc: false
   toc-depth: 3
+  
+  # Numbering - enable section numbers for TOC
+  numbersections: true
+  secnumdepth: 3

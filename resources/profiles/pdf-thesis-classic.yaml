@@ -1,0 +1,92 @@
+# pdf-thesis-classic.yaml - Classic Thesis Style
+# Best for: PhD/Master's theses, dissertations, monographs
+#
+# Description: Elegant book-style layout inspired by the Classic Thesis template.
+#              Features Palatino typography, refined chapter headings,
+#              generous margins for annotations, and sophisticated typographic details.
+
+profile:
+  name: "Classic Thesis"
+  description: "Elegant book-style thesis with Palatino and refined typography"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Layout ---
+variables:
+  documentclass: scrbook
+  classoption:
+    - twoside
+    - openright
+    - titlepage
+    - numbers=noenddot
+  papersize: a4
+  
+  # Generous margins - wider outer for margin notes, inner for binding
+  geometry:
+    - top=27mm
+    - bottom=27mm
+    - inner=24mm
+    - outer=40mm
+    - marginparwidth=28mm
+    - marginparsep=5mm
+    - twoside
+  
+  # Typography - Palatino family (TeX Gyre Pagella)
+  mainfont: "TeX Gyre Pagella"
+  sansfont: "TeX Gyre Heros"
+  monofont: "Libertinus Mono"
+  fontsize: 11pt
+  linestretch: 1.25
+  
+  # Paragraph style: indented (classic book style)
+  indent: true
+  
+  header-includes:
+    # Classic Thesis colors
+    - \usepackage{xcolor}
+    - \definecolor{CTsemi}{RGB}{128,0,0}
+    - \definecolor{CTnumber}{RGB}{180,180,180}
+    # Microtypography for refined text
+    - \usepackage{microtype}
+    # Classic paragraph indentation
+    - \setlength{\parindent}{1em}
+    - \setlength{\parskip}{0pt}
+    # Chapter formatting - Classic Thesis style with large number
+    - \usepackage{titlesec}
+    - \titleformat{\chapter}[display]{\relax}{\vspace*{-3\baselineskip}\makebox[\linewidth][r]{\color{CTnumber}\fontsize{70}{70}\selectfont\thechapter}}{10pt}{\raggedright\huge\scshape\color{CTsemi}}[\normalsize\vspace*{.8\baselineskip}\titlerule]
+    - \titleformat{\section}{\relax\Large\scshape\color{CTsemi}}{\thesection}{1em}{}
+    - \titleformat{\subsection}{\relax\large\itshape\color{CTsemi}}{\thesubsection}{1em}{}
+    - \titlespacing*{\chapter}{0pt}{0pt}{2\baselineskip}
+    # Headers and footers - classic style with small caps
+    - \usepackage[automark]{scrlayer-scrpage}
+    - \clearpairofpagestyles
+    - \cehead{\textsc{\MakeLowercase{\leftmark}}}
+    - \cohead{\textsc{\MakeLowercase{\rightmark}}}
+    - \ofoot*{\pagemark}
+    - \pagestyle{scrheadings}
+    # Fullwidth environment for figures/tables spanning margins
+    - \usepackage{changepage}
+    # Elegant captions with color
+    - \usepackage[font=small,labelfont={bf,color=CTsemi},format=hang]{caption}
+    # No-indent style environment
+    - \newenvironment{noindentstyle}{\setlength{\parindent}{0pt}}{\setlength{\parindent}{1em}}
+    # Two-column environment (no-op for compatibility)
+    - \providecommand{\twocolumn}[1][]{#1}
+    - \providecommand{\onecolumn}{}
+  
+  # Colors - Classic Thesis maroon
+  colorlinks: true
+  linkcolor: CTsemi
+  toccolor: CTsemi
+  urlcolor: CTsemi
+  citecolor: CTsemi
+  
+  # Table of contents
+  toc: false
+  toc-depth: 3
+  
+  # Numbering - enable section numbers for TOC
+  numbersections: true
+  secnumdepth: 3

@@ -1,6 +1,6 @@
 # Scientific Manuscript Template
 
-Write scientific manuscripts in Markdown and export to Word and PDF using a build script.
+Write scientific manuscripts and theses in Markdown and export to Word and PDF using a build script.
 
 ## Quick Start
 
@@ -11,6 +11,7 @@ python build.py
 The interactive wizard guides you through:
 - Document type (Main Text / Supporting Information / Both)
 - Output format (Word / PDF)
+- Thesis profiles for dissertations
 - Journal-specific formats
 - Font and citation style options
 
@@ -86,10 +87,11 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 </details>
 
 <details>
-<summary>TeX Gyre (Times, Palatino, Helvetica)</summary>
+<summary>TeX Gyre Pagella (Classic Thesis profile)</summary>
 
-- **macOS/Linux:** Included with most TeX distributions (TeX Live, MacTeX)
-- **Windows:** Included with MiKTeX/TeX Live, or install from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
+- **macOS:** `brew install --cask font-tex-gyre-pagella`
+- **Linux:** `sudo apt install fonts-texgyre` (Debian/Ubuntu) or install from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
+- **Windows:** Download from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
 
 </details>
 
@@ -174,6 +176,7 @@ Recommended: **Editing Toolbar** (text formatting), **Commentator** (Track Chang
   - Draft - Double-spaced with line numbers
   - Two-Column - Compact layout
   - Thesis - Formal thesis format
+  - Classic Thesis - Elegant book-style with Palatino
   - Nature/Cell - Journal-specific formats
 
 ## Writing Guide

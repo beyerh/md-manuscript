@@ -1,5 +1,5 @@
 
-# Abstract
+# Abstract {.unnumbered}
 **Objective:** Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 **Results:** Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.
 
@@ -21,6 +21,8 @@ Donec ullamcorper nulla non metus auctor fringilla. Vestibulum id ligula porta f
 Maecenas ultricies mi eget mauris pharetra viverra. The main findings are illustrated in **@Fig:results** and the summary data is provided in **@Tbl:data**. Additional data is available in the Supporting Information (see **Figure S1** and **Table S1**).
 
 # Methods
+## A new method
+### A very new method
 Suspendisse potenti. Sed egestas, ante et vulputate volutpat, eros pede semper est, vitae luctus metus libero eu augue. Morbi purus libero, faucibus adipiscing, commodo quis, gravida id, est. Sed lectus. Praesent elementum hendrerit tortor. Sed semper lorem at felis. Vestibulum volutpat, lacus a ultrices sagittis, mi neque euismod dui, eu pulvinar nunc sapien ornare nisl. Phasellus pede arcu, dapibus eu, fermentum et, dapibus sed, urna [@doeQuantumCoherence2025].
 
 Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos.

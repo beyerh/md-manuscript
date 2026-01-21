@@ -251,7 +251,8 @@ CITATION_STYLES = {
 
 # Profile categories for menu display
 PROFILE_CATEGORIES = {
-    "General": ["docx-manuscript", "pdf-default", "pdf-draft", "pdf-two-column", "pdf-thesis"],
+    "General": ["docx-manuscript", "pdf-default", "pdf-draft", "pdf-two-column"],
+    "Thesis": ["pdf-thesis", "pdf-thesis-classic"],
     "Journals": ["pdf-nature", "pdf-cell"],
 }
 

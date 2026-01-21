@@ -47,7 +47,13 @@ brew install --cask font-libertinus
 
 ```bash
 sudo apt update
-sudo apt install python3 pandoc pandoc-crossref imagemagick fonts-libertinus
+sudo apt install python3 pandoc imagemagick fonts-linuxlibertine
+
+# Install pandoc-crossref from GitHub (not available in apt)
+wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.18.0/pandoc-crossref-Linux.tar.xz
+tar -xf pandoc-crossref-Linux.tar.xz
+sudo mv pandoc-crossref /usr/local/bin/
+sudo chmod +x /usr/local/bin/pandoc-crossref
 
 # Install Tectonic: https://tectonic-typesetting.github.io/install.html
 ```
@@ -81,7 +87,9 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 <summary>Libertinus (Default)</summary>
 
 - **macOS:** `brew install --cask font-libertinus`
-- **Linux:** `sudo apt install fonts-libertinus` (Debian/Ubuntu) or install from [GitHub releases](https://github.com/alerque/libertinus/releases)
+- **Linux (Debian/Ubuntu):** `sudo apt install fonts-linuxlibertine`
+- **Linux (Arch):** `sudo pacman -S otf-libertinus`
+- **Linux (Other):** Install from [GitHub releases](https://github.com/alerque/libertinus/releases)
 - **Windows:** Download from [GitHub releases](https://github.com/alerque/libertinus/releases)
 
 </details>
@@ -90,7 +98,9 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 <summary>TeX Gyre Pagella (Classic Thesis profile)</summary>
 
 - **macOS:** `brew install --cask font-tex-gyre-pagella`
-- **Linux:** `sudo apt install fonts-texgyre` (Debian/Ubuntu) or install from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
+- **Linux (Debian/Ubuntu):** `sudo apt install fonts-texgyre`
+- **Linux (Arch):** `sudo pacman -S tex-gyre-fonts`
+- **Linux (Other):** Install from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
 - **Windows:** Download from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
 
 </details>
@@ -99,7 +109,8 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 <summary>Arial/Helvetica</summary>
 
 - **macOS:** Pre-installed
-- **Linux:** Install `msttcorefonts` package or use Liberation fonts as alternatives
+- **Linux (Debian/Ubuntu):** Install `msttcorefonts` package or `ttf-liberation` for alternatives
+- **Linux (Arch):** `sudo pacman -S ttf-liberation` (metric-compatible alternatives)
 - **Windows:** Pre-installed
 
 </details>
@@ -107,7 +118,9 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 <details>
 <summary>Charter</summary>
 
-- **macOS/Linux:** Install via package manager or from [XCharter project](https://github.com/khaledhosny/xcharter)
+- **macOS:** Install from [XCharter project](https://github.com/khaledhosny/xcharter)
+- **Linux (Arch):** `ttf-bitstream-charter` (AUR) or install from [XCharter project](https://github.com/khaledhosny/xcharter)
+- **Linux (Other):** Install from [XCharter project](https://github.com/khaledhosny/xcharter)
 - **Windows:** Install from [XCharter project](https://github.com/khaledhosny/xcharter)
 
 </details>
@@ -115,7 +128,9 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 <details>
 <summary>Latin Modern (Computer Modern alternative)</summary>
 
-- **macOS/Linux:** Included with most TeX distributions
+- **macOS:** Included with most TeX distributions
+- **Linux (Arch):** `sudo pacman -S otf-latin-modern` or included with TeX distributions
+- **Linux (Other):** Included with most TeX distributions
 - **Windows:** Included with MiKTeX/TeX Live
 
 </details>

@@ -1,0 +1,43 @@
+# pdf-draft.yaml - Draft PDF with Line Numbers
+# Best for: Peer review, revision tracking
+#
+# Description: Double-spaced with line numbers for reviewer comments.
+#              Wide margins for annotations.
+
+profile:
+  name: "Draft (Line Numbers)"
+  description: "Double-spaced PDF with line numbers for peer review"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Layout ---
+variables:
+  documentclass: article
+  papersize: a4
+  geometry: ["top=2.5cm", "bottom=2.5cm", "left=3cm", "right=3cm"]
+  
+  # Typography
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 12pt
+  linestretch: 2.0  # Double-spaced
+  
+  # Paragraph style: American (indented)
+  indent: true
+  
+  header-includes:
+    - \usepackage{lineno}
+    - \linenumbers
+    - \setlength{\parindent}{1.5em}
+    - \setlength{\parskip}{0pt}
+    - \newenvironment{noindentstyle}{\setlength{\parindent}{0pt}}{\setlength{\parindent}{1.5em}}
+  
+  # Colors
+  colorlinks: true
+  linkcolor: blue
+  toccolor: black
+  urlcolor: blue
+  citecolor: blue

@@ -1,0 +1,49 @@
+# pdf-default.yaml - Clean Default PDF
+# Best for: Drafts, preprints, general use
+#
+# Description: Professional single-column layout with Libertinus Serif.
+#              1.5 line spacing, A4 paper, American-style indented paragraphs.
+
+profile:
+  name: "Default PDF"
+  description: "Clean single-column PDF for drafts and preprints"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Layout ---
+variables:
+  documentclass: article
+  papersize: a4
+  geometry: ["top=2.5cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm"]
+  
+  # Typography
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 11pt
+  linestretch: 1.5
+  
+  # Paragraph style: American (indented)
+  indent: true
+  
+  header-includes:
+    - \usepackage{lineno}
+    - \setlength{\parindent}{1.5em}
+    - \setlength{\parskip}{0pt}
+    # Bold caption labels (Figure 1:, Table 1:)
+    - \usepackage{caption}
+    - \captionsetup{labelfont=bf,labelsep=colon}
+    # Better float placement (prevent excessive whitespace)
+    - \renewcommand{\floatpagefraction}{0.8}
+    - \renewcommand{\topfraction}{0.9}
+    - \renewcommand{\bottomfraction}{0.9}
+    - \renewcommand{\textfraction}{0.1}
+    # Black TOC links
+    - \AtBeginDocument{\hypersetup{linkcolor=black}}
+  
+  # Colors
+  colorlinks: true
+  urlcolor: blue
+  citecolor: blue

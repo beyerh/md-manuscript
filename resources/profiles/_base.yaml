@@ -1,0 +1,22 @@
+# _base.yaml - Shared defaults inherited by all profiles
+# DO NOT USE THIS DIRECTLY - Use a specific profile instead
+
+# --- Input/Output Settings ---
+reader: markdown
+
+# --- Bibliography ---
+filters:
+  - pandoc-crossref
+  - citeproc
+bibliography: resources/references.json
+
+# --- Cross-Reference Settings ---
+metadata:
+  csl: resources/citation_style.csl
+  link-citations: true
+  figureTitle: "Figure"
+  tableTitle: "Table"
+  figPrefix: ["Figure", "Figures"]
+  tblPrefix: ["Table", "Tables"]
+  linkReferences: true
+  nameInLink: true

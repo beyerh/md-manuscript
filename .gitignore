@@ -7,7 +7,12 @@ figures/*.png
 # Temporary build files
 _temp_merged.md
 _temp_si_merged.md
+_temp_main_merged.md
+_temp_config.yaml
 _si_header.tex
+
+# Build configuration (user-specific)
+.build_config.json
 
 # Pandoc cache (if created)
 .pandoc/

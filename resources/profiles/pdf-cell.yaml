@@ -1,0 +1,48 @@
+# pdf-cell.yaml - Cell Press Style
+# Best for: Cell, Cell Reports, Molecular Cell, Cell Press journals
+#
+# Description: Elegant layout with distinctive Cell typography.
+#              Wide single column, generous spacing.
+
+profile:
+  name: "Cell Press Style"
+  description: "Cell Press journal family format"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Layout ---
+variables:
+  documentclass: article
+  papersize: a4
+  geometry: ["top=2.5cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm"]
+  
+  # Typography - Cell uses clean, modern fonts
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 11pt
+  linestretch: 1.2
+  
+  # Paragraph style: European (gap)
+  indent: false
+  
+  header-includes:
+    - \usepackage{lineno}
+    - \setlength{\parindent}{0pt}
+    - \setlength{\parskip}{0.5\baselineskip}
+    # Bold sans-serif headings
+    - \usepackage{sectsty}
+    - \allsectionsfont{\sffamily\bfseries}
+    # Colored section headings (Cell blue)
+    - \usepackage{xcolor}
+    - \definecolor{cellblue}{RGB}{0,51,102}
+    - \sectionfont{\color{cellblue}\sffamily\bfseries}
+  
+  # Colors
+  colorlinks: true
+  linkcolor: cellblue
+  toccolor: black
+  urlcolor: cellblue
+  citecolor: cellblue

@@ -1,301 +1,245 @@
-# Scientific Manuscript Template (Markdown → PDF & DOCX)
+# Scientific Manuscript Template
 
-Write scientific manuscripts in Markdown with Obsidian and export to Word and PDF documents using a cross-platform build script.
+Write scientific manuscripts in Markdown and export to Word and PDF using a  build script.
 
-**Key Features:**
-- Cross-platform support (macOS, Linux, Windows)
-- Unified configuration for consistent output
-- Automatic cross-referencing for figures, tables, and citations
-- Supporting Information with proper numbering (Figure S1, Table S1)
-- Optional unified bibliography (include SI references in main text)
-- Interactive build script with wizard
-
----
-
-## Prerequisites
-
-### All Platforms
-
-- **Python 3.6+** (required to run the build script)
-
-### Arch Linux
-
-```bash
-sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
-```
-
-### Debian/Ubuntu
-
-```bash
-sudo apt install python3 pandoc pandoc-crossref imagemagick fonts-libertinus
-# Install Tectonic: https://tectonic-typesetting.github.io/install.html
-```
-
-### macOS
-
-```bash
-# Install Homebrew if not already installed
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-# Install required packages
-brew install pandoc pandoc-crossref imagemagick tectonic
-brew install --cask font-libertinus
-```
-
-### Windows
-
-1. **Install Python:** Download from [python.org](https://www.python.org/downloads/)
-2. **Install Pandoc:** Download from [pandoc.org](https://pandoc.org/installing.html)
-3. **Install pandoc-crossref:** Download from [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases)
-4. **Install ImageMagick:** Download from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
-5. **Install Tectonic:** Download from [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io/install.html)
-6. **Install Libertinus fonts:** Download from [GitHub releases](https://github.com/alerque/libertinus/releases)
-
----
-
-## Project Structure
-
-```
-├── 00_frontmatter.md       # Common frontmatter (authors, affiliations)
-├── 01_maintext.md          # Main manuscript content
-├── 02_supp_info.md         # Supporting Information content
-├── build.py                # Build script (cross-platform, Python)
-├── export/                 # Output folder (created automatically)
-├── figures/                # Images (PDF format recommended)
-└── resources/
-    ├── config.yaml         # Pandoc configuration
-    ├── references.json     # Zotero bibliography (auto-updated)
-    ├── citation_style.csl  # Citation style file
-    ├── reference_doc.docx  # Word template
-    └── pdf2png.lua         # Figure conversion filter
-```
-
-**Frontmatter Workflow:** The build script automatically merges `00_frontmatter.md` with both `01_maintext.md` and `02_supp_info.md` during each build. This ensures consistent author information across both documents. You can disable this with the `--no-frontmatter` option.
-
-**Note:** If you rename manuscript files, update the filenames at the top of `build.py` in the `# --- Configuration ---` section.
-
----
-
-## Zotero Setup (Auto-Updating References)
-
-1. **Install Better BibTeX plugin** from [GitHub](https://github.com/retorquere/zotero-better-bibtex/releases)
-2. **Setup auto-export:**
-   - Right-click collection → Export Collection
-   - Format: **BetterBibTeX JSON**
-   - ✓ **Keep updated**
-   - Save as `resources/references.json`
-
-**Citation syntax:** `[@smith2023]` or `[@smith2023; @jones2024]`. Use Zotero plugins for automatization.
-
----
-
-## Obsidian Setup
-
-### Required Plugins
-- **Terminal** - Run build script with interactive wizard
-- **Zotero Integration** - Insert citations
-- **Pandoc Plugin** - PDF, DOCX export
-- **Pandoc Reference List** - View formatted references
-
-**Optional:** Editing Toolbar (text formatting), commentator (Track changes), Git (version control), languagetool (spellcheck)
-
-### Terminal Plugin Configuration
-
-1. Install **Terminal** plugin from Community Plugins
-2. Open terminal in Obsidian (ribbon icon)
-3. Run the build script: `python build.py`
-4. Follow the interactive wizard prompts
-
-**Alternative: Direct commands** (see below)
-### Zotero Integration
-
-Settings → Zotero Integration:
-- Citation Format: **Pandoc/Scrivener** (`@AuthorYear`)
-- Import Format: **Better BibTeX JSON**
-- Set hotkey (e.g., `Alt+Z`) for quick citation insertion
-
-### Pandoc Reference List
-
-Settings → Pandoc Reference List:
-- ***You have to set/update the path to your Bibliography file:*** `full/path/to/resources/references.json`
-- ✓ Show citations in sidebar
-
----
-
-## Build Script Usage
-
-### Interactive Wizard (Recommended in Obsidian)
+## Quick Start
 
 ```bash
 python build.py
 ```
 
-Follow prompts to select:
-1. Document type (Main text / Supporting Information)
-2. Output format (PDF / DOCX)
-3. Include frontmatter (default: yes)
-4. Options (PDF to PNG conversion, include SI refs)
+The interactive wizard guides you through:
+- Document type (Main Text /### Supporting Information
+- Use same syntax as main text
+- Automatically numbered as S1, S2, etc.
+- Build with `python build.py si`
 
-### Command-Line Arguments
+## Obsidian Setup
 
+All configuration is included in the hidden .obsidian folder, and it should all work out of the box. However, you should update the path to the `references.json` file in the settings of the Pandoc Reference List plugin.
+
+**Details:**
+
+### Required Plugins
+- **Terminal** - Run build script with interactive wizard 
+- **Zotero Integration** - Insert citations from Zotero
+- **Pandoc Reference List** - View formatted references
+**Recommended:**
+- **Editing Toolbar** - Text formatting
+- **Commentator** - Track changes
+- **LanguageTool Integration** - Improved spell checking
+
+### Configuration
+**Zotero Integration:**
+- Citation Format: **Pandoc/Scrivener** (`@AuthorYear`)
+- Import Format: **Better BibTeX JSON**
+- Set hotkey (e.g., `Alt+Z`) for quick citation insertion
+
+**Pandoc Reference List:**
+- Set path to: `your/path/to/resources/references.json`
+- Enable "Show citations in sidebar"
+
+**Terminal:**
+- Open terminal from ribbon icon, select integrated terminal
+- Run: `python build.py`
+
+## Installation
+
+### Required Tools
+- **Python 3.6+** (to run the build script)
+- **Pandoc** (document conversion)
+- **pandoc-crossref** (figure/table cross-references)
+- **ImageMagick** (figure conversion)
+- **Tectonic** (PDF engine, lightweight alternative to TeX Live)
+
+## Zotero Setup (References)
+
+1. Install **Better BibTeX** plugin from [GitHub](https://github.com/retorquere/zotero-better-bibtex/releases)
+2. Set up auto-export:
+   - Right-click collection → Export Collection
+   - Format: **BetterBibTeX JSON**
+   - ✓ **Keep updated**
+   - Save as `resources/references.json`
+
+**Citation syntax:** `[@smith2023]` or `[@smith2023; @jones2024]`
+Use the Zotero Integration plugin for automatization
+### Install Commands
+
+**macOS:**
 ```bash
-python build.py main pdf                      # Main text PDF (with frontmatter)
-python build.py main docx --png               # Main text DOCX with PNG figures
-python build.py si pdf                        # Supporting Information PDF
-python build.py main pdf --include-si-refs    # Unified bibliography
-python build.py main pdf --no-frontmatter     # Build without frontmatter
+# Install Homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install required packages
+brew install pandoc pandoc-crossref imagemagick tectonic font-libertinus`
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+sudo apt install python3 pandoc pandoc-crossref imagemagick fonts-libertinus`
+# Install Tectonic: https://tectonic-typesetting.github.io/install.html
+```
+
+**Linux (Arch):**
+```bash
+sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
+```
+
+**Windows:**
+1. Install Python from [python.org](https://www.python.org/downloads/)
+2. Install Pandoc from [pandoc.org](https://pandoc.org/installing.html)
+3. Install pandoc-crossref from [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases)
+4. Install ImageMagick from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
+5. Install Tectonic from [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io/install.html)
+
+## Font Installation
+
+The template supports several font presets. Install the fonts you want to use:
+
+### Libertinus (Default)
+- **macOS:** `brew install --cask font-libertinus`
+- **Linux:** `sudo apt install fonts-libertinus` (Debian/Ubuntu) or install from [GitHub releases](https://github.com/alerque/libertinus/releases)
+- **Windows:** Download from [GitHub releases](https://github.com/alerque/libertinus/releases)
+
+### TeX Gyre (Times, Palatino, Helvetica)
+- **macOS/Linux:** Included with most TeX distributions (TeX Live, MacTeX)
+- **Windows:** Included with MiKTeX/TeX Live, or install from [TeX Gyre project](http://www.gust.org.pl/projects/e-foundry/tex-gyre/)
+
+### Arial/Helvetica
+- **macOS:** Pre-installed
+- **Linux:** Install `msttcorefonts` package or use Liberation fonts as alternatives
+- **Windows:** Pre-installed
+
+### Charter
+- **macOS/Linux:** Install via package manager or from [XCharter project](https://github.com/khaledhosny/xcharter)
+- **Windows:** Install from [XCharter project](https://github.com/khaledhosny/xcharter)
+
+### Latin Modern (Computer Modern alternative)
+- **macOS/Linux:** Included with most TeX distributions
+- **Windows:** Included with MiKTeX/TeX Live
+
+## Advanced Usage
+
+### Command Line
+```bash
+# Basic usage
+python build.py main --profile=pdf-default
+python build.py main --profile=docx-manuscript
+
+# With options
+python build.py main --profile=pdf-default --font=libertinus --fontsize=11pt
+python build.py main --profile=pdf-default --csl=nature
+python build.py main --profile=docx-manuscript --png  # Convert PDF figures to PNG
 ```
 
 **Options:**
-- `--png` - Convert PDF figures to PNG for Word compatibility
-- `--include-si-refs` - Include SI citations in main text bibliography
-- `--no-frontmatter` - Skip merging frontmatter (content files only)
+- `--profile=NAME` - Output format (pdf-default, pdf-nature, pdf-cell, docx-manuscript, etc.)
+- `--font=NAME` - Font preset (libertinus, times, palatino, arial, helvetica, charter, computer-modern)
+- `--fontsize=SIZE` - Font size (9pt, 10pt, 11pt, 12pt)
+- `--csl=STYLE` - Citation style (nature, science, cell, apa, vancouver, or Zotero style ID)
+- `--png` - Convert PDF figures to PNG for Word documents
+- `--include-si-refs` - Include SI references in main bibliography
+- `--no-frontmatter` - Skip merging frontmatter
+- `--list` - Show all available profiles
 
-**Output:** All files are created in `export/` folder
+## Output Formats
 
----
+- `docx-manuscript` - Word document for submissions
+- `pdf-default` - Clean single-column PDF
+- `pdf-draft` - Double-spaced with line numbers for review
+- `pdf-two-column` - Compact two-column layout
+- `pdf-thesis` - Formal thesis format
+- `pdf-nature` - Nature journal format
+- `pdf-cell` - Cell Press journal format
 
-## Writing Guidelines
-
-### Frontmatter Workflow (DRY Principle)
-
-The repository uses a **single source of truth** for author information and frontmatter:
-
-- **`00_frontmatter.md`** - Contains the complete manuscript with title, authors, affiliations, abstract, and all content
-- **`01_maintext.md`** - Contains only the content (Abstract onwards, no title/authors)
-- **`02_supp_info.md`** - Contains only the content (Supporting Information onwards, no title/authors)
-
-During each build, the script automatically merges `00_frontmatter.md` with the content files:
-- `00_frontmatter.md` + `01_maintext.md` → `export/01_maintext.pdf`
-- `00_frontmatter.md` + `02_supp_info.md` → `export/02_supp_info.pdf`
-
-**Benefits:**
-- Update author information in one place only
-- Consistent frontmatter across main text and SI
-- Cleaner content files focused on writing
-
-**To disable:** Use `--no-frontmatter` flag or answer "n" when prompted.
-
-### Title Page (Authors & Affiliations)
-
-```markdown
-# Manuscript Title
-
-::: {custom-style="FrontMatter"}
-**Author Name**^1,2^, **Co-Author**^2^
-
-^1^ Department, University, City, Country  
-^2^ Institute, Organization
-:::
-```
+## Writing Tips
 
 ### Figures
-
-**Always use PDF format** - build script converts to PNG for Word automatically.
+- Use **PDF format** (auto-converted to PNG for Word)
+- Reference with `**@Fig:label**`
+- Caption goes below figure
 
 ```markdown
-As shown in **@Fig:results**...
-
-![**Title.** Legend text.](figures/image.pdf){#fig:results}
-
-Next paragraph...
+![**Figure Title.** Legend text.](figures/image.pdf){#fig:label}
 ```
 
-**Important:** Empty line after figure is required.
-
 ### Tables
-
-Caption goes **above** table. Empty line between caption and table is mandatory.
+- Caption goes **above** table
+- Reference with `**@Tbl:label**`
 
 ```markdown
-See **@Tbl:stats** for details.
-
-Table: **Title.** Description text. {#tbl:stats}
+Table: **Table Title.** Description. {#tbl:label}
 
 | Column A | Column B |
-| :------- | :------- |
+|----------|----------|
 | Value 1  | Value 2  |
 ```
 
 ### Cross-References
-
-**Within document:**
 - Figures: `**@Fig:results**` → "Figure 1"
 - Tables: `**@Tbl:data**` → "Table 1"
 - Citations: `[@smith2023]` → "(Smith 2023)"
 
-**Cross-document (SI from main text):**
-- Use plain text: `**Figure S1**`, `**Table S1**`
-- Cross-references only work within same document
+### Two-Column Layouts (Full-width elements)
 
----
+For two-column profiles (`pdf-two-column`), use raw LaTeX for full-width figures and tables:
 
-## Supporting Information
-
-The SI document (`02_supp_info.md`) automatically:
-- Numbers figures as S1, S2, S3...
-- Numbers tables as S1, S2, S3...
-- Has its own bibliography
-
-Use same syntax as main text:
-```markdown
-See **@Fig:s1** and **@Tbl:s1**...
-
-![**Title.** Legend.](figures/si_image.pdf){#fig:s1}
+```latex
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/image.pdf}
+\caption{**Figure Title.** Legend text.}
+\label{fig:label}
+\end{figure*}
 ```
 
-### Unified Bibliography Option
-
-Some journals require all references (main + SI) in the main text bibliography:
-
-```bash
-python build.py main docx --png --include-si-refs
+```latex
+\begin{table*}[t]
+\centering
+\caption{**Table Title.** Description.}
+\label{tbl:label}
+\begin{tabular}{ll}
+Column A & Column B \\
+\hline
+Value 1  & Value 2
+\end{tabular}
+\end{table*}
 ```
 
-This automatically extracts literature citations from SI and includes them in main text bibliography.
+**Notes:**
+- Use `figure*` and `table*` environments for full-width
+- Standard markdown figures/tables work but appear in single-column width
+- Reference with `**@Fig:label**` and `**@Tbl:label**` as usual
 
----
+## Project Structure
 
-## Customizing Word Template
+```
+├── 00_frontmatter.md       # Title, authors, affiliations
+├── 01_maintext.md          # Main manuscript content
+├── 02_supp_info.md         # Supporting Information
+├── build.py                # Build script
+├── figures/                # Images (PDF format recommended)
+├── export/                 # Generated documents
+└── resources/
+    ├── profiles/           # Output format settings
+    ├── citation_styles/    # Downloaded citation styles
+    ├── citation_style.csl  # Default citation style
+    └── references.json     # Zotero bibliography
+```
 
-To adapt `reference_doc.docx` for different journals:
-
-1. **Generate base:** (fully compatible with Pandoc)
-   ```bash
-   pandoc -o custom_reference.docx --print-default-data-file reference.docx
-   ```
-
-2. **Edit styles in Word:**
-   - Open Styles Pane (`Alt+Ctrl+Shift+S`)
-   - Modify: Normal, Heading 1-3, Table Caption, Figure Caption
-
-3. **Create FrontMatter style:**
-   - New Style → Name: `FrontMatter`
-   - Based on: Normal
-   - Alignment: Left
-
-4. **Save as:** `resources/reference_doc.docx`
-
----
 ## Advanced Features
 
-### Math Equations
-Inline: `$E = mc^2$`  
-Display: `$$\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$$`
+- **Math equations:** `$E = mc^2$` (inline) or `$$...$$` (display)
+- **Footnotes:** `Text with footnote^[Footnote content.]`
+- **Highlighting:** `==highlighted text==` (yellow background)
+- **Custom profiles:** Edit YAML files in `resources/profiles/`
 
-### Footnotes
-`Text with footnote^[This is the footnote content.]`
+## Citation Styles
 
-### Highlighting (for drafts)
-`==highlighted text==` renders as yellow highlighted text.
+Built-in styles: `nature`, `science`, `cell`, `plos`, `pnas`, `apa`, `vancouver`, `chicago`
 
-### Definition Lists
-```markdown
-Term 1
-:   Definition of term 1
-
-Term 2
-:   Definition of term 2
-```
+Download additional styles from [zotero.org/styles](https://www.zotero.org/styles) and use with `--csl=style-id`.
 
 ---
+
+**Output:** All documents are created in the `export/` folder.

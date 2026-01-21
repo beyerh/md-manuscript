@@ -1,0 +1,50 @@
+# pdf-thesis.yaml - Thesis/Dissertation Format
+# Best for: PhD/Master's theses, dissertations, book chapters
+#
+# Description: Formal academic format with generous margins for binding.
+#              Chapter-style headings, 1.5 spacing, page numbers.
+
+profile:
+  name: "Thesis/Dissertation"
+  description: "Formal thesis format with binding margins"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Layout ---
+variables:
+  documentclass: report
+  papersize: a4
+  # Asymmetric margins for binding
+  geometry: ["top=2.5cm", "bottom=2.5cm", "inner=3.5cm", "outer=2.5cm", "twoside"]
+  
+  # Typography
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 12pt
+  linestretch: 1.5
+  
+  # Paragraph style: American (indented)
+  indent: true
+  
+  header-includes:
+    - \usepackage{lineno}
+    - \setlength{\parindent}{1.5em}
+    - \setlength{\parskip}{0pt}
+    - \newenvironment{noindentstyle}{\setlength{\parindent}{0pt}}{\setlength{\parindent}{1.5em}}
+    # Chapter title formatting
+    - \usepackage{titlesec}
+    - \titleformat{\chapter}[display]{\normalfont\huge\bfseries}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
+  
+  # Colors - more subtle for formal documents
+  colorlinks: true
+  linkcolor: black
+  toccolor: black
+  urlcolor: blue
+  citecolor: black
+  
+  # Table of contents - disabled, use \tableofcontents in frontmatter instead
+  toc: false
+  toc-depth: 3

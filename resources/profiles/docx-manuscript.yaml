@@ -1,0 +1,18 @@
+# docx-manuscript.yaml - Word Document Export
+# Best for: Initial submissions, collaborator review, track changes
+#
+# Description: Clean Word document using reference template.
+#              Figures can be PDF or PNG (use --png flag for compatibility).
+
+profile:
+  name: "Word Document"
+  description: "Word DOCX for submissions and collaboration"
+  format: docx
+
+# --- Word Specifics ---
+reference-doc: resources/reference_doc.docx
+dpi: 600
+toc: false
+
+# Note: Font, spacing, and layout are controlled by reference_doc.docx
+# Edit that file in Word to customize styles.

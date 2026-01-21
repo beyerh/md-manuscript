@@ -1,0 +1,60 @@
+# pdf-two-column.yaml - Two-Column Layout
+# Best for: Conference papers, technical reports, final proofs
+#
+# Description: Compact two-column layout similar to published articles.
+#              Single-spaced, smaller margins.
+
+profile:
+  name: "Two-Column PDF"
+  description: "Compact two-column layout for conference papers"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Filters ---
+# Custom filter to convert longtable to tabular for twocolumn compatibility
+filters:
+  - pandoc-crossref
+  - citeproc
+  - resources/no-longtable.lua
+
+# --- Layout ---
+variables:
+  documentclass: article
+  classoption: ["twocolumn"]
+  papersize: a4
+  geometry: ["top=2cm", "bottom=2cm", "left=1.5cm", "right=1.5cm"]
+  
+  # Typography
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 10pt
+  linestretch: 1.0
+  
+  # Paragraph style: European (gap) works better in two-column
+  indent: false
+  
+  header-includes:
+    - \setlength{\parindent}{0pt}
+    - \setlength{\parskip}{0.5\baselineskip}
+    - \setlength{\columnsep}{0.8cm}
+    # Bold caption labels (Figure 1:, Table 1:)
+    - \usepackage{caption}
+    - \captionsetup{labelfont=bf,labelsep=colon}
+    # Better float placement for two-column
+    - \usepackage{stfloats}
+    - \renewcommand{\floatpagefraction}{0.8}
+    - \renewcommand{\topfraction}{0.95}
+    - \renewcommand{\bottomfraction}{0.95}
+    - \renewcommand{\textfraction}{0.05}
+    - \renewcommand{\dbltopfraction}{0.95}
+    - \renewcommand{\dblfloatpagefraction}{0.8}
+  
+  # Colors
+  colorlinks: true
+  linkcolor: blue
+  toccolor: black
+  urlcolor: blue
+  citecolor: blue

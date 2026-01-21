@@ -1,0 +1,44 @@
+# pdf-nature.yaml - Nature Style
+# Best for: Nature, Nature Communications, Nature journals
+#
+# Description: Clean, compact style. Sans-serif headings, serif body.
+#              Single-spaced, narrow margins, 8pt references.
+
+profile:
+  name: "Nature Style"
+  description: "Nature journal family format"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Layout ---
+variables:
+  documentclass: article
+  papersize: a4
+  geometry: ["top=2cm", "bottom=2cm", "left=2cm", "right=2cm"]
+  
+  # Typography - Nature uses Arial/Helvetica for headings
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 10pt
+  linestretch: 1.15
+  
+  # Paragraph style: European (gap)
+  indent: false
+  
+  header-includes:
+    - \usepackage{lineno}
+    - \setlength{\parindent}{0pt}
+    - \setlength{\parskip}{0.4\baselineskip}
+    # Sans-serif headings
+    - \usepackage{sectsty}
+    - \allsectionsfont{\sffamily}
+  
+  # Colors
+  colorlinks: true
+  linkcolor: blue
+  toccolor: black
+  urlcolor: blue
+  citecolor: blue

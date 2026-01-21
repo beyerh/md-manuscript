@@ -12,7 +12,6 @@ bibliography: resources/references.json
 
 # --- Cross-Reference Settings ---
 metadata:
-  csl: resources/citation_style.csl
   link-citations: true
   figureTitle: "Figure"
   tableTitle: "Table"

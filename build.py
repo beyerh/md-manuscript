@@ -27,7 +27,15 @@ LUA_FILTER = "resources/pdf2png.lua"
 SI_HEADER = "_si_header.tex"
 EXPORT_DIR = "export"
 BUILD_CONFIG = ".build_config.json"
+DEFAULTS_CONFIG = ".defaults_config.json"
 CITATION_STYLES_DIR = "resources/citation_styles"
+
+# Default settings when nothing is configured
+DEFAULT_SETTINGS = {
+    "font": "libertinus",
+    "fontsize": "11pt",
+    "citation_style": "vancouver"
+}
 
 # Font presets for PDF output
 FONT_PRESETS = {
@@ -164,8 +172,6 @@ def download_csl_from_identifier(style_identifier: str) -> Optional[str]:
         return None
 
 
-
-
 def get_profile_default_fontsize(profile: str) -> Optional[str]:
     """Extract fontsize from a profile YAML (best-effort)."""
     profile_path = Path(PROFILES_DIR) / f"{profile}.yaml"
@@ -184,47 +190,62 @@ def get_profile_default_fontsize(profile: str) -> Optional[str]:
 
 FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"]
 
-# Citation style URLs from Zotero Style Repository
+# Citation style URLs from Zotero Style Repository (alphabetical order)
 CITATION_STYLES = {
-    "nature": {
-        "name": "Nature",
-        "url": "https://www.zotero.org/styles/nature",
-        "file": "nature.csl",
+    "acs-synthetic-biology": {
+        "name": "ACS Synthetic Biology",
+        "url": "https://www.zotero.org/styles/acs-synthetic-biology",
+        "file": "acs-synthetic-biology.csl",
     },
-    "science": {
-        "name": "Science",
-        "url": "https://www.zotero.org/styles/science",
-        "file": "science.csl",
-    },
-    "cell": {
-        "name": "Cell",
-        "url": "https://www.zotero.org/styles/cell",
-        "file": "cell.csl",
-    },
-    "plos": {
-        "name": "PLOS",
-        "url": "https://www.zotero.org/styles/plos",
-        "file": "plos.csl",
-    },
-    "pnas": {
-        "name": "PNAS",
-        "url": "https://www.zotero.org/styles/pnas",
-        "file": "pnas.csl",
+    "angewandte-chemie": {
+        "name": "Angewandte Chemie",
+        "url": "https://www.zotero.org/styles/angewandte-chemie",
+        "file": "angewandte-chemie.csl",
     },
     "apa": {
         "name": "APA 7th Edition",
         "url": "https://www.zotero.org/styles/apa",
         "file": "apa.csl",
     },
-    "vancouver": {
-        "name": "Vancouver",
-        "url": "https://www.zotero.org/styles/vancouver",
-        "file": "vancouver.csl",
+    "cell": {
+        "name": "Cell",
+        "url": "https://www.zotero.org/styles/cell",
+        "file": "cell.csl",
     },
     "chicago": {
         "name": "Chicago Author-Date",
         "url": "https://www.zotero.org/styles/chicago-author-date",
         "file": "chicago-author-date.csl",
+    },
+    "nature": {
+        "name": "Nature",
+        "url": "https://www.zotero.org/styles/nature",
+        "file": "nature.csl",
+    },
+    "nucleic-acids-research": {
+        "name": "Nucleic Acids Research",
+        "url": "https://www.zotero.org/styles/nucleic-acids-research",
+        "file": "nucleic-acids-research.csl",
+    },
+    "pnas": {
+        "name": "PNAS",
+        "url": "https://www.zotero.org/styles/pnas",
+        "file": "pnas.csl",
+    },
+    "plos": {
+        "name": "PLOS",
+        "url": "https://www.zotero.org/styles/plos",
+        "file": "plos.csl",
+    },
+    "science": {
+        "name": "Science",
+        "url": "https://www.zotero.org/styles/science",
+        "file": "science.csl",
+    },
+    "vancouver": {
+        "name": "Vancouver",
+        "url": "https://www.zotero.org/styles/vancouver",
+        "file": "vancouver.csl",
     },
 }
 
@@ -239,50 +260,6 @@ PROFILE_CITATION_STYLES = {
     "pdf-nature": "nature",
     "pdf-cell": "cell",
 }
-
-
-def load_yaml_simple(filepath: str) -> Dict[str, Any]:
-    """Simple YAML loader without external dependencies."""
-    if not Path(filepath).exists():
-        return {}
-    
-    with open(filepath, 'r') as f:
-        content = f.read()
-    
-    # Very basic YAML parsing for our config files
-    result = {}
-    current_key = None
-    current_indent = 0
-    list_mode = False
-    
-    for line in content.split('\n'):
-        stripped = line.strip()
-        if not stripped or stripped.startswith('#'):
-            continue
-        
-        # Count leading spaces
-        indent = len(line) - len(line.lstrip())
-        
-        if ':' in stripped and not stripped.startswith('-'):
-            key, _, value = stripped.partition(':')
-            key = key.strip()
-            value = value.strip()
-            
-            if value:
-                # Remove quotes
-                if value.startswith('"') and value.endswith('"'):
-                    value = value[1:-1]
-                elif value.startswith("'") and value.endswith("'"):
-                    value = value[1:-1]
-                # Handle lists in bracket notation
-                if value.startswith('[') and value.endswith(']'):
-                    value = [v.strip().strip('"\'') for v in value[1:-1].split(',')]
-                result[key] = value
-            else:
-                result[key] = {}
-                current_key = key
-    
-    return result
 
 
 def get_profile_info(profile_name: str) -> Tuple[str, str, str]:
@@ -324,11 +301,34 @@ def list_profiles() -> List[str]:
 
 
 def load_last_config() -> Optional[Dict[str, Any]]:
-    """Load last build configuration."""
+    """Load the last build configuration."""
     if Path(BUILD_CONFIG).exists():
-        with open(BUILD_CONFIG, 'r') as f:
-            return json.load(f)
+        try:
+            with open(BUILD_CONFIG, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
     return None
+
+
+def load_defaults() -> Dict[str, Any]:
+    """Load default settings or return defaults if none exist."""
+    if Path(DEFAULTS_CONFIG).exists():
+        try:
+            with open(DEFAULTS_CONFIG, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return DEFAULT_SETTINGS.copy()
+
+
+def save_defaults(defaults: Dict[str, Any]) -> None:
+    """Save default settings to file."""
+    try:
+        with open(DEFAULTS_CONFIG, 'w') as f:
+            json.dump(defaults, f, indent=2)
+    except Exception:
+        pass
 
 
 def save_config(config: Dict[str, Any]):
@@ -505,37 +505,6 @@ def ensure_citation_styles_dir():
     Path(CITATION_STYLES_DIR).mkdir(exist_ok=True)
 
 
-def download_citation_style(style_key: str) -> Optional[str]:
-    """Download a citation style from Zotero repository. Returns path to CSL file."""
-    if style_key not in CITATION_STYLES:
-        return None
-    
-    style_info = CITATION_STYLES[style_key]
-    ensure_citation_styles_dir()
-    
-    csl_path = Path(CITATION_STYLES_DIR) / style_info["file"]
-    
-    # Check if already downloaded
-    if csl_path.exists():
-        return str(csl_path)
-    
-    # Download from Zotero
-    print(f"   Downloading {style_info['name']} citation style...")
-    try:
-        # Zotero redirects to raw CSL, follow redirects
-        url = style_info["url"]
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=10) as response:
-            csl_content = response.read()
-        
-        with open(csl_path, "wb") as f:
-            f.write(csl_content)
-        
-        print(f"   ✓ Downloaded {style_info['file']}")
-        return str(csl_path)
-    except (urllib.error.URLError, urllib.error.HTTPError) as e:
-        print(f"   Warning: Could not download citation style: {e}")
-        return None
 
 
 def resolve_citation_style(citation_style: str) -> Tuple[Optional[str], Optional[str]]:
@@ -547,8 +516,29 @@ def resolve_citation_style(citation_style: str) -> Tuple[Optional[str], Optional
 
     # Built-in styles (downloaded on demand)
     if style in CITATION_STYLES:
-        path = download_citation_style(style)
-        return path, CITATION_STYLES[style]["name"]
+        style_info = CITATION_STYLES[style]
+        ensure_citation_styles_dir()
+        csl_path = Path(CITATION_STYLES_DIR) / style_info["file"]
+        
+        # Download if not exists
+        if not csl_path.exists():
+            print(f"   Downloading {style_info['name']} citation style...")
+            try:
+                # Zotero redirects to raw CSL, follow redirects
+                url = style_info["url"]
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=10) as response:
+                    csl_content = response.read()
+                
+                with open(csl_path, "wb") as f:
+                    f.write(csl_content)
+                
+                print(f"   ✓ Downloaded {style_info['file']}")
+            except (urllib.error.URLError, urllib.error.HTTPError) as e:
+                print(f"   Warning: Could not download citation style: {e}")
+                return None
+        
+        return str(csl_path), style_info["name"]
 
     # Local styles by stem or filename
     ensure_citation_styles_dir()
@@ -565,19 +555,6 @@ def resolve_citation_style(citation_style: str) -> Tuple[Optional[str], Optional
     if path:
         return path, _extract_csl_title(Path(path))
     return None, None
-
-
-
-
-def get_available_citation_styles() -> List[str]:
-    """Get list of locally available citation styles."""
-    ensure_citation_styles_dir()
-    styles = []
-    for key, info in CITATION_STYLES.items():
-        csl_path = Path(CITATION_STYLES_DIR) / info["file"]
-        if csl_path.exists():
-            styles.append(key)
-    return styles
 
 
 def create_si_header():
@@ -719,32 +696,78 @@ def build_document(doc_type: str, profile: str, use_png: bool, include_si_refs: 
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"   Error: {e.stderr if e.stderr else 'Unknown error'}")
-        cleanup_temp_files(temp_merged, config_file)
+        # Remove temporary files
+        for f in [temp_merged, config_file]:
+            if f and Path(f).exists():
+                os.remove(f)
+        if Path(SI_HEADER).exists():
+            os.remove(SI_HEADER)
         sys.exit(1)
     
     # Cleanup
-    cleanup_temp_files(temp_merged, config_file)
-    
-    print(f"   ✓ {output_file} created")
-
-
-def cleanup_temp_files(*files):
-    """Remove temporary files."""
-    for f in files:
+    # Remove temporary files
+    for f in [temp_merged, config_file]:
         if f and Path(f).exists():
             os.remove(f)
     if Path(SI_HEADER).exists():
         os.remove(SI_HEADER)
+    
+    print(f"   ✓ {output_file} created")
 
+
+# UI Constants
+BOX_WIDTH = 64  # Inner width for all frame boxes
+
+def box_top(title: str = "") -> str:
+    """Return top border with optional title."""
+    if title:
+        return f"┌─ {title} " + "─" * (BOX_WIDTH - len(title) - 3) + "┐"
+    return "┌" + "─" * BOX_WIDTH + "┐"
+
+def box_row(text: str) -> str:
+    """Return a row with content, padded to box width."""
+    return f"│  {text:<{BOX_WIDTH - 4}}  │"
+
+def box_bottom() -> str:
+    """Return bottom border."""
+    return "└" + "─" * BOX_WIDTH + "┘"
 
 def print_header():
     """Print application header."""
     print()
-    print("╔══════════════════════════════════════════════════════════════╗")
-    print("║               Manuscript Build System                        ║")
-    print("║           Cross-Platform • Multi-Profile                     ║")
-    print("╚══════════════════════════════════════════════════════════════╝")
+    print("╔" + "═" * BOX_WIDTH + "╗")
+    print("║" + "Manuscript Build System".center(BOX_WIDTH) + "║")
+    print("║" + "Cross-Platform • Multi-Profile".center(BOX_WIDTH) + "║")
+    print("╚" + "═" * BOX_WIDTH + "╝")
     print()
+
+def print_build_summary(config: Dict[str, Any]) -> None:
+    """Print build configuration summary."""
+    _, _, fmt = get_profile_info(config["profile"])
+    print(box_top("Build Configuration"))
+    print(box_row(f"Document:     {config['doc_type'].upper()}"))
+    print(box_row(f"Profile:      {config['profile']}"))
+    print(box_row(f"Format:       {fmt.upper()}"))
+    print(box_row(f"Frontmatter:  {'Yes' if config['include_frontmatter'] else 'No'}"))
+    if fmt == "docx":
+        print(box_row(f"PNG Convert:  {'Yes' if config['use_png'] else 'No'}"))
+    if config['doc_type'] == "main":
+        print(box_row(f"SI Refs:      {'Yes' if config['include_si_refs'] else 'No'}"))
+    elif config['doc_type'] == "both":
+        print(box_row("SI Refs:      Yes for Main, No for SI"))
+    if fmt == "pdf" and config.get('font'):
+        font_name = FONT_PRESETS[config['font']]['name']
+        print(box_row(f"Font:         {font_name}"))
+    if fmt == "pdf" and config.get('fontsize'):
+        print(box_row(f"Font Size:    {config['fontsize']}"))
+    if fmt in ("pdf", "docx") and config.get('citation_style'):
+        style_key = config['citation_style']
+        if style_key in CITATION_STYLES:
+            style_name = CITATION_STYLES[style_key]['name']
+        else:
+            style_name = str(style_key)
+        print(box_row(f"Citation:     {style_name}"))
+    print(box_bottom())
 
 
 def print_profiles_list():
@@ -761,63 +784,186 @@ def print_profiles_list():
     print()
 
 
+def configure_defaults() -> None:
+    """Configure default font, font size, and citation style."""
+    print_header()
+    
+    defaults = load_defaults()
+    
+    print(box_top("Current Defaults"))
+    print(box_row(f"Font: {FONT_PRESETS[defaults['font']]['name']}"))
+    print(box_row(f"Font Size: {defaults['fontsize']}"))
+    style_name = CITATION_STYLES.get(defaults['citation_style'], {}).get('name', defaults['citation_style'])
+    print(box_row(f"Citation Style: {style_name}"))
+    print(box_bottom())
+    print()
+    
+    # Font selection
+    print(box_top("Font Selection"))
+    font_list = list(FONT_PRESETS.keys())
+    for i, key in enumerate(font_list, 1):
+        name = FONT_PRESETS[key]["name"]
+        marker = " (current)" if key == defaults['font'] else ""
+        print(box_row(f"{i:2}) {name}{marker}"))
+    print(box_bottom())
+    
+    font_choice = input(f"Select font [1-{len(font_list)}, Enter=keep current]: ").strip()
+    if font_choice:
+        try:
+            idx = int(font_choice) - 1
+            if 0 <= idx < len(font_list):
+                defaults['font'] = font_list[idx]
+        except (ValueError, IndexError):
+            pass
+    
+    print()
+    
+    # Font size selection
+    print(box_top("Font Size Selection"))
+    for i, size in enumerate(FONT_SIZES, 1):
+        marker = " (current)" if size == defaults['fontsize'] else ""
+        print(box_row(f"{i:2}) {size}{marker}"))
+    print(box_bottom())
+    
+    size_choice = input(f"Select size [1-{len(FONT_SIZES)}, Enter=keep current]: ").strip()
+    if size_choice:
+        try:
+            idx = int(size_choice) - 1
+            if 0 <= idx < len(FONT_SIZES):
+                defaults['fontsize'] = FONT_SIZES[idx]
+        except (ValueError, IndexError):
+            pass
+    
+    print()
+    
+    # Citation style selection
+    print(box_top("Citation Style Selection"))
+    builtin = [(k, v["name"]) for k, v in CITATION_STYLES.items()]
+    local = [(k, n) for (k, n, _) in list_local_csl_files() if k not in CITATION_STYLES]
+    all_styles = builtin + local
+    
+    for i, (key, name) in enumerate(all_styles, 1):
+        marker = " (current)" if key == defaults['citation_style'] else ""
+        print(box_row(f"{i:2}) {name}{marker}"))
+    print(box_row(f"{len(all_styles)+1:2}) Download by Zotero style ID or URL"))
+    print(box_bottom())
+    
+    style_choice = input(f"Select style [1-{len(all_styles)+1}, Enter=keep current]: ").strip()
+    if style_choice:
+        try:
+            idx = int(style_choice) - 1
+            if 0 <= idx < len(all_styles):
+                defaults['citation_style'] = all_styles[idx][0]
+            elif idx == len(all_styles):
+                # Download option
+                print("│   Find styles at: https://www.zotero.org/styles")
+                ident = input("│  Enter Zotero style ID or URL: ").strip()
+                if ident:
+                    # Download and use the style
+                    csl_path = download_csl_from_identifier(ident)
+                    if csl_path:
+                        # Extract the key from the downloaded file
+                        csl_key = Path(csl_path).stem
+                        defaults['citation_style'] = csl_key
+        except (ValueError, IndexError):
+            pass
+    
+    print()
+    save_defaults(defaults)
+    print("✓ Defaults saved successfully!")
+    input("Press Enter to continue...")
+
+
 def interactive_menu() -> Dict[str, Any]:
     """Display interactive menu and return configuration."""
     print_header()
     
+    # Check if we have a last build for quick build
+    last_config = load_last_config()
+    
+    # Main menu
+    print(box_top("Main Menu"))
+    print(box_row("1) Build Document"))
+    print(box_row("2) Quick Build (Repeat Last Build)"))
+    print(box_row("3) Configure Style/Citation Defaults"))
+    print(box_bottom())
+    
+    main_choice = input("Select option [1-3]: ").strip()
+    
+    if main_choice == "3":
+        configure_defaults()
+        return interactive_menu()  # Show menu again after configuring
+    
+    if main_choice == "2":
+        # Quick build - use last configuration
+        if last_config:
+            print()
+            print(box_top("Quick Build"))
+            print(box_row(f"Last build: {last_config.get('doc_type', 'main').upper()} → {last_config.get('profile', 'pdf-default')}"))
+            print(box_bottom())
+            
+            # Show build summary
+            print()
+            print_build_summary(last_config)
+            print()
+            
+            # Ask for confirmation
+            confirm = input("Continue with these settings? [Y/n]: ").strip().lower()
+            if confirm == 'n':
+                print()
+                return interactive_menu()
+            
+            return last_config
+        else:
+            print()
+            print(box_top("Quick Build"))
+            print(box_row("No previous build found. Please build a document first."))
+            print(box_bottom())
+            input("Press Enter to continue...")
+            return interactive_menu()
+    
     # Document selection
-    print("┌─ Document ────────────────────────────────────────────────────┐")
-    print("│  1) Main Text                                                 │")
-    print("│  2) Supporting Information                                    │")
-    print("└───────────────────────────────────────────────────────────────┘")
-    doc_choice = input("Select document [1-2]: ").strip()
-    doc_type = "main" if doc_choice == "1" else "si"
+    print(box_top("Document"))
+    print(box_row("1) Main Text"))
+    print(box_row("2) Supporting Information"))
+    print(box_row("3) Both (Main Text + Supporting Information)"))
+    print(box_bottom())
+    doc_choice = input("Select document [1-3]: ").strip()
+    if doc_choice == "1":
+        doc_type = "main"
+    elif doc_choice == "2":
+        doc_type = "si"
+    elif doc_choice == "3":
+        doc_type = "both"
+    else:
+        doc_type = "main"  # default
     print()
     
     # Format selection
-    print("┌─ Output Format ────────────────────────────────────────────────┐")
-    print("│  1) Word Document (DOCX)                                      │")
-    print("│  2) PDF                                                       │")
-    print("└───────────────────────────────────────────────────────────────┘")
+    print(box_top("Output Format"))
+    print(box_row("1) Word Document (DOCX)"))
+    print(box_row("2) PDF"))
+    print(box_bottom())
     fmt_choice = input("Select format [1-2]: ").strip()
     fmt = "docx" if fmt_choice == "1" else "pdf"
     print()
-    
-    # For PDF: offer to repeat last build if available (PDF only)
-    if fmt == "pdf":
-        last_config = load_last_config()
-        # Offer repeat if last build was PDF (allow switching between main/si)
-        if last_config and last_config.get('profile', '').startswith('pdf-'):
-            print("┌─ Quick Build ─────────────────────────────────────────────────┐")
-            print(f"│  Last build: {last_config.get('doc_type', 'main').upper()} → {last_config.get('profile', 'pdf-default')}")
-            print("└───────────────────────────────────────────────────────────────┘")
-            repeat = input("\nRepeat last build? [Y/n]: ").strip().lower()
-            if repeat != 'n':
-                # Update doc_type to current selection, keep other settings
-                config_to_repeat = last_config.copy()
-                config_to_repeat['doc_type'] = doc_type
-                # For SI document, force include_si_refs=False
-                if doc_type == 'si':
-                    config_to_repeat['include_si_refs'] = False
-                return config_to_repeat
-        print()
     
     # Profile selection (skip for DOCX since there's only one)
     if fmt == "docx":
         profile = "docx-manuscript"
     else:
-        print("┌─ Output Profile ──────────────────────────────────────────────┐")
+        print(box_top("Output Profile"))
         all_profiles = []
         idx = 1
         for category, profiles in PROFILE_CATEGORIES.items():
-            print(f"│  {category}:")
+            print(box_row(f"{category}:"))
             for profile in profiles:
                 name, description, profile_fmt = get_profile_info(profile)
                 if profile_fmt == fmt:
                     all_profiles.append(profile)
-                    print(f"│    {idx:2}) {name:<20} [{fmt.upper()}]")
+                    print(box_row(f"  {idx:2}) {name}"))
                     idx += 1
-        print("└───────────────────────────────────────────────────────────────┘")
+        print(box_bottom())
         
         profile_choice = input(f"Select profile [1-{len(all_profiles)}]: ").strip()
         try:
@@ -829,82 +975,30 @@ def interactive_menu() -> Dict[str, Any]:
     
     print()
     
+    # Load defaults
+    defaults = load_defaults()
+    
     # Additional options
     use_png = False
     include_si_refs = False
     include_frontmatter = True
-    font = None
-    fontsize = None
-    citation_style = None
     
-    print("┌─ Options ─────────────────────────────────────────────────────┐")
+    print(box_top("Options"))
+    
+    # Frontmatter option
+    frontmatter_choice = input("│  Include frontmatter? [Y/n]: ").strip().lower()
+    include_frontmatter = frontmatter_choice != 'n'
+    
+    # SI references option (for main text or both documents)
+    if doc_type in ("main", "both"):
+        si_refs_choice = input("│  Include SI references in bibliography? [y/N]: ").strip().lower()
+        include_si_refs = si_refs_choice == 'y'
     
     if fmt == "docx":
         png_choice = input("│  Convert PDF figures to PNG? [y/N]: ").strip().lower()
         use_png = png_choice == 'y'
-    
-    if doc_type == "main":
-        si_choice = input("│  Include SI references in bibliography? [y/N]: ").strip().lower()
-        include_si_refs = si_choice == 'y'
-    
-    fm_choice = input("│  Include frontmatter? [Y/n]: ").strip().lower()
-    include_frontmatter = fm_choice != 'n'
-    
-    # Font selection for PDF
-    if fmt == "pdf":
-        customize = input("│  Customize font/citation style? [y/N]: ").strip().lower()
-        if customize == 'y':
-            print("│")
-            print("│  Font:")
-            font_keys = list(FONT_PRESETS.keys())
-            for i, key in enumerate(font_keys, 1):
-                print(f"│    {i}) {FONT_PRESETS[key]['name']}")
-            font_choice = input(f"│  Select font [1-{len(font_keys)}, Enter=default]: ").strip()
-            if font_choice:
-                try:
-                    font = font_keys[int(font_choice) - 1]
-                except (ValueError, IndexError):
-                    pass
-            
-            print("│")
-            print("│  Font Size:")
-            default_size = get_profile_default_fontsize(profile) if profile else None
-            for i, size in enumerate(FONT_SIZES, 1):
-                suffix = " (default)" if default_size and size == default_size else ""
-                print(f"│    {i}) {size}{suffix}")
-            default_hint = default_size if default_size else "profile default"
-            size_choice = input(f"│  Select size [1-{len(FONT_SIZES)}, Enter={default_hint}]: ").strip()
-            if size_choice:
-                try:
-                    fontsize = FONT_SIZES[int(size_choice) - 1]
-                except (ValueError, IndexError):
-                    pass
-            
-            print("│")
-            print("│  Citation Style:")
-            builtin = [(k, v["name"]) for k, v in CITATION_STYLES.items()]
-            local = [(k, n) for (k, n, _) in list_local_csl_files() if k not in CITATION_STYLES]
-            all_styles = builtin + local
 
-            print("│    0) Default (from profile)")
-            for i, (key, name) in enumerate(all_styles, 1):
-                print(f"│    {i}) {name}")
-            print(f"│    d) Download by Zotero style ID or URL")
-
-            style_choice = input(f"│  Select style [0-{len(all_styles)} / d, Enter=default]: ").strip().lower()
-
-            if style_choice == 'd':
-                print("│   Find styles at: https://www.zotero.org/styles")
-                ident = input("│  Enter Zotero style ID or URL: ").strip()
-                if ident:
-                    citation_style = ident
-            elif style_choice and style_choice != "0":
-                try:
-                    citation_style = all_styles[int(style_choice) - 1][0]
-                except (ValueError, IndexError):
-                    pass
-    
-    print("└───────────────────────────────────────────────────────────────┘")
+    print(box_bottom())
     
     return {
         "doc_type": doc_type,
@@ -912,9 +1006,9 @@ def interactive_menu() -> Dict[str, Any]:
         "use_png": use_png,
         "include_si_refs": include_si_refs,
         "include_frontmatter": include_frontmatter,
-        "font": font,
-        "fontsize": fontsize,
-        "citation_style": citation_style,
+        "font": defaults.get('font'),
+        "fontsize": defaults.get('fontsize'),
+        "citation_style": defaults.get('citation_style'),
     }
 
 
@@ -1032,53 +1126,50 @@ def main():
     # Save configuration
     save_config(config)
     
-    # Display build summary
-    _, profile_desc, fmt = get_profile_info(config["profile"])
-    print()
-    print("┌─ Build Configuration ────────────────────────────────────────┐")
-    print(f"│  Document:     {config['doc_type'].upper():<45} │")
-    print(f"│  Profile:      {config['profile']:<45} │")
-    print(f"│  Format:       {fmt.upper():<45} │")
-    print(f"│  Frontmatter:  {'Yes' if config['include_frontmatter'] else 'No':<45} │")
-    if fmt == "docx":
-        print(f"│  PNG Convert:  {'Yes' if config['use_png'] else 'No':<45} │")
-    if config['doc_type'] == "main":
-        print(f"│  SI Refs:      {'Yes' if config['include_si_refs'] else 'No':<45} │")
-    if config.get('font'):
-        font_name = FONT_PRESETS[config['font']]['name']
-        print(f"│  Font:         {font_name:<45} │")
-
-    # Always show font size for PDF (default from profile if not overridden)
-    if fmt == "pdf":
-        effective_size = config.get('fontsize') or get_profile_default_fontsize(config['profile'])
-        if effective_size:
-            print(f"│  Font Size:    {effective_size:<45} │")
-
-    # Always show citation style (default base CSL if not overridden)
-    if fmt in ("pdf", "docx"):
-        if config.get('citation_style'):
-            style_key = config['citation_style']
-            if style_key in CITATION_STYLES:
-                style_name = CITATION_STYLES[style_key]['name']
-            else:
-                style_name = str(style_key)
-            print(f"│  Citation:     {style_name:<45} │")
-        else:
-            print(f"│  Citation:     {'Default (resources/citation_style.csl)':<45} │")
-    print("└───────────────────────────────────────────────────────────────┘")
-    print()
+    # Display build summary (skip if already shown in quick build)
+    if not use_last:
+        print()
+        print_build_summary(config)
+        print()
     
     # Build
-    build_document(
-        config["doc_type"],
-        config["profile"],
-        config["use_png"],
-        config["include_si_refs"],
-        config["include_frontmatter"],
-        config.get("font"),
-        config.get("fontsize"),
-        config.get("citation_style"),
-    )
+    if config["doc_type"] == "both":
+        # Build both documents
+        print("Building Main Text...")
+        build_document(
+            "main",
+            config["profile"],
+            config["use_png"],
+            config["include_si_refs"],
+            config["include_frontmatter"],
+            config.get("font"),
+            config.get("fontsize"),
+            config.get("citation_style"),
+        )
+        print()
+        print("Building Supporting Information...")
+        build_document(
+            "si",
+            config["profile"],
+            config["use_png"],
+            False,  # Never include SI refs for SI document
+            config["include_frontmatter"],
+            config.get("font"),
+            config.get("fontsize"),
+            config.get("citation_style"),
+        )
+    else:
+        # Build single document
+        build_document(
+            config["doc_type"],
+            config["profile"],
+            config["use_png"],
+            config["include_si_refs"],
+            config["include_frontmatter"],
+            config.get("font"),
+            config.get("fontsize"),
+            config.get("citation_style"),
+        )
     
     print()
     print("✓ Build complete!")

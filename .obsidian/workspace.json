@@ -4,50 +4,54 @@
     "type": "split",
     "children": [
       {
-        "id": "0860d69c80352a21",
+        "id": "2b99623cc25eab01",
         "type": "split",
         "children": [
           {
             "id": "70c95cb17bb0400a",
             "type": "tabs",
+            "dimension": 76.15894039735099,
             "children": [
               {
-                "id": "dc7f1ab2be7406be",
+                "id": "88bcf003830e16b9",
                 "type": "leaf",
                 "state": {
-                  "type": "pdf",
+                  "type": "markdown",
                   "state": {
-                    "file": "export/01_maintext.pdf"
+                    "file": "README.md",
+                    "mode": "source",
+                    "source": false,
+                    "annotationGutterFolded": false,
+                    "annotationGutterWidth": 300
                   },
-                  "icon": "lucide-file-text",
-                  "title": "01_maintext"
+                  "icon": "lucide-file",
+                  "title": "README"
                 }
               }
             ]
           },
           {
-            "id": "4c2e6a79bcd33579",
+            "id": "441387a10b14008b",
             "type": "tabs",
+            "dimension": 23.841059602649008,
             "children": [
               {
-                "id": "6553ce66832e3242",
+                "id": "a010bac1fc483bc7",
                 "type": "leaf",
                 "pinned": true,
                 "state": {
                   "type": "terminal:terminal",
                   "state": {
                     "terminal:terminal": {
-                      "cwd": "/Users/hbeyer/repos/md-manuscript",
+                      "cwd": "/home/hbeyer/repos/md-manuscript/",
                       "focus": false,
                       "profile": {
-                        "args": [
-                          "--login"
-                        ],
-                        "executable": "/bin/zsh",
+                        "args": [],
+                        "executable": "/bin/sh",
                         "followTheme": true,
                         "name": "",
                         "platforms": {
-                          "darwin": true
+                          "linux": true
                         },
                         "pythonExecutable": "python3",
                         "restoreHistory": false,
@@ -68,7 +72,7 @@
                   },
                   "pinned": true,
                   "icon": "terminal",
-                  "title": "Terminal: hbeyer@Hanness-MacBook-Pro:~/repos/md-manuscript"
+                  "title": "Terminal: sh"
                 }
               }
             ]
@@ -209,13 +213,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "export/01_maintext.pdf",
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 01_maintext"
+              "title": "Outline of README"
             }
           }
         ],
@@ -237,27 +241,28 @@
       "terminal:Open terminal": false
     }
   },
-  "active": "dc7f1ab2be7406be",
+  "active": "88bcf003830e16b9",
   "lastOpenFiles": [
-    "export/01_maintext.pdf",
-    "resources/citation_styles/cell.csl",
     "_temp_config.yaml",
     "_temp_main_merged.md",
-    "export",
+    "export/01_maintext.docx",
+    "export/01_maintext.pdf",
     "01_maintext.md",
     "README.md",
-    "02_supp_info.md",
+    "resources/color-text.lua",
     "00_frontmatter.md",
+    "HIGHLIGHTING.md",
+    "test_simple_highlight.md",
+    "figures/figure1.png",
+    "figures/figure2.png",
     "resources/citation_styles/vancouver.csl",
+    "resources/citation_styles",
+    "export",
+    "resources/citation_styles/cell.csl",
+    "02_supp_info.md",
     "resources/profiles/pdf-thesis-classic.yaml",
     "_si_header.tex",
     "_temp_si_merged.md",
-    "export/02_supp_info.pdf",
-    "__pycache__/build.cpython-311.pyc",
-    "__pycache__",
-    "export/~$_maintext.docx",
-    "figures/figure2.png",
-    "figures/figure1.png",
     "_temp_merged.md",
     "CROSSREF_EXAMPLES.md",
     "_temp_combined.md",

@@ -2,10 +2,12 @@
 # DO NOT USE THIS DIRECTLY - Use a specific profile instead
 
 # --- Input/Output Settings ---
-reader: markdown
+# Enable mark extension for ==highlighted text== and raw_html for <font color> tags
+reader: markdown+mark+raw_html
 
 # --- Bibliography ---
 filters:
+  - resources/color-text.lua
   - pandoc-crossref
   - citeproc
 bibliography: resources/references.json

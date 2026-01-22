@@ -30,6 +30,7 @@ variables:
   
   header-includes:
     - \usepackage{lineno}
+    - \usepackage{xcolor}
     - \setlength{\parindent}{1.5em}
     - \setlength{\parskip}{0pt}
     # Bold caption labels (Figure 1:, Table 1:)

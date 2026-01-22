@@ -30,6 +30,7 @@ variables:
   
   header-includes:
     - \usepackage{lineno}
+    - \usepackage{xcolor}
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.4\baselineskip}
     # Sans-serif headings

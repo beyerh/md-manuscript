@@ -222,6 +222,27 @@ Table: **Table Title.** Description. {#tbl:label}
 - Tables: `**@Tbl:data**` → "Table 1"
 - Citations: `[@smith2023]` → "(Smith 2023)"
 
+### Highlighting and Colored Text
+
+**Yellow Background Highlighting:**
+- Use Obsidian-style syntax: `==highlighted text==`
+- Works in both PDF and DOCX outputs (yellow background by default)
+
+```markdown
+The results show ==significant improvement== in all metrics.
+```
+
+**Colored Text (Red, Blue, etc.):**
+- Use HTML font tags from Obsidian's editing toolbar (works in **PDF only**):
+
+```markdown
+This is <font color="red">red text</font>.
+This is <font color="#0000ff">blue text</font>.
+This is <font color="green">green text</font>.
+```
+
+**Note:** Colored text works in PDF but **not in DOCX** due to Pandoc limitations. For DOCX, you can manually apply colors in Word after generating the document, or use the highlighting feature (`==text==`) which works in both formats.
+
 ### Supporting Information
 - Use same syntax as main text
 - Automatically numbered as S1, S2, etc.

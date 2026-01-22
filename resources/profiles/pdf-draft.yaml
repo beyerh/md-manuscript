@@ -30,6 +30,7 @@ variables:
   
   header-includes:
     - \usepackage{lineno}
+    - \usepackage{xcolor}
     - \linenumbers
     - \setlength{\parindent}{1.5em}
     - \setlength{\parskip}{0pt}

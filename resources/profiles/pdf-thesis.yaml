@@ -31,6 +31,7 @@ variables:
   
   header-includes:
     - \usepackage{lineno}
+    - \usepackage{xcolor}
     - \setlength{\parindent}{1.5em}
     - \setlength{\parskip}{0pt}
     - \newenvironment{noindentstyle}{\setlength{\parindent}{0pt}}{\setlength{\parindent}{1.5em}}

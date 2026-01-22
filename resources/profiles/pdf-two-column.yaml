@@ -12,9 +12,13 @@ profile:
 # --- PDF Engine ---
 pdf-engine: tectonic
 
+# --- Reader/Writer ---
+reader: markdown+mark+raw_html
+
 # --- Filters ---
 # Custom filter to convert longtable to tabular for twocolumn compatibility
 filters:
+  - resources/color-text.lua
   - pandoc-crossref
   - citeproc
   - resources/no-longtable.lua
@@ -37,6 +41,7 @@ variables:
   indent: false
   
   header-includes:
+    - \usepackage{xcolor}
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.5\baselineskip}
     - \setlength{\columnsep}{0.8cm}

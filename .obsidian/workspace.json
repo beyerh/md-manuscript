@@ -11,10 +11,16 @@
             "id": "e6deeba75fbc1067",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false,
+                "annotationGutterFolded": false,
+                "annotationGutterWidth": 300
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "README"
             }
           }
         ]
@@ -152,12 +158,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of README"
             }
           }
         ],
@@ -180,7 +187,7 @@
       "manuscript-build:Build Manuscript": false
     }
   },
-  "active": "beb314a26d857518",
+  "active": "e6deeba75fbc1067",
   "lastOpenFiles": [
     "export/~$-md-manuscript-maintext.docx",
     "_temp_config.yaml",

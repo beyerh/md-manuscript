@@ -8,7 +8,7 @@ Write scientific manuscripts and theses in Markdown and export to Word and PDF u
 1. Open this folder as an Obsidian vault
 2. Click the **Build** icon in the left ribbon (or use Quick Build ⚡)
 3. Configure options and click Build (Defaults in the plugin settings)
-<img src="/figures/plugin_button.png" alt="drawing" width="500"/>
+<img src="/figures/plugin_button.jpg" alt="drawing" width="500"/>
 
 **Using the terminal in case you want to use a different editor:**
 ```bash

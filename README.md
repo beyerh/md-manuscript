@@ -1,19 +1,25 @@
 # Scientific Manuscript Template
 
-Write scientific manuscripts and theses in Markdown and export to Word and PDF using a build script.
+Write scientific manuscripts and theses in Markdown and export to Word and PDF using a custom Obsidian plugin or a script.
 
 ## Quick Start
 
+**Using Obsidian (recommended):**
+1. Open this folder as an Obsidian vault
+2. Click the **Build** icon in the left ribbon (or use Quick Build ⚡)
+3. Configure options and click Build (Defaults in the plugin settings)
+<img src="/figures/plugin_button.png" alt="drawing" width="500"/>
+
+**Using the terminal in case you want to use a different editor:**
 ```bash
 python build.py
 ```
 
-The interactive wizard guides you through:
-- Document type (Main Text / Supporting Information / Both)
-- Output format (Word / PDF)
-- Thesis profiles for dissertations
-- Journal-specific formats
-- Font and citation style options
+Both methods support:
+- Multiple output formats (Word / PDF)
+- Journal-specific profiles (Nature, Cell, etc.)
+- Templates/examples
+- Custom fonts and citation styles
 
 ## Installation
 
@@ -23,8 +29,10 @@ The interactive wizard guides you through:
 - **pandoc-crossref** (figure/table cross-references)
 - **ImageMagick** (figure conversion)
 - **Tectonic** (PDF engine, lightweight alternative to TeX Live)
+- **Fonts** (below)
 
 ### Platform Installation
+Install Obsidian for your system and the following dependencies:
 
 <details>
 <summary>macOS</summary>
@@ -137,12 +145,50 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 
 ## Obsidian Setup
 
-The included hidded `.obsidian` folder contains all settings and plugins and should work out of the box. Just adjust the path to `references.json` in the Pandoc Reference List plugin.
-### Details on Required Plugins
-- **Terminal** - Run build script with interactive wizard
+Download the repository. The folder `obsidian-manuscript-build` is for development and can be deleted. The included `.obsidian` folder contains all plugins and settings, and a custom AnuPpuccin theme. The **Manuscript Build Plugin** should work out of the box. You might want to update the path to `resources/ferences.json`.
+
+### Using the Build Plugin
+
+The custom build plugin is included in this repository. Two ribbon icons are available in the left sidebar:
+- **Build** (hammer icon) - Opens the build dialog with all options
+- **Quick Build** (lightning icon) - Repeats last build with confirmation
+
+**Build options include:**
+- Source file and frontmatter selection
+- Output profile (PDF, Word, journal-specific)
+- Font and font size (PDF only)
+- Citation style
+- SI formatting options
+
+**Settings** (Settings → Manuscript Build):
+- Configure default profile, font, and citation style
+- Add new citation styles via the Settings panel
+
+### Adding Citation Styles
+
+Citation styles are stored in `resources/citation_styles/`. To add new styles:
+1. Visit [zotero.org/styles](https://www.zotero.org/styles) (or use the button in Settings)
+2. Download the `.csl` file
+3. Place it in `resources/citation_styles/` (you can use "Open Folder" in the plugin settings)
+4. Reopen the build dialog - the new style appears automatically
+
+### Rebuilding the Plugin (Development)
+
+If you modify the plugin source code:
+```bash
+cd obsidian-manuscript-build
+npm install
+npm run build
+```
+Then copy `main.js`, `manifest.json`, and `styles.css` to `.obsidian/plugins/manuscript-build/`.
+
+### Other Recommended Plugins
 - **Zotero Integration** - Insert citations from Zotero
 - **Pandoc Reference List** - View formatted references
-Recommended: **Editing Toolbar** (text formatting), **Commentator** (Track Changes), **LanguageTool Integration** (improved spell check), **Git** (version control)
+- **Editing Toolbar** - Text formatting
+- **Commentator** - Track Changes
+- **LanguageTool Integration** - Improved spell check
+- **Git** - Version control
 
 ### Configuration
 
@@ -172,24 +218,47 @@ Recommended: **Editing Toolbar** (text formatting), **Commentator** (Track Chang
 ## Features and Structure
 
 ### Working Files
-- **`00_frontmatter.md`** - Title, authors, affiliations, abstract
-- **`01_maintext.md`** - Main manuscript content
-- **`02_supp_info.md`** - Supporting Information (optional)
-- **`figures/`** - Place all figures here (PDF format)
+
+**Manuscripts** (use with `pdf-default`, `pdf-draft`, `pdf-nature`, `pdf-cell`, or `docx-manuscript`):
+- **`01_frontmatter.md`** - Title page with authors and affiliations
+- **`02_maintext.md`** - Main manuscript content (template)
+- **`03_supp_info.md`** - Supporting Information (optional)
+
+**Thesis** (use with `pdf-thesis` or `pdf-thesis-classic`):
+- **`05_example_thesis.md`** - Complete thesis template with custom title page
+
+**Notes & Scripts** (use with `pdf-notes`):
+- **`06_example_notes_technical.md`** - Technical docs, API references, tutorials
+- **`07_example_notes_narrative.md`** - Lecture notes, essays (includes figures, citations, markdown features)
+
+**Resources:**
+- **`figures/`** - Place all figures here (PDF format recommended)
 
 ### Build System
-- **`build.py`** - Interactive build script
-- **Main Menu Options:**
-  1. Build Document - Full guided setup
-  2. Quick Build - Repeat last build with confirmation
-  3. Configure Defaults - Set font, size, citation style
+
+The Obsidian plugin is the recommended way to build documents (see [Obsidian Setup](#obsidian-setup)).
+
+**Alternative: Command-line script**
+
+The `build.py` script can be used independently without Obsidian:
+```bash
+python build.py           # Interactive mode
+python build.py --last    # Repeat last build
+python build.py --help    # Show all options
+```
+
+**Script menu options:**
+1. Build Document - Full guided setup
+2. Quick Build - Repeat last build with confirmation  
+3. Configure Defaults - Set font, size, citation style (downloads styles from Zotero)
 
 ### Output Formats
 - **Word Document** - For journal submissions
 - **PDF Profiles:**
-  - Default - Clean single-column
+  - Default - Clean single-column layout
   - Draft - Double-spaced with line numbers
-  - Two-Column - Compact layout
+  - Two-Column - Compact two-column layout
+  - Notes & Scripts - Modern digital-friendly style for teaching materials
   - Thesis - Formal thesis format
   - Classic Thesis - Elegant book-style with Palatino
   - Nature/Cell - Journal-specific formats
@@ -198,6 +267,7 @@ Recommended: **Editing Toolbar** (text formatting), **Commentator** (Track Chang
 
 ### Figures
 - Use **PDF format** (auto-converted to PNG for Word)
+- You can drag&drop the file and adjust
 - Reference with `**@Fig:label**`
 - Caption goes below the figure
 
@@ -278,21 +348,12 @@ Value 1  & Value 2
 
 ### Configure Defaults
 
-The build script has a "Configure Defaults" option to set:
+The manuscript build plugin and the build script have a "Configure Defaults" option to set:
 - **Font** (default: Libertinus)
 - **Font Size** (default: 11pt)
 - **Citation Style** (default: Vancouver)
 
 Once configured, these settings are used for all builds unless you reconfigure them.
-
-### Citation Styles
-
-Built-in citation styles:
-- ACS Synthetic Biology, Angewandte Chemie, APA 7th Edition
-- Cell, Chicago Author-Date, Nature
-- Nucleic Acids Research, PLOS, PNAS, Science, Vancouver
-
-**Download additional styles:** Find styles at [zotero.org/styles](https://www.zotero.org/styles)
 
 ### PDF Customization
 
@@ -315,7 +376,7 @@ The template uses **profiles** (YAML files in `resources/profiles/`) to define o
 
 **Generating a fresh reference document:**
 
-**Option 1: From pandoc default**
+**Option 1: From the Pandoc default**
 ```bash
 pandoc --print-default-data-file reference.docx > custom-reference.docx
 ```
@@ -335,3 +396,4 @@ Then:
 ---
 
 **Output:** All documents are created in the `export/` folder.
+Templates: See `example/` folder.

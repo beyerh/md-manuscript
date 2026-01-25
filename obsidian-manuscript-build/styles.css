@@ -1,0 +1,339 @@
+/* ============================================================================
+   Manuscript Build Plugin - Styles
+   ============================================================================ */
+
+/* Modal Base Styles - Target the modal container */
+.modal.manuscript-build-modal,
+.modal.manuscript-build-output-modal {
+	width: 650px !important;
+	max-width: 90vw !important;
+}
+
+.manuscript-build-modal .modal-content,
+.manuscript-build-output-modal .modal-content {
+	width: 100% !important;
+	max-height: 75vh;
+	overflow-y: auto;
+	padding: 20px !important;
+}
+
+/* Modal Title */
+.modal-title {
+	margin: 0 0 1.5em 0;
+	padding-bottom: 0.5em;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 1.4em;
+	font-weight: 600;
+}
+
+/* Section Headers */
+.setting-section-header {
+	margin: 1em 0 0.5em 0;
+	padding-bottom: 0.25em;
+	border-bottom: 1px solid var(--background-modifier-border);
+	font-size: 0.9em;
+	font-weight: 600;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.setting-section-header:first-of-type {
+	margin-top: 0;
+}
+
+/* Settings Adjustments */
+.manuscript-build-modal .setting-item {
+	padding: 0.5em 0;
+	border-bottom: none;
+}
+
+.manuscript-build-modal .setting-item-info {
+	flex: 1;
+}
+
+.manuscript-build-modal .setting-item-name {
+	font-weight: 500;
+}
+
+.manuscript-build-modal .setting-item-description {
+	font-size: 0.85em;
+	color: var(--text-muted);
+}
+
+.manuscript-build-modal .setting-item-control {
+	flex-shrink: 0;
+	min-width: 200px;
+}
+
+.manuscript-build-modal .setting-item-control select {
+	width: 100%;
+}
+
+/* Button Container */
+.modal-button-container {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75em;
+	margin-top: 1.5em;
+	padding-top: 1em;
+	border-top: 1px solid var(--background-modifier-border);
+	position: sticky;
+	bottom: 0;
+	background: var(--modal-background);
+	padding-bottom: 0.5em;
+}
+
+/* ============================================================================
+   Quick Build Summary
+   ============================================================================ */
+
+/* Citation style info section */
+.citation-style-info {
+	background: var(--background-secondary);
+	padding: 12px 16px;
+	border-radius: 6px;
+	margin-bottom: 16px;
+}
+
+.citation-style-info p {
+	margin: 0 0 8px 0;
+}
+
+.citation-style-info ol {
+	margin: 0;
+	padding-left: 20px;
+}
+
+.citation-style-info li {
+	margin: 4px 0;
+}
+
+.citation-style-info code {
+	background: var(--background-primary);
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 0.9em;
+}
+
+.quick-build-summary {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 1em;
+	margin: 1em 0;
+}
+
+.summary-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.35em 0;
+	border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+
+.summary-row:last-child {
+	border-bottom: none;
+}
+
+.summary-label {
+	font-weight: 500;
+	color: var(--text-muted);
+}
+
+.summary-value {
+	color: var(--text-normal);
+}
+
+/* ============================================================================
+   Build Output Modal
+   ============================================================================ */
+
+.manuscript-build-output-modal {
+	min-height: 400px;
+}
+
+.output-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 1em;
+	padding-bottom: 0.5em;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.output-header h2 {
+	margin: 0;
+	font-size: 1.3em;
+}
+
+.build-status {
+	padding: 0.25em 0.75em;
+	border-radius: 4px;
+	font-size: 0.85em;
+	font-weight: 500;
+}
+
+.build-status.building {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	animation: pulse 1.5s ease-in-out infinite;
+}
+
+.build-status.success {
+	background-color: var(--color-green);
+	color: white;
+}
+
+.build-status.error {
+	background-color: var(--color-red);
+	color: white;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.7; }
+}
+
+.output-file-info {
+	margin: 0 0 1em 0;
+	font-size: 0.9em;
+	color: var(--text-muted);
+}
+
+/* Build Output */
+.build-output {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 1em;
+	margin: 0;
+	max-height: 300px;
+	overflow-y: auto;
+	font-family: var(--font-monospace);
+	font-size: 0.85em;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.build-output .output-text {
+	color: var(--text-normal);
+}
+
+.build-output .output-error {
+	color: var(--color-red);
+}
+
+/* Scrollbar Styling */
+.build-output::-webkit-scrollbar {
+	width: 8px;
+}
+
+.build-output::-webkit-scrollbar-track {
+	background: var(--background-secondary);
+	border-radius: 4px;
+}
+
+.build-output::-webkit-scrollbar-thumb {
+	background: var(--background-modifier-border);
+	border-radius: 4px;
+}
+
+.build-output::-webkit-scrollbar-thumb:hover {
+	background: var(--text-muted);
+}
+
+/* ============================================================================
+   Settings Tab
+   ============================================================================ */
+
+.manuscript-build-settings .setting-item {
+	padding: 1em 0;
+}
+
+.manuscript-build-settings .setting-item-control input[type="text"] {
+	width: 250px;
+}
+
+/* ============================================================================
+   Dropdown Optgroups
+   ============================================================================ */
+
+.manuscript-build-modal select optgroup {
+	font-weight: 600;
+	font-style: normal;
+	color: var(--text-muted);
+	padding: 0.5em 0;
+}
+
+.manuscript-build-modal select option {
+	font-weight: normal;
+	padding: 0.25em 0.5em;
+}
+
+/* ============================================================================
+   Toggle Styling
+   ============================================================================ */
+
+.manuscript-build-modal .checkbox-container {
+	cursor: pointer;
+}
+
+/* ============================================================================
+   Responsive Adjustments
+   ============================================================================ */
+
+@media (max-width: 600px) {
+	.manuscript-build-modal .setting-item {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.5em;
+	}
+
+	.manuscript-build-modal .setting-item-control {
+		width: 100%;
+		min-width: unset;
+	}
+
+	.manuscript-build-modal .setting-item-control select {
+		width: 100%;
+	}
+}
+
+/* ============================================================================
+   Theme Compatibility - Dark Mode Adjustments
+   ============================================================================ */
+
+.theme-dark .build-output {
+	background-color: var(--background-secondary-alt);
+}
+
+.theme-dark .build-status.success {
+	background-color: #2e7d32;
+}
+
+.theme-dark .build-status.error {
+	background-color: #c62828;
+}
+
+/* ============================================================================
+   Accessibility
+   ============================================================================ */
+
+.manuscript-build-modal button:focus,
+.manuscript-build-modal select:focus,
+.manuscript-build-modal input:focus {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+	.build-status {
+		border: 2px solid currentColor;
+	}
+
+	.build-output {
+		border-width: 2px;
+	}
+}

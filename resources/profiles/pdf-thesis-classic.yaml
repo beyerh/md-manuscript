@@ -48,6 +48,8 @@ variables:
     - \usepackage{xcolor}
     - \definecolor{CTsemi}{RGB}{128,0,0}
     - \definecolor{CTnumber}{RGB}{180,180,180}
+    - \providecommand{\mdtwocolumnstart}{}
+    - \providecommand{\mdtwocolumnend}{}
     # Microtypography for refined text
     - \usepackage{microtype}
     # Classic paragraph indentation

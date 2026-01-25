@@ -1,0 +1,10 @@
+{
+	"id": "manuscript-build",
+	"name": "Manuscript Build",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Build academic manuscripts to PDF/DOCX using Pandoc with customizable profiles, citation styles, and formatting options.",
+	"author": "Manuscript Build",
+	"authorUrl": "https://github.com/manuscript-build",
+	"isDesktopOnly": true
+}

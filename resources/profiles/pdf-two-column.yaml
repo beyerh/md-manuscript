@@ -13,7 +13,7 @@ profile:
 pdf-engine: tectonic
 
 # --- Reader/Writer ---
-reader: markdown+mark+raw_html
+reader: markdown+mark+raw_html+raw_tex
 
 # --- Filters ---
 # Custom filter to convert longtable to tabular for twocolumn compatibility
@@ -26,7 +26,7 @@ filters:
 # --- Layout ---
 variables:
   documentclass: article
-  classoption: ["twocolumn"]
+  classoption: [twocolumn]
   papersize: a4
   geometry: ["top=2cm", "bottom=2cm", "left=1.5cm", "right=1.5cm"]
   
@@ -42,6 +42,10 @@ variables:
   
   header-includes:
     - \usepackage{xcolor}
+    - \providecolor{CTsemi}{RGB}{0,0,0}
+    - \usepackage{cuted}
+    - \providecommand{\mdtwocolumnstart}{\begin{strip}}
+    - \providecommand{\mdtwocolumnend}{\end{strip}}
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.5\baselineskip}
     - \setlength{\columnsep}{0.8cm}

@@ -39,7 +39,7 @@ local function make_colored_span(inlines, color)
 
   if FORMAT:match('latex') or FORMAT:match('pdf') then
     local text = pandoc.utils.stringify(inlines)
-    return pandoc.RawInline('latex', string.format('\\textcolor[RGB]{%d,%d,%d}{%s}', r, g, b, text))
+    return pandoc.RawInline('latex', string.format('{\\color[RGB]{%d,%d,%d}%s}', r, g, b, text))
   elseif FORMAT:match('docx') then
     local span = pandoc.Span(inlines)
     span.attributes['custom-style'] = nil

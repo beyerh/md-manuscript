@@ -31,6 +31,9 @@ variables:
   header-includes:
     - \usepackage{lineno}
     - \usepackage{xcolor}
+    - \providecolor{CTsemi}{RGB}{0,0,0}
+    - \providecommand{\mdtwocolumnstart}{}
+    - \providecommand{\mdtwocolumnend}{}
     - \setlength{\parindent}{1.5em}
     - \setlength{\parskip}{0pt}
     # Bold caption labels (Figure 1:, Table 1:)

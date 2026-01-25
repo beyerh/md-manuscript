@@ -4,81 +4,20 @@
     "type": "split",
     "children": [
       {
-        "id": "2b99623cc25eab01",
-        "type": "split",
+        "id": "4f6acb4046443570",
+        "type": "tabs",
         "children": [
           {
-            "id": "70c95cb17bb0400a",
-            "type": "tabs",
-            "dimension": 76.15894039735099,
-            "children": [
-              {
-                "id": "88bcf003830e16b9",
-                "type": "leaf",
-                "state": {
-                  "type": "markdown",
-                  "state": {
-                    "file": "README.md",
-                    "mode": "source",
-                    "source": false,
-                    "annotationGutterFolded": false,
-                    "annotationGutterWidth": 300
-                  },
-                  "icon": "lucide-file",
-                  "title": "README"
-                }
-              }
-            ]
-          },
-          {
-            "id": "441387a10b14008b",
-            "type": "tabs",
-            "dimension": 23.841059602649008,
-            "children": [
-              {
-                "id": "a010bac1fc483bc7",
-                "type": "leaf",
-                "pinned": true,
-                "state": {
-                  "type": "terminal:terminal",
-                  "state": {
-                    "terminal:terminal": {
-                      "cwd": "/home/hbeyer/repos/md-manuscript/",
-                      "focus": false,
-                      "profile": {
-                        "args": [],
-                        "executable": "/bin/sh",
-                        "followTheme": true,
-                        "name": "",
-                        "platforms": {
-                          "linux": true
-                        },
-                        "pythonExecutable": "python3",
-                        "restoreHistory": false,
-                        "rightClickAction": "copyPaste",
-                        "successExitCodes": [
-                          "0",
-                          "SIGINT",
-                          "SIGTERM"
-                        ],
-                        "terminalOptions": {
-                          "documentOverride": null
-                        },
-                        "type": "integrated",
-                        "useWin32Conhost": true
-                      },
-                      "serial": null
-                    }
-                  },
-                  "pinned": true,
-                  "icon": "terminal",
-                  "title": "Terminal: sh"
-                }
-              }
-            ]
+            "id": "e6deeba75fbc1067",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
           }
-        ],
-        "direction": "horizontal"
+        ]
       }
     ],
     "direction": "vertical"
@@ -135,7 +74,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 515.5
+    "width": 316.5
   },
   "right": {
     "id": "1e45c34c81b215ea",
@@ -213,13 +152,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of README"
+              "title": "Outline"
             }
           }
         ],
@@ -238,47 +176,52 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
-      "terminal:Open terminal": false
+      "terminal:Open terminal": false,
+      "manuscript-build:Build Manuscript": false
     }
   },
-  "active": "88bcf003830e16b9",
+  "active": "beb314a26d857518",
   "lastOpenFiles": [
+    "export/~$-md-manuscript-maintext.docx",
     "_temp_config.yaml",
-    "_temp_main_merged.md",
-    "export/01_maintext.docx",
-    "export/01_maintext.pdf",
-    "01_maintext.md",
-    "README.md",
-    "resources/color-text.lua",
-    "00_frontmatter.md",
-    "HIGHLIGHTING.md",
-    "test_simple_highlight.md",
-    "figures/figure1.png",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "export/02-md-manuscript-maintext.docx",
     "figures/figure2.png",
-    "resources/citation_styles/vancouver.csl",
-    "resources/citation_styles",
+    "figures/figure1.png",
+    "02-md-manuscript-maintext.md",
+    "01-md-manuscript-frontmatter.md",
+    "export/02-md-manuscript-maintext.pdf",
+    "export/~$-md-manuscript_supp_info.docx",
+    "export/03-md-manuscript_supp_info.docx",
+    "_temp_03-md-manuscript_supp_info_merged.md",
+    "export/md-manuscript-maintext.pdf",
+    "README.md",
+    "md-manuscript-frontmatter.md",
+    "_temp_md-manuscript-maintext_merged.md",
+    "md-manuscript-maintext.md",
+    "md-thesis.md",
+    "md-notes_technical.md",
     "export",
-    "resources/citation_styles/cell.csl",
-    "02_supp_info.md",
-    "resources/profiles/pdf-thesis-classic.yaml",
-    "_si_header.tex",
-    "_temp_si_merged.md",
-    "_temp_merged.md",
-    "CROSSREF_EXAMPLES.md",
-    "_temp_combined.md",
-    "MIGRATION.md",
-    "_old_versions/02_supp_info.md",
-    "_old_versions/01_maintext.md",
-    "WORKFLOW.md",
-    "02_supp_info_new.md",
-    "01_maintext_new.md",
-    "maintext.md",
-    "supp_info.md",
-    "supp_info.md.md",
-    "template.md",
+    "export/md-manuscript-maintext.docx",
+    "_pdf_default_debug.tex",
+    "Untitled 2.md",
+    "Untitled.md",
+    "Untitled 1.md",
+    "_debug_merged.md",
+    "figures/plugin_button.png",
+    "figures/Screenshot 2026-01-25 at 20.06.48.png",
+    "md-manuscript_supp_info.md",
+    "md-notes_narrative.md",
+    "examples/md-thesis.md",
+    "examples/md-notes_technical.md",
+    "examples/md-notes_narrative.md",
+    "examples/md-manuscript_supp_info.md",
+    "examples/md-manuscript-maintext.md",
+    "examples/md-manuscript-frontmatter.md",
+    "thesis.md",
+    "notes_technical.md",
+    "notes_narrative.md",
     "figures/figure.png",
-    "figures/figure.emf.md",
-    "figures/figure.md",
     "figures/input_singlepage.png"
   ]
 }

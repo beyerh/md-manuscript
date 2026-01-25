@@ -37,6 +37,9 @@ variables:
     - \allsectionsfont{\sffamily\bfseries}
     # Colored section headings (Cell blue)
     - \usepackage{xcolor}
+    - \providecolor{CTsemi}{RGB}{0,0,0}
+    - \providecommand{\mdtwocolumnstart}{}
+    - \providecommand{\mdtwocolumnend}{}
     - \definecolor{cellblue}{RGB}{0,51,102}
     - \sectionfont{\color{cellblue}\sffamily\bfseries}
   

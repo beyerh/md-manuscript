@@ -1,0 +1,107 @@
+# pdf-notes.yaml - Modern Notes/Scripts Style
+# Best for: Teaching scripts, lecture notes, personal notes, digital sharing
+#
+# Description: Clean, modern styling optimized for on-screen reading.
+#              Sans-serif body, excellent code highlighting, no print margins.
+#              European paragraph style (gap instead of indent).
+
+profile:
+  name: "Notes & Scripts"
+  description: "Modern digital-friendly style for notes and teaching materials"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+# --- Syntax Highlighting ---
+highlight-style: tango
+
+# --- Layout ---
+variables:
+  documentclass: article
+  papersize: a4
+  geometry: ["top=2cm", "bottom=2cm", "left=2.5cm", "right=2.5cm"]
+  
+  # Typography - Clean sans-serif for screen reading
+  mainfont: "Libertinus Sans"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  fontsize: 11pt
+  linestretch: 1.35
+  
+  # Paragraph style: European (gap between paragraphs, no indent)
+  indent: false
+  
+  # Table of contents (optional - can be overridden in document YAML)
+  # Leave commented out to allow document-level control
+  # toc: false
+  toc-depth: 3
+  
+  # Section numbering
+  numbersections: true
+  secnumdepth: 3
+  
+  header-includes:
+    - \usepackage{xcolor}
+    - \providecolor{CTsemi}{RGB}{0,0,0}
+    - \providecommand{\mdtwocolumnstart}{}
+    - \providecommand{\mdtwocolumnend}{}
+    - \usepackage{microtype}
+    - \usepackage{booktabs}
+    # Left-aligned title for notes
+    - \usepackage{titling}
+    - \pretitle{\begin{flushleft}\LARGE\bfseries\sffamily}
+    - \posttitle{\par\end{flushleft}}
+    - \preauthor{\begin{flushleft}\large}
+    - \postauthor{\par\end{flushleft}}
+    - \predate{\begin{flushleft}\normalsize}
+    - \postdate{\par\end{flushleft}}
+    - |
+      \makeatletter
+      \providecommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+      \renewcommand{\maketitle}{%
+        \begin{flushleft}
+        {\LARGE\bfseries\sffamily\@title\par}
+        \vskip 0.5em
+        \@ifundefined{@subtitle}{}{{\large\itshape\@subtitle\par\vskip 1em}}
+        {\large\@author\par}
+        {\normalsize\@date\par}
+        \end{flushleft}
+      }
+      \makeatother
+    # Modern accent color (teal/cyan)
+    - \definecolor{accent}{RGB}{0,122,128}
+    - \definecolor{codebg}{RGB}{248,248,248}
+    - \definecolor{codeframe}{RGB}{220,220,220}
+    # Paragraph spacing
+    - \setlength{\parindent}{0pt}
+    - \setlength{\parskip}{0.6\baselineskip}
+    # Section styling with accent color
+    - \usepackage{titlesec}
+    - \titleformat{\section}{\Large\bfseries\sffamily\color{accent}}{\thesection}{1em}{}
+    - \titleformat{\subsection}{\large\bfseries\sffamily\color{accent}}{\thesubsection}{1em}{}
+    - \titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{accent}}{\thesubsubsection}{1em}{}
+    - \titlespacing*{\section}{0pt}{1.0\baselineskip}{0.4\baselineskip}
+    - \titlespacing*{\subsection}{0pt}{0.8\baselineskip}{0.3\baselineskip}
+    - \titlespacing*{\subsubsection}{0pt}{0.6\baselineskip}{0.2\baselineskip}
+    # Code block styling
+    - \usepackage{fancyvrb}
+    - \usepackage{framed}
+    - \definecolor{shadecolor}{RGB}{248,248,248}
+    # Caption styling
+    - \usepackage{caption}
+    - \captionsetup{labelfont={bf,color=accent},labelsep=colon,font=small}
+    # Better float placement
+    - \renewcommand{\floatpagefraction}{0.8}
+    - \renewcommand{\topfraction}{0.9}
+    - \renewcommand{\bottomfraction}{0.9}
+    - \renewcommand{\textfraction}{0.1}
+    # Clickable TOC
+    - \AtBeginDocument{\hypersetup{linkcolor=accent,urlcolor=accent,citecolor=accent}}
+  
+  # Colors - accent color for links
+  colorlinks: true
+  linkcolor: accent
+  toccolor: accent
+  urlcolor: accent
+  citecolor: accent

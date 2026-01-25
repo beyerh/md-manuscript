@@ -3,7 +3,7 @@
 
 # --- Input/Output Settings ---
 # Enable mark extension for ==highlighted text== and raw_html for <font color> tags
-reader: markdown+mark+raw_html
+reader: markdown+mark+raw_html+raw_tex
 
 # --- Bibliography ---
 filters:
@@ -21,3 +21,11 @@ metadata:
   tblPrefix: ["Table", "Tables"]
   linkReferences: true
   nameInLink: true
+
+  header-includes:
+    - \usepackage{xcolor}
+    - \providecolor{CTsemi}{RGB}{0,0,0}
+    - \providecommand{\mdonecolumn}{}
+    - \providecommand{\mdtwocolumn}{}
+    - \providecommand{\mdtwocolumnstart}{}
+    - \providecommand{\mdtwocolumnend}{}

@@ -1,4 +1,3 @@
-
 # Abstract {.unnumbered}
 **Objective:** Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 **Results:** Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum.
@@ -10,6 +9,9 @@
 ::: 
 
 # Introduction
+Profile: Use with pdf-default, pdf-draft, pdf-nature, pdf-cell, or docx-manuscript.
+Frontmatter: Pair with 01_frontmatter.md for title page.
+
 **Lorem** *ipsum* ~~dolor~~ ~~sit~~ <u>amet</u>, ==consectetur== adipiscing elit. Nullamin dui mauris.<font color="#ff0000"> Text color is only supported in PDF</font>.
 
 Vivamus hendrerit arcu sed erat molestie vehicula. Sed auctor neque eu tellus rhoncus ut eleifend nibh porttitor. Ut in nulla enim. Phasellus molestie magna non est bibendum non venenatis nisl tempor. Suspendisse dictum feugiat nisl ut dapibus. Mauris iaculis porttitor posuere [@chenSenescencePathways2025].

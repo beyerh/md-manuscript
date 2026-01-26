@@ -25,7 +25,7 @@ Both methods support:
 
 ### Required Tools
 - **Obsidian** (Markdown editor)
-- **Python 3.6+** (to run the build script)
+- **Python 3.7+** (to run the build script)
 - **Pandoc** (document conversion)
 - **pandoc-crossref** (figure/table cross-references)
 - **ImageMagick** (figure conversion)
@@ -107,7 +107,17 @@ scoop install pandoc tectonic git python obsidian pandoc-crossref
 </details>
 
 ### Font Installation
-Install the fonts you would like to use:
+
+**Automated Installation (Recommended):**
+
+The script provides an interactive wizard for easy font management on **Windows, macOS, and Linux**:
+```bash
+python resources/install-fonts.py
+```
+
+**Manual Installation:**
+
+Alternatively, install fonts manually:
 
 <details>
 <summary>Libertinus (Default)</summary>

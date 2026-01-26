@@ -6,6 +6,9 @@ Usage: python build.py [--last] [--profile NAME] [--list] [--source=FILE] [--fro
 
 import subprocess
 import sys
+# Force UTF-8 output to fix Windows console crashes
+if sys.version_info >= (3, 7):
+    sys.stdout.reconfigure(encoding='utf-8')
 import os
 import re
 import json

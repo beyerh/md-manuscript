@@ -34,7 +34,12 @@ CITATION_STYLES_DIR = "resources/citation_styles"
 DEFAULT_SETTINGS = {
     "font": "libertinus",
     "fontsize": "11pt",
-    "citation_style": "vancouver"
+    "citation_style": "vancouver",
+    "linespacing": "",
+    "paragraph_style": "",
+    "linenumbers": None,
+    "numbered_headings": None,
+    "language": ""
 }
 
 # Font presets for PDF output
@@ -43,6 +48,42 @@ FONT_PRESETS = {
         "name": "Libertinus (Default)",
         "mainfont": "Libertinus Serif",
         "sansfont": "Libertinus Sans",
+        "monofont": "Libertinus Mono",
+    },
+    "libertinus-serif": {
+        "name": "Libertinus Serif",
+        "mainfont": "Libertinus Serif",
+        "sansfont": "Libertinus Sans",
+        "monofont": "Libertinus Mono",
+    },
+    "libertinus-sans": {
+        "name": "Libertinus Sans",
+        "mainfont": "Libertinus Sans",
+        "sansfont": "Libertinus Sans",
+        "monofont": "Libertinus Mono",
+    },
+    "inter": {
+        "name": "Inter",
+        "mainfont": "Inter",
+        "sansfont": "Inter",
+        "monofont": "Libertinus Mono",
+    },
+    "ibm-plex-sans": {
+        "name": "IBM Plex Sans",
+        "mainfont": "IBM Plex Sans",
+        "sansfont": "IBM Plex Sans",
+        "monofont": "IBM Plex Mono",
+    },
+    "ibm-plex-serif": {
+        "name": "IBM Plex Serif",
+        "mainfont": "IBM Plex Serif",
+        "sansfont": "IBM Plex Sans",
+        "monofont": "IBM Plex Mono",
+    },
+    "switzer": {
+        "name": "Switzer",
+        "mainfont": "Switzer",
+        "sansfont": "Switzer",
         "monofont": "Libertinus Mono",
     },
     "times": {
@@ -81,6 +122,43 @@ FONT_PRESETS = {
         "sansfont": "Latin Modern Sans",
         "monofont": "Latin Modern Mono",
     },
+}
+
+# Line spacing presets
+LINE_SPACING_PRESETS = {
+    "single": {"value": "1.0", "name": "Single (1.0)"},
+    "compact": {"value": "1.15", "name": "Compact (1.15)"},
+    "normal": {"value": "1.25", "name": "Normal (1.25)"},
+    "relaxed": {"value": "1.5", "name": "Relaxed (1.5)"},
+    "double": {"value": "2.0", "name": "Double (2.0)"},
+}
+
+# Paragraph style presets
+PARAGRAPH_STYLE_PRESETS = {
+    "indent": {"indent": True, "name": "Indented (American)"},
+    "gap": {"indent": False, "name": "Gap (European)"},
+    "both": {"indent": True, "name": "Gap + Indent (Both)"},
+}
+
+# Numbered headings presets
+NUMBERED_HEADINGS_PRESETS = {
+    "on": {"value": True, "name": "Numbered"},
+    "off": {"value": False, "name": "Unnumbered"},
+}
+
+# Language presets (ISO 639-1 codes)
+LANGUAGE_PRESETS = {
+    "en": "English",
+    "de": "German (Deutsch)",
+    "fr": "French (Français)",
+    "es": "Spanish (Español)",
+    "it": "Italian (Italiano)",
+    "pt": "Portuguese (Português)",
+    "nl": "Dutch (Nederlands)",
+    "pl": "Polish (Polski)",
+    "ru": "Russian (Русский)",
+    "zh": "Chinese (中文)",
+    "ja": "Japanese (日本語)",
 }
 
 
@@ -383,13 +461,18 @@ def apply_font_overrides_to_defaults_file(
     defaults_path: str,
     font: Optional[str] = None,
     fontsize: Optional[str] = None,
+    linespacing: Optional[str] = None,
+    paragraph_style: Optional[str] = None,
+    linenumbers: Optional[bool] = None,
+    numbered_headings: Optional[bool] = None,
+    language: Optional[str] = None,
 ) -> None:
-    """Apply font/fontsize overrides directly to the merged Pandoc defaults file.
+    """Apply font/fontsize/linespacing/paragraph style/headings/language overrides to Pandoc defaults file.
 
-    This avoids situations where multiple font settings (from profile + CLI)
+    This avoids situations where multiple settings (from profile + CLI)
     end up concatenated in the generated LaTeX.
     """
-    if not font and not fontsize:
+    if not any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, numbered_headings is not None, language]):
         return
 
     path = Path(defaults_path)
@@ -426,8 +509,21 @@ def apply_font_overrides_to_defaults_file(
             end_idx = j
             break
 
-    # Remove existing font/fontsize keys inside the variables block.
-    keys_to_remove = {"mainfont:", "sansfont:", "monofont:", "fontsize:"}
+    # Remove existing keys we're overriding inside the variables block.
+    keys_to_remove = set()
+    if font:
+        keys_to_remove.update({"mainfont:", "sansfont:", "monofont:"})
+    if fontsize:
+        keys_to_remove.add("fontsize:")
+    if linespacing:
+        keys_to_remove.add("linestretch:")
+    if paragraph_style:
+        keys_to_remove.add("indent:")
+    if numbered_headings is not None:
+        keys_to_remove.add("numbersections:")
+    if language:
+        keys_to_remove.add("lang:")
+    
     new_block: List[str] = []
     for line in lines[variables_idx + 1 : end_idx]:
         stripped = line.strip()
@@ -448,6 +544,16 @@ def apply_font_overrides_to_defaults_file(
         )
     if fontsize:
         override_lines.append(f"{child_indent_str}fontsize: {fontsize}\n")
+    if linespacing and linespacing in LINE_SPACING_PRESETS:
+        spacing_value = LINE_SPACING_PRESETS[linespacing]["value"]
+        override_lines.append(f"{child_indent_str}linestretch: {spacing_value}\n")
+    if paragraph_style and paragraph_style in PARAGRAPH_STYLE_PRESETS:
+        indent_value = "true" if PARAGRAPH_STYLE_PRESETS[paragraph_style]["indent"] else "false"
+        override_lines.append(f"{child_indent_str}indent: {indent_value}\n")
+    if numbered_headings is not None:
+        override_lines.append(f"{child_indent_str}numbersections: {'true' if numbered_headings else 'false'}\n")
+    if language and language in LANGUAGE_PRESETS:
+        override_lines.append(f"{child_indent_str}lang: {language}\n")
 
     # Write back file: keep everything, but replace variables block content.
     out = []
@@ -456,6 +562,187 @@ def apply_font_overrides_to_defaults_file(
     out.extend(new_block)
     out.extend(lines[end_idx:])
     path.write_text(''.join(out))
+    
+    # Handle line numbers - need to modify header-includes
+    if linenumbers is not None:
+        _apply_linenumbers_override(defaults_path, linenumbers)
+    
+    # Handle paragraph style - need to modify parindent/parskip in header-includes
+    if paragraph_style:
+        _apply_paragraph_style_override(defaults_path, paragraph_style)
+
+
+def _apply_linenumbers_override(defaults_path: str, enable: bool) -> None:
+    """Add or remove \\linenumbers from header-includes inside variables block."""
+    path = Path(defaults_path)
+    if not path.exists():
+        return
+    
+    content = path.read_text()
+    lines = content.splitlines(True)
+    
+    # First, remove any existing lineno-related lines
+    new_lines = []
+    for line in lines:
+        if r'\usepackage{lineno}' in line or r'\linenumbers' in line:
+            continue
+        new_lines.append(line)
+    
+    if enable:
+        # Add \usepackage{lineno} and \linenumbers to header-includes inside variables block
+        result_lines = []
+        in_variables = False
+        in_header_includes = False
+        added = False
+        
+        for line in new_lines:
+            result_lines.append(line)
+            stripped = line.strip()
+            indent = len(line) - len(line.lstrip())
+            
+            if stripped == "variables:":
+                in_variables = True
+            elif in_variables and stripped == "header-includes:":
+                in_header_includes = True
+            elif in_header_includes and not added:
+                if stripped.startswith("- "):
+                    item_indent = indent
+                    indent_str = " " * item_indent
+                    # Add both usepackage and linenumbers command
+                    result_lines.insert(-1, f"{indent_str}- \\usepackage{{lineno}}\n")
+                    result_lines.insert(-1, f"{indent_str}- \\linenumbers\n")
+                    added = True
+                    in_header_includes = False
+        
+        if added:
+            path.write_text(''.join(result_lines))
+    else:
+        # Just write back the file with lineno lines removed
+        path.write_text(''.join(new_lines))
+
+
+def _normalize_inline_parindent_for_gap(markdown_path: str) -> None:
+    path = Path(markdown_path)
+    if not path.exists():
+        return
+
+    content = path.read_text()
+
+    content = re.sub(
+        r"`\\setlength\{\\parindent\}\{[^}]+\}`\{=latex\}",
+        r"`\\setlength{\\parindent}{0pt}`{=latex}",
+        content,
+    )
+
+    def _rewrite_raw_latex_block(match: re.Match) -> str:
+        block = match.group(0)
+        return re.sub(
+            r"\\setlength\{\\parindent\}\{[^}]+\}",
+            r"\\setlength{\\parindent}{0pt}",
+            block,
+        )
+
+    content = re.sub(
+        r"```\{=latex\}[\s\S]*?```",
+        _rewrite_raw_latex_block,
+        content,
+    )
+
+    content = re.sub(
+        r":::\s*\{=latex\}[\s\S]*?:::",
+        _rewrite_raw_latex_block,
+        content,
+    )
+    path.write_text(content)
+
+
+def _profile_uses_gap_paragraphs(defaults_path: str) -> bool:
+    path = Path(defaults_path)
+    if not path.exists():
+        return False
+
+    lines = path.read_text().splitlines()
+    in_variables = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "variables:":
+            in_variables = True
+            continue
+        if in_variables and stripped and not stripped.startswith("#"):
+            indent = len(line) - len(line.lstrip())
+            if indent == 0:
+                in_variables = False
+                continue
+            if stripped.startswith("indent:"):
+                value = stripped.split(":", 1)[1].strip().lower()
+                return value == "false"
+    return False
+
+
+def _apply_paragraph_style_override(defaults_path: str, style: str) -> None:
+    """Modify parindent/parskip in header-includes inside variables block.
+    
+    Adds settings at END of header-includes to ensure they override profile defaults.
+    """
+    path = Path(defaults_path)
+    if not path.exists():
+        return
+    
+    content = path.read_text()
+    lines = content.splitlines(True)
+    
+    # Remove ALL existing parindent/parskip lines (and any prior AtBeginDocument injection)
+    # and any parskip package usage from anywhere in the file.
+    new_lines = []
+    for line in lines:
+        if r'\setlength{\parindent}' in line or r'\setlength{\parskip}' in line:
+            continue
+        if r'\AtBeginDocument' in line and (r'\parindent' in line or r'\parskip' in line):
+            continue
+        if r'\usepackage{parskip}' in line:
+            continue
+        new_lines.append(line)
+    
+    # Find the LAST item in header-includes inside variables block
+    # and add our settings AFTER it (at end of header-includes)
+    in_variables = False
+    in_header_includes = False
+    last_header_item_idx = -1
+    item_indent = 4  # default
+    
+    for i, line in enumerate(new_lines):
+        stripped = line.strip()
+        indent = len(line) - len(line.lstrip())
+        
+        if stripped == "variables:":
+            in_variables = True
+        elif in_variables and stripped == "header-includes:":
+            in_header_includes = True
+        elif in_header_includes:
+            if stripped.startswith("- "):
+                last_header_item_idx = i
+                item_indent = indent
+            elif stripped and not stripped.startswith("#") and not stripped.startswith("-") and not stripped.startswith("|"):
+                # End of header-includes block (new key at same or lower indent)
+                if indent <= item_indent - 2:
+                    in_header_includes = False
+    
+    if last_header_item_idx > 0:
+        indent_str = " " * item_indent
+        if style == "indent":
+            injection = r"\AtBeginDocument{\setlength{\parindent}{1.5em}\setlength{\parskip}{0pt}}"
+        elif style == "both":
+            injection = r"\AtBeginDocument{\setlength{\parindent}{1.5em}\setlength{\parskip}{0.5\baselineskip}}"
+        else:
+            injection = r"\AtBeginDocument{\setlength{\parindent}{0pt}\setlength{\parskip}{0.5\baselineskip}}"
+
+        if style == "gap":
+            new_lines.insert(last_header_item_idx + 1, f"{indent_str}- \\usepackage{{parskip}}\n")
+            last_header_item_idx += 1
+
+        new_lines.insert(last_header_item_idx + 1, f"{indent_str}- {injection}\n")
+        
+        path.write_text(''.join(new_lines))
 
 
 def create_export_dir():
@@ -557,7 +844,10 @@ def extract_si_citations(si_file: Optional[str] = None) -> str:
 def build_document(source_file: str, profile: str, use_png: bool, include_si_refs: bool, 
                    frontmatter_file: Optional[str] = None, font: Optional[str] = None, 
                    fontsize: Optional[str] = None, citation_style: Optional[str] = None,
-                   si_file: Optional[str] = None, is_si: bool = False):
+                   si_file: Optional[str] = None, is_si: bool = False,
+                   linespacing: Optional[str] = None, paragraph_style: Optional[str] = None,
+                   linenumbers: Optional[bool] = None, numbered_headings: Optional[bool] = None,
+                   language: Optional[str] = None):
     """Build the document with specified profile."""
     # Get profile info
     _, _, fmt = get_profile_info(profile)
@@ -597,7 +887,7 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
             nocite_header = f"---\nnocite: |\n  {si_cites}\n---\n\n"
             with open(temp_merged, "w") as f:
                 f.write(nocite_header + original_content)
-    
+
     # Convert figures for DOCX
     if fmt == "docx" and use_png:
         convert_figures_to_png()
@@ -606,13 +896,42 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     profile_path = f"{PROFILES_DIR}/{profile}.yaml"
     config_file = merge_configs(BASE_PROFILE, profile_path)
 
-    # Apply font overrides directly to defaults file (prevents fontspec issues)
-    if fmt == "pdf" and (font or fontsize):
-        apply_font_overrides_to_defaults_file(config_file, font=font, fontsize=fontsize)
+    effective_gap = paragraph_style == "gap" or (
+        not paragraph_style and _profile_uses_gap_paragraphs(config_file)
+    )
+    if effective_gap:
+        if input_file != temp_merged:
+            shutil.copy(source_file, temp_merged)
+            input_file = temp_merged
+        _normalize_inline_parindent_for_gap(input_file)
+
+    # Apply typography overrides directly to defaults file (prevents fontspec issues)
+    has_overrides = any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, numbered_headings is not None, language])
+    if fmt == "pdf" and has_overrides:
+        apply_font_overrides_to_defaults_file(
+            config_file, font=font, fontsize=fontsize,
+            linespacing=linespacing, paragraph_style=paragraph_style,
+            linenumbers=linenumbers, numbered_headings=numbered_headings,
+            language=language
+        )
         if font and font in FONT_PRESETS:
             print(f"   Using font: {FONT_PRESETS[font]['name']}")
         if fontsize:
             print(f"   Using font size: {fontsize}")
+        if linespacing and linespacing in LINE_SPACING_PRESETS:
+            print(f"   Using line spacing: {LINE_SPACING_PRESETS[linespacing]['name']}")
+        if paragraph_style and paragraph_style in PARAGRAPH_STYLE_PRESETS:
+            print(f"   Using paragraph style: {PARAGRAPH_STYLE_PRESETS[paragraph_style]['name']}")
+        if linenumbers is True:
+            print(f"   Line numbers: enabled")
+        elif linenumbers is False:
+            print(f"   Line numbers: disabled")
+        if numbered_headings is True:
+            print(f"   Numbered headings: enabled")
+        elif numbered_headings is False:
+            print(f"   Numbered headings: disabled")
+        if language and language in LANGUAGE_PRESETS:
+            print(f"   Using language: {LANGUAGE_PRESETS[language]}")
     
     # Build pandoc command
     cmd = ["pandoc", input_file, "-o", output_file, f"--defaults={config_file}"]
@@ -732,37 +1051,59 @@ def print_profiles_list():
 
 
 def configure_defaults() -> None:
-    """Configure default font, font size, and citation style."""
+    """Configure default font, font size, citation style, and typography settings."""
     print_header()
     
     defaults = load_defaults()
     
+    # Show current defaults
     print(box_top("Current Defaults"))
-    print(box_row(f"Font: {FONT_PRESETS[defaults['font']]['name']}"))
-    print(box_row(f"Font Size: {defaults['fontsize']}"))
-    # Get citation style display name from local file or show the key
-    style_key = defaults['citation_style']
+    current_font_key = defaults.get('font', '')
+    if current_font_key:
+        current_font_name = FONT_PRESETS.get(current_font_key, FONT_PRESETS['libertinus'])['name']
+    else:
+        current_font_name = 'Profile Default'
+    print(box_row(f"Font: {current_font_name}"))
+    print(box_row(f"Font Size: {defaults.get('fontsize', '11pt')}"))
+    style_key = defaults.get('citation_style', 'vancouver')
     local_styles = list_local_csl_files()
     style_name = next((n for k, n, _ in local_styles if k == style_key), style_key)
     print(box_row(f"Citation Style: {style_name}"))
+    # Typography settings
+    ls = defaults.get('linespacing', '')
+    print(box_row(f"Line Spacing: {LINE_SPACING_PRESETS[ls]['name'] if ls else 'Profile Default'}"))
+    ps = defaults.get('paragraph_style', '')
+    print(box_row(f"Paragraph Style: {PARAGRAPH_STYLE_PRESETS[ps]['name'] if ps else 'Profile Default'}"))
+    ln = defaults.get('linenumbers')
+    ln_str = "Profile Default" if ln is None else ("Enabled" if ln else "Disabled")
+    print(box_row(f"Line Numbers: {ln_str}"))
+    nh = defaults.get('numbered_headings')
+    nh_str = "Profile Default" if nh is None else ("Numbered" if nh else "Unnumbered")
+    print(box_row(f"Headings: {nh_str}"))
+    lang = defaults.get('language', '')
+    print(box_row(f"Language: {LANGUAGE_PRESETS.get(lang, 'Profile Default')}"))
     print(box_bottom())
     print()
     
     # Font selection
     print(box_top("Font Selection"))
+    print(box_row(f" 0) Profile Default{' (current)' if not defaults.get('font') else ''}"))
     font_list = list(FONT_PRESETS.keys())
     for i, key in enumerate(font_list, 1):
         name = FONT_PRESETS[key]["name"]
-        marker = " (current)" if key == defaults['font'] else ""
+        marker = " (current)" if key == defaults.get('font') else ""
         print(box_row(f"{i:2}) {name}{marker}"))
     print(box_bottom())
     
-    font_choice = input(f"Select font [1-{len(font_list)}, Enter=keep current]: ").strip()
+    font_choice = input(f"Select font [0-{len(font_list)}, Enter=keep current]: ").strip()
     if font_choice:
         try:
-            idx = int(font_choice) - 1
-            if 0 <= idx < len(font_list):
-                defaults['font'] = font_list[idx]
+            if int(font_choice) == 0:
+                defaults['font'] = ''
+            else:
+                idx = int(font_choice) - 1
+                if 0 <= idx < len(font_list):
+                    defaults['font'] = font_list[idx]
         except (ValueError, IndexError):
             pass
     
@@ -771,7 +1112,7 @@ def configure_defaults() -> None:
     # Font size selection
     print(box_top("Font Size Selection"))
     for i, size in enumerate(FONT_SIZES, 1):
-        marker = " (current)" if size == defaults['fontsize'] else ""
+        marker = " (current)" if size == defaults.get('fontsize') else ""
         print(box_row(f"{i:2}) {size}{marker}"))
     print(box_bottom())
     
@@ -786,13 +1127,13 @@ def configure_defaults() -> None:
     
     print()
     
-    # Citation style selection - show only local files + download option
+    # Citation style selection
     print(box_top("Citation Style Selection"))
-    local_styles = list_local_csl_files()  # Returns [(key, name, path), ...]
+    local_styles = list_local_csl_files()
     
     if local_styles:
         for i, (key, name, _) in enumerate(local_styles, 1):
-            marker = " (current)" if key == defaults['citation_style'] else ""
+            marker = " (current)" if key == defaults.get('citation_style') else ""
             print(box_row(f"{i:2}) {name}{marker}"))
         print(box_row(f"{len(local_styles)+1:2}) Download by Zotero style ID or URL"))
     else:
@@ -808,7 +1149,6 @@ def configure_defaults() -> None:
             if local_styles and 0 <= idx < len(local_styles):
                 defaults['citation_style'] = local_styles[idx][0]
             elif idx == len(local_styles) if local_styles else idx == 0:
-                # Download option
                 print("│   Find styles at: https://www.zotero.org/styles")
                 ident = input("│  Enter Zotero style ID or URL: ").strip()
                 if ident:
@@ -819,6 +1159,103 @@ def configure_defaults() -> None:
         except (ValueError, IndexError):
             pass
     
+    print()
+    
+    # Typography settings (PDF only)
+    print(box_top("Typography Settings (PDF only)"))
+    print(box_row("These override profile defaults for PDF output"))
+    print(box_row(""))
+    
+    # Line spacing
+    spacing_list = list(LINE_SPACING_PRESETS.items())
+    print(box_row("Line Spacing:"))
+    print(box_row("  0) Profile Default"))
+    for i, (key, info) in enumerate(spacing_list, 1):
+        marker = " (current)" if key == defaults.get('linespacing') else ""
+        print(box_row(f"  {i}) {info['name']}{marker}"))
+    spacing_choice = input("│  Select line spacing [0-5, Enter=keep current]: ").strip()
+    if spacing_choice:
+        try:
+            spacing_idx = int(spacing_choice)
+            if spacing_idx == 0:
+                defaults['linespacing'] = ""
+            elif spacing_idx > 0:
+                defaults['linespacing'] = spacing_list[spacing_idx - 1][0]
+        except (ValueError, IndexError):
+            pass
+    
+    # Paragraph style
+    print(box_row(""))
+    print(box_row("Paragraph Style:"))
+    cur_ps = defaults.get('paragraph_style', '')
+    print(box_row(f"  0) Profile Default{' (current)' if not cur_ps else ''}"))
+    print(box_row(f"  1) Indented (American){' (current)' if cur_ps == 'indent' else ''}"))
+    print(box_row(f"  2) Gap (European){' (current)' if cur_ps == 'gap' else ''}"))
+    print(box_row(f"  3) Gap + Indent (Both){' (current)' if cur_ps == 'both' else ''}"))
+    para_choice = input("│  Select paragraph style [0-3, Enter=keep current]: ").strip()
+    if para_choice:
+        if para_choice == "0":
+            defaults['paragraph_style'] = ""
+        elif para_choice == "1":
+            defaults['paragraph_style'] = "indent"
+        elif para_choice == "2":
+            defaults['paragraph_style'] = "gap"
+        elif para_choice == "3":
+            defaults['paragraph_style'] = "both"
+    
+    # Line numbers
+    print(box_row(""))
+    cur_ln = defaults.get('linenumbers')
+    print(box_row("Line Numbers:"))
+    print(box_row(f"  0) Profile Default{' (current)' if cur_ln is None else ''}"))
+    print(box_row(f"  1) Enable{' (current)' if cur_ln is True else ''}"))
+    print(box_row(f"  2) Disable{' (current)' if cur_ln is False else ''}"))
+    ln_choice = input("│  Select line numbers [0-2, Enter=keep current]: ").strip()
+    if ln_choice:
+        if ln_choice == "0":
+            defaults['linenumbers'] = None
+        elif ln_choice == "1":
+            defaults['linenumbers'] = True
+        elif ln_choice == "2":
+            defaults['linenumbers'] = False
+    
+    # Numbered headings
+    print(box_row(""))
+    cur_nh = defaults.get('numbered_headings')
+    print(box_row("Numbered Headings:"))
+    print(box_row(f"  0) Profile Default{' (current)' if cur_nh is None else ''}"))
+    print(box_row(f"  1) Numbered{' (current)' if cur_nh is True else ''}"))
+    print(box_row(f"  2) Unnumbered{' (current)' if cur_nh is False else ''}"))
+    nh_choice = input("│  Select heading numbering [0-2, Enter=keep current]: ").strip()
+    if nh_choice:
+        if nh_choice == "0":
+            defaults['numbered_headings'] = None
+        elif nh_choice == "1":
+            defaults['numbered_headings'] = True
+        elif nh_choice == "2":
+            defaults['numbered_headings'] = False
+    
+    # Language
+    print(box_row(""))
+    lang_list = list(LANGUAGE_PRESETS.items())
+    cur_lang = defaults.get('language', '')
+    print(box_row("Document Language:"))
+    print(box_row(f"  0) Profile Default{' (current)' if not cur_lang else ''}"))
+    for i, (key, name) in enumerate(lang_list, 1):
+        marker = " (current)" if key == cur_lang else ""
+        print(box_row(f"  {i}) {name}{marker}"))
+    lang_choice = input(f"│  Select language [0-{len(lang_list)}, Enter=keep current]: ").strip()
+    if lang_choice:
+        try:
+            lang_idx = int(lang_choice)
+            if lang_idx == 0:
+                defaults['language'] = ""
+            elif lang_idx > 0:
+                defaults['language'] = lang_list[lang_idx - 1][0]
+        except (ValueError, IndexError):
+            pass
+    
+    print(box_bottom())
     print()
     save_defaults(defaults)
     print("✓ Defaults saved successfully!")
@@ -992,6 +1429,11 @@ def interactive_menu() -> Dict[str, Any]:
         "font": defaults.get('font'),
         "fontsize": defaults.get('fontsize'),
         "citation_style": defaults.get('citation_style'),
+        "linespacing": defaults.get('linespacing') or None,
+        "paragraph_style": defaults.get('paragraph_style') or None,
+        "linenumbers": defaults.get('linenumbers'),
+        "numbered_headings": defaults.get('numbered_headings'),
+        "language": defaults.get('language') or None,
     }
 
 
@@ -1024,6 +1466,11 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         "font": None,
         "fontsize": None,
         "citation_style": None,
+        "linespacing": None,
+        "paragraph_style": None,
+        "linenumbers": None,
+        "numbered_headings": None,
+        "language": None,
     }
     
     for arg in args:
@@ -1042,6 +1489,20 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         elif arg.startswith("--si-file="):
             config["si_file"] = arg.split("=", 1)[1]
             config["include_si_refs"] = True
+        elif arg.startswith("--linespacing="):
+            config["linespacing"] = arg.split("=", 1)[1]
+        elif arg.startswith("--paragraph-style="):
+            config["paragraph_style"] = arg.split("=", 1)[1]
+        elif arg == "--linenumbers":
+            config["linenumbers"] = True
+        elif arg == "--no-linenumbers":
+            config["linenumbers"] = False
+        elif arg == "--numbered-headings":
+            config["numbered_headings"] = True
+        elif arg == "--no-numbered-headings":
+            config["numbered_headings"] = False
+        elif arg.startswith("--lang="):
+            config["language"] = arg.split("=", 1)[1]
         elif arg == "--png":
             config["use_png"] = True
         elif arg == "--include-si-refs":
@@ -1064,6 +1525,9 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
 def print_help():
     """Print help message."""
     font_list = ", ".join(FONT_PRESETS.keys())
+    spacing_list = ", ".join(LINE_SPACING_PRESETS.keys())
+    para_list = ", ".join(PARAGRAPH_STYLE_PRESETS.keys())
+    lang_list = ", ".join(LANGUAGE_PRESETS.keys())
     # Get installed citation styles or show placeholder
     local_styles = list_local_csl_files()
     style_list = ", ".join(k for k, _, _ in local_styles) if local_styles else "install from zotero.org/styles"
@@ -1082,6 +1546,13 @@ Options:
   --profile=NAME             Use specific profile (e.g., --profile=pdf-nature)
   --font=NAME                Override font ({font_list})
   --fontsize=SIZE            Override font size (9pt, 10pt, 11pt, 12pt)
+  --linespacing=NAME         Override line spacing ({spacing_list})
+  --paragraph-style=NAME     Override paragraph style ({para_list})
+  --linenumbers              Enable line numbers
+  --no-linenumbers           Disable line numbers
+  --numbered-headings        Enable numbered headings
+  --no-numbered-headings     Disable numbered headings
+  --lang=CODE                Set document language ({lang_list})
   --csl=STYLE                Use citation style (installed: {style_list})
   --png                      Convert PDF figures to PNG (for DOCX)
   --include-si-refs          Include SI citations in bibliography
@@ -1148,6 +1619,11 @@ def main():
         config.get("citation_style"),
         config.get("si_file"),
         config.get("is_si", False),
+        config.get("linespacing"),
+        config.get("paragraph_style"),
+        config.get("linenumbers"),
+        config.get("numbered_headings"),
+        config.get("language"),
     )
     
     print()

@@ -39,6 +39,11 @@ interface BuildConfig {
 	font: string;
 	fontSize: string;
 	citationStyle: string;
+	lineSpacing: string;
+	paragraphStyle: string;
+	lineNumbers: boolean | null;
+	numberedHeadings: boolean | null;
+	language: string;
 }
 
 interface ProfileInfo {
@@ -56,7 +61,7 @@ const DEFAULT_SETTINGS: ManuscriptBuildSettings = {
 	pythonPath: "python3",
 	buildScriptPath: "build.py",
 	defaultProfile: "pdf-default",
-	defaultFont: "libertinus",
+	defaultFont: "",
 	defaultFontSize: "11pt",
 	defaultCitationStyle: "vancouver",
 	showNotifications: true,
@@ -65,6 +70,12 @@ const DEFAULT_SETTINGS: ManuscriptBuildSettings = {
 
 const FONT_PRESETS: Record<string, string> = {
 	libertinus: "Libertinus (Default)",
+	"libertinus-serif": "Libertinus Serif",
+	"libertinus-sans": "Libertinus Sans",
+	inter: "Inter",
+	"ibm-plex-sans": "IBM Plex Sans",
+	"ibm-plex-serif": "IBM Plex Serif",
+	switzer: "Switzer",
 	times: "Times/TeX Gyre Termes",
 	palatino: "Palatino/TeX Gyre Pagella",
 	arial: "Arial",
@@ -74,6 +85,40 @@ const FONT_PRESETS: Record<string, string> = {
 };
 
 const FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"];
+
+// Line spacing presets
+const LINE_SPACING_PRESETS: Record<string, string> = {
+	"": "Profile Default",
+	single: "Single (1.0)",
+	compact: "Compact (1.15)",
+	normal: "Normal (1.25)",
+	relaxed: "Relaxed (1.5)",
+	double: "Double (2.0)",
+};
+
+// Paragraph style presets
+const PARAGRAPH_STYLE_PRESETS: Record<string, string> = {
+	"": "Profile Default",
+	indent: "Indented (American)",
+	gap: "Gap (European)",
+	both: "Gap + Indent (Both)",
+};
+
+// Language presets
+const LANGUAGE_PRESETS: Record<string, string> = {
+	"": "Default (English)",
+	en: "English",
+	de: "German (Deutsch)",
+	fr: "French (Français)",
+	es: "Spanish (Español)",
+	it: "Italian (Italiano)",
+	pt: "Portuguese (Português)",
+	nl: "Dutch (Nederlands)",
+	pl: "Polish (Polski)",
+	ru: "Russian (Русский)",
+	zh: "Chinese (中文)",
+	ja: "Japanese (日本語)",
+};
 
 // Citation styles are loaded dynamically from resources/citation_styles/
 // This is a fallback map for display names of common styles
@@ -314,6 +359,11 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			font: this.settings.defaultFont,
 			fontSize: this.settings.defaultFontSize,
 			citationStyle: this.settings.defaultCitationStyle,
+			lineSpacing: "",
+			paragraphStyle: "",
+			lineNumbers: null,
+			numberedHeadings: null,
+			language: "",
 		};
 		this.executeBuild(config);
 	}
@@ -333,9 +383,14 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					includeSiRefs: data.include_si_refs || false,
 					siFile: data.si_file || null,
 					isSi: data.is_si || false,
-					font: data.font || this.settings.defaultFont,
+					font: data.font !== undefined ? data.font : this.settings.defaultFont,
 					fontSize: data.fontsize || this.settings.defaultFontSize,
 					citationStyle: data.citation_style || this.settings.defaultCitationStyle,
+					lineSpacing: data.linespacing || "",
+					paragraphStyle: data.paragraph_style || "",
+					lineNumbers: data.linenumbers !== undefined ? data.linenumbers : null,
+					numberedHeadings: data.numbered_headings !== undefined ? data.numbered_headings : null,
+					language: data.language || "",
 				};
 			}
 		} catch (e) {
@@ -435,6 +490,30 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			args.push(`--fontsize=${config.fontSize}`);
 		}
 
+		if (config.lineSpacing) {
+			args.push(`--linespacing=${config.lineSpacing}`);
+		}
+
+		if (config.paragraphStyle) {
+			args.push(`--paragraph-style=${config.paragraphStyle}`);
+		}
+
+		if (config.lineNumbers === true) {
+			args.push("--linenumbers");
+		} else if (config.lineNumbers === false) {
+			args.push("--no-linenumbers");
+		}
+
+		if (config.numberedHeadings === true) {
+			args.push("--numbered-headings");
+		} else if (config.numberedHeadings === false) {
+			args.push("--no-numbered-headings");
+		}
+
+		if (config.language) {
+			args.push(`--lang=${config.language}`);
+		}
+
 		if (config.citationStyle) {
 			args.push(`--csl=${config.citationStyle}`);
 		}
@@ -476,6 +555,11 @@ class BuildModal extends Modal {
 	private profileDropdown: DropdownComponent;
 	private fontDropdown: DropdownComponent;
 	private fontSizeDropdown: DropdownComponent;
+	private lineSpacingDropdown: DropdownComponent;
+	private paragraphStyleDropdown: DropdownComponent;
+	private lineNumbersDropdown: DropdownComponent;
+	private numberedHeadingsDropdown: DropdownComponent;
+	private languageDropdown: DropdownComponent;
 	private citationDropdown: DropdownComponent;
 	private siRefsToggle: ToggleComponent;
 	private siFileDropdown: DropdownComponent;
@@ -504,6 +588,11 @@ class BuildModal extends Modal {
 				font: plugin.settings.defaultFont,
 				fontSize: plugin.settings.defaultFontSize,
 				citationStyle: plugin.settings.defaultCitationStyle,
+				lineSpacing: "",
+				paragraphStyle: "",
+				lineNumbers: null,
+				numberedHeadings: null,
+				language: "",
 			};
 		}
 	}
@@ -635,10 +724,11 @@ class BuildModal extends Modal {
 			.setDesc("Document typeface")
 			.addDropdown((dropdown) => {
 				this.fontDropdown = dropdown;
+				dropdown.addOption("", "Profile Default");
 				Object.entries(FONT_PRESETS).forEach(([key, name]) => {
 					dropdown.addOption(key, name);
 				});
-				dropdown.setValue(this.config.font);
+				dropdown.setValue(this.config.font || "");
 				dropdown.onChange((value) => {
 					this.config.font = value;
 				});
@@ -656,6 +746,91 @@ class BuildModal extends Modal {
 				dropdown.setValue(this.config.fontSize);
 				dropdown.onChange((value) => {
 					this.config.fontSize = value;
+				});
+			});
+
+		// Line spacing
+		new Setting(contentEl)
+			.setName("Line Spacing")
+			.setDesc("Override line spacing (leave as Profile Default to use profile setting)")
+			.addDropdown((dropdown) => {
+				this.lineSpacingDropdown = dropdown;
+				Object.entries(LINE_SPACING_PRESETS).forEach(([key, name]) => {
+					dropdown.addOption(key, name);
+				});
+				dropdown.setValue(this.config.lineSpacing);
+				dropdown.onChange((value) => {
+					this.config.lineSpacing = value;
+				});
+			});
+
+		// Paragraph style
+		new Setting(contentEl)
+			.setName("Paragraph Style")
+			.setDesc("Indented, Gap, or Both")
+			.addDropdown((dropdown) => {
+				this.paragraphStyleDropdown = dropdown;
+				Object.entries(PARAGRAPH_STYLE_PRESETS).forEach(([key, name]) => {
+					dropdown.addOption(key, name);
+				});
+				dropdown.setValue(this.config.paragraphStyle);
+				dropdown.onChange((value) => {
+					this.config.paragraphStyle = value;
+				});
+			});
+
+		// Line numbers
+		new Setting(contentEl)
+			.setName("Line Numbers")
+			.setDesc("Override line numbering (three-state: Profile Default / On / Off)")
+			.addDropdown((dropdown) => {
+				this.lineNumbersDropdown = dropdown;
+				dropdown.addOption("default", "Profile Default");
+				dropdown.addOption("on", "On");
+				dropdown.addOption("off", "Off");
+				const currentValue = this.config.lineNumbers === null ? "default" : (this.config.lineNumbers ? "on" : "off");
+				dropdown.setValue(currentValue);
+				dropdown.onChange((value) => {
+					if (value === "default") {
+						this.config.lineNumbers = null;
+					} else {
+						this.config.lineNumbers = value === "on";
+					}
+				});
+			});
+
+		// Numbered headings
+		new Setting(contentEl)
+			.setName("Numbered Headings")
+			.setDesc("Override heading numbering (three-state: Profile Default / On / Off)")
+			.addDropdown((dropdown) => {
+				this.numberedHeadingsDropdown = dropdown;
+				dropdown.addOption("default", "Profile Default");
+				dropdown.addOption("on", "Numbered");
+				dropdown.addOption("off", "Unnumbered");
+				const currentValue = this.config.numberedHeadings === null ? "default" : (this.config.numberedHeadings ? "on" : "off");
+				dropdown.setValue(currentValue);
+				dropdown.onChange((value) => {
+					if (value === "default") {
+						this.config.numberedHeadings = null;
+					} else {
+						this.config.numberedHeadings = value === "on";
+					}
+				});
+			});
+
+		// Language
+		new Setting(contentEl)
+			.setName("Document Language")
+			.setDesc("Set document language for hyphenation and localization")
+			.addDropdown((dropdown) => {
+				this.languageDropdown = dropdown;
+				Object.entries(LANGUAGE_PRESETS).forEach(([key, name]) => {
+					dropdown.addOption(key, name);
+				});
+				dropdown.setValue(this.config.language);
+				dropdown.onChange((value) => {
+					this.config.language = value;
 				});
 			});
 
@@ -782,6 +957,11 @@ class BuildModal extends Modal {
 		this.config.font = settings.defaultFont;
 		this.config.fontSize = settings.defaultFontSize;
 		this.config.citationStyle = settings.defaultCitationStyle;
+		this.config.lineSpacing = "";
+		this.config.paragraphStyle = "";
+		this.config.lineNumbers = null;
+		this.config.numberedHeadings = null;
+		this.config.language = "";
 		this.config.usePng = false;
 		this.config.includeSiRefs = false;
 		this.config.isSi = false;
@@ -808,6 +988,11 @@ class BuildModal extends Modal {
 		this.profileDropdown?.setValue(this.config.profile);
 		this.fontDropdown?.setValue(this.config.font);
 		this.fontSizeDropdown?.setValue(this.config.fontSize);
+		this.lineSpacingDropdown?.setValue(this.config.lineSpacing);
+		this.paragraphStyleDropdown?.setValue(this.config.paragraphStyle);
+		this.lineNumbersDropdown?.setValue("default");
+		this.numberedHeadingsDropdown?.setValue("default");
+		this.languageDropdown?.setValue(this.config.language);
 		this.citationDropdown?.setValue(this.config.citationStyle);
 		this.pngToggle?.setValue(this.config.usePng);
 		this.siRefsToggle?.setValue(this.config.includeSiRefs);
@@ -1008,10 +1193,11 @@ class ManuscriptBuildSettingTab extends PluginSettingTab {
 			.setName("Default Font")
 			.setDesc("Default typeface for PDF builds")
 			.addDropdown((dropdown) => {
+				dropdown.addOption("", "Profile Default");
 				Object.entries(FONT_PRESETS).forEach(([key, name]) => {
 					dropdown.addOption(key, name);
 				});
-				dropdown.setValue(this.plugin.settings.defaultFont);
+				dropdown.setValue(this.plugin.settings.defaultFont || "");
 				dropdown.onChange(async (value) => {
 					this.plugin.settings.defaultFont = value;
 					await this.plugin.saveSettings();

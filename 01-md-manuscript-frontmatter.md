@@ -2,7 +2,7 @@
 \mdtwocolumnstart
 ```
 
-# Manuscript Title {.unnumbered}
+# \huge Manuscript Title {.unnumbered}
 
 ::: {custom-style="FrontMatter"}
 `\setlength{\parindent}{0pt}`{=latex}

@@ -90,6 +90,7 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 </details>
 
 ### Font Installation
+Install the fonts you would like to use:
 
 <details>
 <summary>Libertinus (Default)</summary>
@@ -99,6 +100,37 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 - **Linux (Arch):** `sudo pacman -S otf-libertinus`
 - **Linux (Other):** Install from [GitHub releases](https://github.com/alerque/libertinus/releases)
 - **Windows:** Download from [GitHub releases](https://github.com/alerque/libertinus/releases)
+
+</details>
+
+<details>
+<summary>Inter (Notes profile default)</summary>
+
+- **macOS:** `brew install --cask font-inter`
+- **Linux (Debian/Ubuntu):** Install from [Inter releases](https://github.com/rsms/inter/releases)
+- **Linux (Arch):** `sudo pacman -S ttf-inter`
+- **Windows:** Install from [Inter releases](https://github.com/rsms/inter/releases)
+
+</details>
+
+<details>
+<summary>IBM Plex (Sans/Mono)</summary>
+
+- **macOS:** `brew install --cask font-ibm-plex-sans font-ibm-plex-mono`
+- **Linux (Debian/Ubuntu):** Install from [IBM Plex releases](https://github.com/IBM/plex/releases)
+- **Linux (Arch):** `sudo pacman -S ttf-ibm-plex`
+- **Windows:** Install from [IBM Plex releases](https://github.com/IBM/plex/releases)
+
+</details>
+
+<details>
+<summary>Switzer</summary>
+
+- **macOS:** Install manually (not available via Homebrew):
+  1. Download from [Fontshare](https://www.fontshare.com/fonts/switzer)
+  2. Install the `.otf` files (Font Book)
+- **Linux:** Install from [Fontshare](https://www.fontshare.com/fonts/switzer)
+- **Windows:** Install from [Fontshare](https://www.fontshare.com/fonts/switzer)
 
 </details>
 

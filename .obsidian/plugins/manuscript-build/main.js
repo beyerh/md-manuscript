@@ -44,7 +44,7 @@ var DEFAULT_SETTINGS = {
   pythonPath: "python3",
   buildScriptPath: "build.py",
   defaultProfile: "pdf-default",
-  defaultFont: "libertinus",
+  defaultFont: "",
   defaultFontSize: "11pt",
   defaultCitationStyle: "vancouver",
   showNotifications: true,
@@ -52,6 +52,12 @@ var DEFAULT_SETTINGS = {
 };
 var FONT_PRESETS = {
   libertinus: "Libertinus (Default)",
+  "libertinus-serif": "Libertinus Serif",
+  "libertinus-sans": "Libertinus Sans",
+  inter: "Inter",
+  "ibm-plex-sans": "IBM Plex Sans",
+  "ibm-plex-serif": "IBM Plex Serif",
+  switzer: "Switzer",
   times: "Times/TeX Gyre Termes",
   palatino: "Palatino/TeX Gyre Pagella",
   arial: "Arial",
@@ -60,6 +66,34 @@ var FONT_PRESETS = {
   "computer-modern": "Computer Modern (LaTeX default)"
 };
 var FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"];
+var LINE_SPACING_PRESETS = {
+  "": "Profile Default",
+  single: "Single (1.0)",
+  compact: "Compact (1.15)",
+  normal: "Normal (1.25)",
+  relaxed: "Relaxed (1.5)",
+  double: "Double (2.0)"
+};
+var PARAGRAPH_STYLE_PRESETS = {
+  "": "Profile Default",
+  indent: "Indented (American)",
+  gap: "Gap (European)",
+  both: "Gap + Indent (Both)"
+};
+var LANGUAGE_PRESETS = {
+  "": "Default (English)",
+  en: "English",
+  de: "German (Deutsch)",
+  fr: "French (Fran\xE7ais)",
+  es: "Spanish (Espa\xF1ol)",
+  it: "Italian (Italiano)",
+  pt: "Portuguese (Portugu\xEAs)",
+  nl: "Dutch (Nederlands)",
+  pl: "Polish (Polski)",
+  ru: "Russian (\u0420\u0443\u0441\u0441\u043A\u0438\u0439)",
+  zh: "Chinese (\u4E2D\u6587)",
+  ja: "Japanese (\u65E5\u672C\u8A9E)"
+};
 var CITATION_STYLE_NAMES = {
   vancouver: "Vancouver",
   nature: "Nature",
@@ -241,7 +275,12 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       isSi: false,
       font: this.settings.defaultFont,
       fontSize: this.settings.defaultFontSize,
-      citationStyle: this.settings.defaultCitationStyle
+      citationStyle: this.settings.defaultCitationStyle,
+      lineSpacing: "",
+      paragraphStyle: "",
+      lineNumbers: null,
+      numberedHeadings: null,
+      language: ""
     };
     this.executeBuild(config);
   }
@@ -260,9 +299,14 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           includeSiRefs: data.include_si_refs || false,
           siFile: data.si_file || null,
           isSi: data.is_si || false,
-          font: data.font || this.settings.defaultFont,
+          font: data.font !== void 0 ? data.font : this.settings.defaultFont,
           fontSize: data.fontsize || this.settings.defaultFontSize,
-          citationStyle: data.citation_style || this.settings.defaultCitationStyle
+          citationStyle: data.citation_style || this.settings.defaultCitationStyle,
+          lineSpacing: data.linespacing || "",
+          paragraphStyle: data.paragraph_style || "",
+          lineNumbers: data.linenumbers !== void 0 ? data.linenumbers : null,
+          numberedHeadings: data.numbered_headings !== void 0 ? data.numbered_headings : null,
+          language: data.language || ""
         };
       }
     } catch (e) {
@@ -345,6 +389,25 @@ Error: ${err.message}`, true);
     if (config.fontSize) {
       args.push(`--fontsize=${config.fontSize}`);
     }
+    if (config.lineSpacing) {
+      args.push(`--linespacing=${config.lineSpacing}`);
+    }
+    if (config.paragraphStyle) {
+      args.push(`--paragraph-style=${config.paragraphStyle}`);
+    }
+    if (config.lineNumbers === true) {
+      args.push("--linenumbers");
+    } else if (config.lineNumbers === false) {
+      args.push("--no-linenumbers");
+    }
+    if (config.numberedHeadings === true) {
+      args.push("--numbered-headings");
+    } else if (config.numberedHeadings === false) {
+      args.push("--no-numbered-headings");
+    }
+    if (config.language) {
+      args.push(`--lang=${config.language}`);
+    }
     if (config.citationStyle) {
       args.push(`--csl=${config.citationStyle}`);
     }
@@ -384,7 +447,12 @@ var BuildModal = class extends import_obsidian.Modal {
         isSi: false,
         font: plugin.settings.defaultFont,
         fontSize: plugin.settings.defaultFontSize,
-        citationStyle: plugin.settings.defaultCitationStyle
+        citationStyle: plugin.settings.defaultCitationStyle,
+        lineSpacing: "",
+        paragraphStyle: "",
+        lineNumbers: null,
+        numberedHeadings: null,
+        language: ""
       };
     }
   }
@@ -469,10 +537,11 @@ var BuildModal = class extends import_obsidian.Modal {
     this.createSectionHeader(contentEl, "Typography");
     new import_obsidian.Setting(contentEl).setName("Font").setDesc("Document typeface").addDropdown((dropdown) => {
       this.fontDropdown = dropdown;
+      dropdown.addOption("", "Profile Default");
       Object.entries(FONT_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
       });
-      dropdown.setValue(this.config.font);
+      dropdown.setValue(this.config.font || "");
       dropdown.onChange((value) => {
         this.config.font = value;
       });
@@ -485,6 +554,66 @@ var BuildModal = class extends import_obsidian.Modal {
       dropdown.setValue(this.config.fontSize);
       dropdown.onChange((value) => {
         this.config.fontSize = value;
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Line Spacing").setDesc("Override line spacing (leave as Profile Default to use profile setting)").addDropdown((dropdown) => {
+      this.lineSpacingDropdown = dropdown;
+      Object.entries(LINE_SPACING_PRESETS).forEach(([key, name]) => {
+        dropdown.addOption(key, name);
+      });
+      dropdown.setValue(this.config.lineSpacing);
+      dropdown.onChange((value) => {
+        this.config.lineSpacing = value;
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Paragraph Style").setDesc("Indented, Gap, or Both").addDropdown((dropdown) => {
+      this.paragraphStyleDropdown = dropdown;
+      Object.entries(PARAGRAPH_STYLE_PRESETS).forEach(([key, name]) => {
+        dropdown.addOption(key, name);
+      });
+      dropdown.setValue(this.config.paragraphStyle);
+      dropdown.onChange((value) => {
+        this.config.paragraphStyle = value;
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Line Numbers").setDesc("Override line numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+      this.lineNumbersDropdown = dropdown;
+      dropdown.addOption("default", "Profile Default");
+      dropdown.addOption("on", "On");
+      dropdown.addOption("off", "Off");
+      const currentValue = this.config.lineNumbers === null ? "default" : this.config.lineNumbers ? "on" : "off";
+      dropdown.setValue(currentValue);
+      dropdown.onChange((value) => {
+        if (value === "default") {
+          this.config.lineNumbers = null;
+        } else {
+          this.config.lineNumbers = value === "on";
+        }
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Numbered Headings").setDesc("Override heading numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+      this.numberedHeadingsDropdown = dropdown;
+      dropdown.addOption("default", "Profile Default");
+      dropdown.addOption("on", "Numbered");
+      dropdown.addOption("off", "Unnumbered");
+      const currentValue = this.config.numberedHeadings === null ? "default" : this.config.numberedHeadings ? "on" : "off";
+      dropdown.setValue(currentValue);
+      dropdown.onChange((value) => {
+        if (value === "default") {
+          this.config.numberedHeadings = null;
+        } else {
+          this.config.numberedHeadings = value === "on";
+        }
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Document Language").setDesc("Set document language for hyphenation and localization").addDropdown((dropdown) => {
+      this.languageDropdown = dropdown;
+      Object.entries(LANGUAGE_PRESETS).forEach(([key, name]) => {
+        dropdown.addOption(key, name);
+      });
+      dropdown.setValue(this.config.language);
+      dropdown.onChange((value) => {
+        this.config.language = value;
       });
     });
     this.createSectionHeader(contentEl, "Citations");
@@ -559,13 +688,18 @@ var BuildModal = class extends import_obsidian.Modal {
     });
   }
   restoreDefaults() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
     const mdFiles = this.plugin.getMarkdownFiles();
     const settings = this.plugin.settings;
     this.config.profile = settings.defaultProfile;
     this.config.font = settings.defaultFont;
     this.config.fontSize = settings.defaultFontSize;
     this.config.citationStyle = settings.defaultCitationStyle;
+    this.config.lineSpacing = "";
+    this.config.paragraphStyle = "";
+    this.config.lineNumbers = null;
+    this.config.numberedHeadings = null;
+    this.config.language = "";
     this.config.usePng = false;
     this.config.includeSiRefs = false;
     this.config.isSi = false;
@@ -583,11 +717,16 @@ var BuildModal = class extends import_obsidian.Modal {
     (_d = this.profileDropdown) == null ? void 0 : _d.setValue(this.config.profile);
     (_e = this.fontDropdown) == null ? void 0 : _e.setValue(this.config.font);
     (_f = this.fontSizeDropdown) == null ? void 0 : _f.setValue(this.config.fontSize);
-    (_g = this.citationDropdown) == null ? void 0 : _g.setValue(this.config.citationStyle);
-    (_h = this.pngToggle) == null ? void 0 : _h.setValue(this.config.usePng);
-    (_i = this.siRefsToggle) == null ? void 0 : _i.setValue(this.config.includeSiRefs);
-    (_j = this.siFileDropdown) == null ? void 0 : _j.setValue(this.config.siFile || "");
-    (_k = this.isSiToggle) == null ? void 0 : _k.setValue(this.config.isSi);
+    (_g = this.lineSpacingDropdown) == null ? void 0 : _g.setValue(this.config.lineSpacing);
+    (_h = this.paragraphStyleDropdown) == null ? void 0 : _h.setValue(this.config.paragraphStyle);
+    (_i = this.lineNumbersDropdown) == null ? void 0 : _i.setValue("default");
+    (_j = this.numberedHeadingsDropdown) == null ? void 0 : _j.setValue("default");
+    (_k = this.languageDropdown) == null ? void 0 : _k.setValue(this.config.language);
+    (_l = this.citationDropdown) == null ? void 0 : _l.setValue(this.config.citationStyle);
+    (_m = this.pngToggle) == null ? void 0 : _m.setValue(this.config.usePng);
+    (_n = this.siRefsToggle) == null ? void 0 : _n.setValue(this.config.includeSiRefs);
+    (_o = this.siFileDropdown) == null ? void 0 : _o.setValue(this.config.siFile || "");
+    (_p = this.isSiToggle) == null ? void 0 : _p.setValue(this.config.isSi);
     this.updateFormatOptions(currentFormat);
     this.siFileContainer.style.display = "none";
     new import_obsidian.Notice("Settings restored to defaults");
@@ -705,10 +844,11 @@ var ManuscriptBuildSettingTab = class extends import_obsidian.PluginSettingTab {
       });
     });
     new import_obsidian.Setting(containerEl).setName("Default Font").setDesc("Default typeface for PDF builds").addDropdown((dropdown) => {
+      dropdown.addOption("", "Profile Default");
       Object.entries(FONT_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
       });
-      dropdown.setValue(this.plugin.settings.defaultFont);
+      dropdown.setValue(this.plugin.settings.defaultFont || "");
       dropdown.onChange(async (value) => {
         this.plugin.settings.defaultFont = value;
         await this.plugin.saveSettings();

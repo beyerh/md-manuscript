@@ -108,7 +108,7 @@ Install the fonts you would like to use:
 
 - **macOS:** `brew install --cask font-inter`
 - **Linux (Debian/Ubuntu):** Install from [Inter releases](https://github.com/rsms/inter/releases)
-- **Linux (Arch):** `sudo pacman -S ttf-inter`
+- **Linux (Arch):** `sudo pacman -S inter-font`
 - **Windows:** Install from [Inter releases](https://github.com/rsms/inter/releases)
 
 </details>
@@ -118,7 +118,7 @@ Install the fonts you would like to use:
 
 - **macOS:** `brew install --cask font-ibm-plex-sans font-ibm-plex-mono`
 - **Linux (Debian/Ubuntu):** Install from [IBM Plex releases](https://github.com/IBM/plex/releases)
-- **Linux (Arch):** `sudo pacman -S ttf-ibm-plex`
+- **Linux (Arch):** `sudo pacman -S otf-ibm-plex`
 - **Windows:** Install from [IBM Plex releases](https://github.com/IBM/plex/releases)
 
 </details>

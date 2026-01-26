@@ -5,7 +5,7 @@ Write scientific manuscripts and theses in Markdown and export to Word and PDF u
 ## Quick Start
 
 **Using Obsidian (recommended):**
-1. Open this folder as an Obsidian vault
+1. [Download](https://github.com/beyerh/md-manuscript/archive/refs/heads/main.zip), extract, and open this folder as an Obsidian vault
 2. Click the **Build** icon in the left ribbon
 3. Configure options and click Build (Defaults in the plugin settings)
 <img src="/figures/plugin_button.jpg" alt="drawing" width="500"/>
@@ -24,6 +24,7 @@ Both methods support:
 ## Installation
 
 ### Required Tools
+- **Obsidian** (Markdown editor)
 - **Python 3.6+** (to run the build script)
 - **Pandoc** (document conversion)
 - **pandoc-crossref** (figure/table cross-references)
@@ -32,7 +33,7 @@ Both methods support:
 - **Fonts** (below)
 
 ### Platform Installation
-Install Obsidian for your system and the following dependencies:
+Install [Obsidian](https://www.obsidian.md/) for your system and the following dependencies:
 
 <details>
 <summary>macOS</summary>
@@ -42,7 +43,7 @@ Install Obsidian for your system and the following dependencies:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install required packages
-brew install python3 pandoc pandoc-crossref imagemagick tectonic
+brew install python3 pandoc pandoc-crossref imagemagick tectonic git
 
 # Install Libertinus font (default font)
 brew install --cask font-libertinus
@@ -55,7 +56,7 @@ brew install --cask font-libertinus
 
 ```bash
 sudo apt update
-sudo apt install python3 pandoc imagemagick fonts-linuxlibertine
+sudo apt install python3 pandoc imagemagick fonts-linuxlibertine git
 
 # Install pandoc-crossref from GitHub (not available in apt)
 wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.18.0/pandoc-crossref-Linux.tar.xz
@@ -72,7 +73,7 @@ sudo chmod +x /usr/local/bin/pandoc-crossref
 <summary>Linux (Arch)</summary>
 
 ```bash
-sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
+sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus git
 ```
 
 </details>
@@ -80,13 +81,29 @@ sudo pacman -S python pandoc pandoc-crossref imagemagick tectonic otf-libertinus
 <details>
 <summary>Windows</summary>
 
-1. Install Python from [python.org](https://www.python.org/downloads/)
-2. Install Pandoc from [pandoc.org](https://pandoc.org/installing.html)
-3. Install pandoc-crossref from [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases)
-4. Install ImageMagick from [imagemagick.org](https://imagemagick.org/script/download.php#windows)
-5. Install Tectonic from [tectonic-typesetting.github.io](https://tectonic-typesetting.github.io/install.html)
-6. Download and install Libertinus font from [GitHub releases](https://github.com/alerque/libertinus/releases)
+We use **Scoop** to manage all dependencies.
 
+### Install Scoop
+If you don't have Scoop, open **PowerShell** and run:
+
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+irm get.scoop.sh | iex
+```
+If you get an error regarding Administrator install, use:
+```powershell
+iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
+```
+
+### Install Dependencies
+Add bucket:
+```powershell
+scoop bucket add extras
+```
+Install packages:
+```powershell
+scoop install pandoc tectonic git python obsidian pandoc-crossref
+```
 </details>
 
 ### Font Installation

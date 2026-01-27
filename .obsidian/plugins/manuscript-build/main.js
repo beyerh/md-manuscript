@@ -314,8 +314,35 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
     }
     return null;
   }
+  saveBuildConfig(config) {
+    const fs = require("fs");
+    const configPath = path.join(this.getVaultPath(), ".build_config.json");
+    const data = {
+      source_file: config.sourceFile,
+      frontmatter_file: config.frontmatterFile,
+      profile: config.profile,
+      use_png: config.usePng,
+      include_si_refs: config.includeSiRefs,
+      si_file: config.siFile,
+      is_si: config.isSi,
+      font: config.font || null,
+      fontsize: config.fontSize,
+      citation_style: config.citationStyle,
+      linespacing: config.lineSpacing || null,
+      paragraph_style: config.paragraphStyle || null,
+      linenumbers: config.lineNumbers,
+      numbered_headings: config.numberedHeadings,
+      language: config.language || null
+    };
+    try {
+      fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.error("Failed to save build config:", e);
+    }
+  }
   executeBuild(config) {
     var _a, _b;
+    this.saveBuildConfig(config);
     const vaultPath = this.getVaultPath();
     const args = this.buildCommandArgs(config);
     if (this.settings.showNotifications) {

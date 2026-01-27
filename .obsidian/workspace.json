@@ -4,17 +4,23 @@
     "type": "split",
     "children": [
       {
-        "id": "84fa1cce55d67095",
+        "id": "6dc87753ae6bb7af",
         "type": "tabs",
         "children": [
           {
-            "id": "fe461a99f17e2066",
+            "id": "08ccd4533f6561a1",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false,
+                "annotationGutterFolded": false,
+                "annotationGutterWidth": 300
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "README"
             }
           }
         ]
@@ -152,12 +158,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of README"
             }
           }
         ],
@@ -180,15 +187,17 @@
       "manuscript-build:Build Manuscript": false
     }
   },
-  "active": "fe461a99f17e2066",
+  "active": "08ccd4533f6561a1",
   "lastOpenFiles": [
+    "README.md",
+    "WRITING.md",
+    "WRITING",
     "export/02-md-manuscript-maintext.pdf",
     "_temp_config.yaml",
     "_temp_02-md-manuscript-maintext_merged.md",
     "01-md-manuscript-frontmatter.md",
     "02-md-manuscript-maintext.md",
     "03-md-manuscript_supp_info.md",
-    "README.md",
     "export/~$-md-manuscript-maintext.docx",
     "export/02-md-manuscript-maintext.docx",
     "__pycache__/build.cpython-311.pyc",
@@ -204,9 +213,7 @@
     "md-manuscript-maintext.md",
     "md-thesis.md",
     "md-notes_technical.md",
-    "export",
     "Untitled 2.md",
-    "Untitled.md",
     "Untitled 1.md",
     "_debug_merged.md",
     "figures/plugin_button.png",

@@ -63,14 +63,19 @@ Fusce convallis metus id felis luctus adipiscing. Aliquam erat volutpat. Nam dui
 
 ## Figures and Tables
 
-![**Example Figure.** Lorem ipsum dolor sit amet, consectetur adipiscing elit.](figures/figure1.pdf){#fig:results width=100%}
+> [!figure] #fig:results width=100%
+> ![](figures/figure1.pdf)
+>
+> **Example Figure.** Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 
-Table: **Example Table.** Results summary. {#tbl:data}
+> [!table] #tbl:data width=80% align=left columns=0.25,0.45,0.30 colsep=4pt fontsize=footnotesize spacing=1.1
+>
+> **Example Table.** Results summary.
 
-| Group       | Mean (SD)  | P-value |
-| :---        | :---:      | :---:   |
-| Control     | 12.5 (1.2) | -       |
-| Treatment   | 18.2 (2.1) | < 0.05  |
+| Group     | Mean (SD)  | P-value |
+| :-------- | :--------: | :-----: |
+| Control   | 12.5 (1.2) |    -    |
+| Treatment | 18.2 (2.1) | < 0.05  |
 
 ## Statistical Analysis
 Curabitur malesuada erat sit amet massa. Fusce ac convallis erat, vel aliquet diam. The data is summarized in **@Fig:results** and **@Tbl:data** above.

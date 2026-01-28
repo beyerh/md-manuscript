@@ -43,6 +43,8 @@ variables:
   
   header-includes:
     - \usepackage{xcolor}
+    - \usepackage{pdflscape}
+    - \usepackage{adjustbox}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}
@@ -91,6 +93,15 @@ variables:
     # Caption styling
     - \usepackage{caption}
     - \captionsetup{labelfont={bf,color=accent},labelsep=colon,font=small}
+    # Table styling - smaller sans-serif font, better fit
+    - \usepackage{array}
+    - \usepackage{longtable}
+    - \usepackage{tabularx}
+    - \usepackage{seqsplit}
+    - |
+      \AtBeginEnvironment{longtable}{\small\sffamily\setlength{\tabcolsep}{3pt}}
+    - |
+      \renewcommand{\arraystretch}{1.0}
     # Better float placement
     - \renewcommand{\floatpagefraction}{0.8}
     - \renewcommand{\topfraction}{0.9}

@@ -32,6 +32,8 @@ variables:
   header-includes:
     - \usepackage{lineno}
     - \usepackage{xcolor}
+    - \usepackage{pdflscape}
+    - \usepackage{adjustbox}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}

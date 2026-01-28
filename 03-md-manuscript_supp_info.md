@@ -20,17 +20,25 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Representativ
 
 # Supplementary Figures
 
-![**Raw Western Blot Data.** This figure shows the unprocessed western blot data corresponding to **Figure 1** in the main manuscript.](figures/figure1.pdf){#fig:s1 width=90%}
+> [!figure] #fig:s1 width=90%
+> ![](figures/figure1.pdf)
+>
+> **Raw Western Blot Data.** This figure shows the unprocessed western blot data corresponding to **Figure 1** in the main manuscript.
 
 \newpage
 
-![**Title of Second Supplementary Figure.** Histology samples at 40x magnification.](figures/figure2.pdf){#fig:s2 width=90%}
+> [!figure] #fig:s2 width=90%
+> ![](figures/figure2.pdf)
+>
+> **Title of Second Supplementary Figure.** Histology samples at 40x magnification.
 
 \newpage
 
 # Supplementary Tables
 
-Table: **Primers used in this study.** Sequences are listed 5' to 3'. {#tbl:s1}
+> [!table] #tbl:s1
+>
+> **Primers used in this study.** Sequences are listed 5' to 3'.
 
 | Gene  | Forward Sequence | Reverse Sequence |
 | :---- | :--------------- | :--------------- |

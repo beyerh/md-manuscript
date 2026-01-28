@@ -2,5 +2,9 @@
   "cssTheme": "AnuPpuccin",
   "theme": "moonstone",
   "accentColor": "",
-  "baseFontSize": 18
+  "baseFontSize": 18,
+  "enabledCssSnippets": [
+    "obsidian-figure-callouts",
+    "obsidian-table-callouts"
+  ]
 }

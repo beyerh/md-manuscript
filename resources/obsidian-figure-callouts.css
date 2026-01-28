@@ -1,0 +1,89 @@
+/* Figure Callout Styling for Obsidian
+ * 
+ * Copy this file to your Obsidian vault's .obsidian/snippets/ folder
+ * Then enable it in Settings → Appearance → CSS Snippets
+ *
+ * Usage in Markdown:
+ * > [!figure] #fig:my-label
+ * > ![](path/to/image.pdf)
+ * >
+ * > This is my **caption** with *formatting* that you can see and edit.
+ */
+
+/* Style the figure callout */
+.callout[data-callout="figure"] {
+  --callout-color: 100, 100, 100;
+  --callout-icon: image;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 1.5em 0;
+}
+
+/* Hide the default callout title bar but keep content */
+.callout[data-callout="figure"] .callout-title {
+  display: none;
+}
+
+/* Style the callout content area */
+.callout[data-callout="figure"] .callout-content {
+  padding: 0;
+  background: transparent;
+}
+
+/* Center images within figure callouts */
+.callout[data-callout="figure"] .callout-content img {
+  display: block;
+  margin: 0 auto 0.8em auto;
+  max-width: 100%;
+}
+
+/* Style the caption text (paragraphs after the image) */
+.callout[data-callout="figure"] .callout-content > p:not(:first-child) {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  text-align: justify;
+  line-height: 1.4;
+  margin-top: 0.5em;
+  padding: 0 1em;
+  border-left: 3px solid var(--interactive-accent);
+}
+
+/* First paragraph (contains image) - no special styling */
+.callout[data-callout="figure"] .callout-content > p:first-child {
+  margin-bottom: 0;
+}
+
+/* Make the label visible as a small tag */
+.callout[data-callout="figure"] .callout-title-inner {
+  display: inline-block;
+  font-size: 0.75em;
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+  margin-bottom: 0.5em;
+}
+
+/* Alternative: Show full title bar but minimal */
+.callout[data-callout="figure"].show-title .callout-title {
+  display: flex;
+  background: transparent;
+  padding: 0.2em 0;
+  font-size: 0.8em;
+  color: var(--text-faint);
+}
+
+/* Reading mode adjustments */
+.markdown-reading-view .callout[data-callout="figure"] {
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Print/export adjustments */
+@media print {
+  .callout[data-callout="figure"] .callout-content > p:not(:first-child) {
+    border-left: none;
+    padding: 0;
+    font-size: 0.85em;
+  }
+}

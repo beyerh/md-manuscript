@@ -115,22 +115,37 @@ This is paragraph two.
 - Store in `figures/` folder
 - Caption goes **below** the figure
 - Reference with `**@Fig:label**`
+- Default width in PDF/LaTeX is full width (`\linewidth`); override with `width=...`
 
 ```markdown
-![**Figure Title.** Legend text describing the figure.](figures/image.pdf){#fig:label}
+> [!figure] #fig:label width=100% align=center
+> ![](figures/image.pdf)
+>
+> **Figure Title.** Legend text describing the figure.
 ```
 
 **To reference:** Use `**@Fig:label**` in text → renders as "Figure 1"
 
+**Options are optional to use, you can omit them and the defaults apply.**
+
+**Figure width options:**
+- `width=X` - LaTeX/PDF only. Supported: `100%`, `80%`, `\linewidth`, `\textwidth`, or numeric factors like `0.9\linewidth`, `0.9\textwidth`.
+
+**Figure alignment options:**
+- `align=left|center|right` - figure + caption alignment (LaTeX/PDF only).
+
 ### Tables
 
-- Caption goes **above** the table
+- Caption goes **above** the table (in a `[!table]` header callout)
 - Reference with `**@Tbl:label**`
+- The actual table stays a normal Markdown table (Obsidian table editor works)
 - Use pipe (`|`) to separate columns
 - Use colons (`:`) to align columns
 
 ```markdown
-Table: **Table Title.** Description of the table. {#tbl:label}
+> [!table] #tbl:label
+>
+> **Table Title.** Description of the table.
 
 | Column A | Column B | Column C |
 |:---------|:--------:|---------:|
@@ -143,7 +158,72 @@ Table: **Table Title.** Description of the table. {#tbl:label}
 - `:---:` = centered
 - `---:` = right-aligned
 
-**To reference:** Use `**@Tbl:label**` in text → renders as "Table 1"
+**To reference:** Use `**@Tbl:label**` in text → renders as "Table 1" (numbering is automatic; do not write "Table 1" manually).
+
+#### Styled Tables (with width, font size, spacing)
+
+Recommended: keep tables as normal Markdown tables (so Obsidian's table editor works), but put a figure-like `[!table]` header callout above it. The callout carries label/options + caption and is used during export.
+
+```markdown
+> [!table] #tbl:label width=100% align=center fontsize=small spacing=1.2 columns=0.22,0.38,0.28,0.12 colsep=4pt
+>
+> **Table Title.** Description of the table.
+
+| Column A | Column B | Column C |
+|:---------|:--------:|---------:|
+| Left     | Center   | Right    |
+```
+
+**Available options:**
+- `#tbl:label` - pandoc-crossref label for referencing
+- `width=X` - total table width (LaTeX/PDF only). Supported: `100%`, `80%`, `\linewidth`, `\textwidth`, or numeric factors like `0.9\linewidth`, `0.9\textwidth`.
+- `align=left|center|right` - table placement on the page (LaTeX/PDF only). This does **not** affect per-column alignment.
+- `columns=a,b,c,...` - relative column widths (LaTeX/PDF only). Values are normalized; must match the number of columns.
+- `colsep=X` - horizontal padding between columns (LaTeX/PDF only), sets `\tabcolsep`, e.g. `colsep=4pt`.
+- `fontsize=X` - LaTeX font size for the table (LaTeX/PDF only), e.g. `footnotesize`, `small`.
+- `family=X` - LaTeX font family for the table (LaTeX/PDF only): `rmfamily`, `sffamily`, `ttfamily`.
+- `spacing=X` - vertical row spacing multiplier (LaTeX/PDF only), sets `\arraystretch`, e.g. `spacing=1.2`.
+
+**Examples:**
+```markdown
+> [!table] #tbl:results fontsize=footnotesize
+>
+> Gene expression results from RNA-seq analysis.
+
+| Gene | Expression | p-value |
+|------|------------|---------|
+| ABC1 | 2.5        | 0.001   |
+
+> [!table] #tbl:wide-data width=100% fontsize=small spacing=1.3
+>
+> Measurements across replicates with summary statistics.
+
+| Sample | Condition | Rep 1 | Rep 2 | Rep 3 | Mean | SD |
+|--------|-----------|-------|-------|-------|------|-----|
+| S1     | Control   | 1.2   | 1.3   | 1.1   | 1.2  | 0.1 |
+```
+
+#### Landscape Tables (PDF)
+
+Wrap wide tables with the raw LaTeX `landscape` environment (requires `pdflscape`, already included in the PDF profiles):
+
+```markdown
+```{=latex}
+\begin{landscape}
+```
+
+> [!table] #tbl:label width=\textwidth fontsize=small spacing=1.1
+>
+> **Table Title.** Description of the table.
+
+| Column A | Column B | Column C | Column D |
+|:---------|:--------:|---------:|:---------|
+| Left     | Center   | Right    | Left     |
+
+```{=latex}
+\end{landscape}
+```
+```
 
 ### Cross-References
 

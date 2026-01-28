@@ -1,0 +1,96 @@
+/* Table Callout Styling for Obsidian
+ * 
+ * Copy this file to your Obsidian vault's .obsidian/snippets/ folder
+ * Then enable it in Settings → Appearance → CSS Snippets
+ *
+ * Usage in Markdown:
+ * > [!table] #tbl:my-label width=100% fontsize=small spacing=1.2
+ * > | Col 1 | Col 2 | Col 3 |
+ * > |-------|-------|-------|
+ * > | A     | B     | C     |
+ * >
+ * > This is my **caption** with *formatting*.
+ */
+
+/* Style the table callout */
+.callout[data-callout="table"] {
+  --callout-color: 70, 130, 180;
+  --callout-icon: table;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  margin: 1.5em 0;
+}
+
+/* Hide the default callout title bar */
+.callout[data-callout="table"] .callout-title {
+  display: none;
+}
+
+/* Style the callout content area */
+.callout[data-callout="table"] .callout-content {
+  padding: 0;
+  background: transparent;
+}
+
+/* Style tables within table callouts */
+.callout[data-callout="table"] .callout-content table {
+  width: 100%;
+  margin: 0 auto 0.8em auto;
+  border-collapse: collapse;
+}
+
+/* Table header styling */
+.callout[data-callout="table"] .callout-content th {
+  background-color: var(--background-secondary);
+  font-weight: 600;
+  padding: 0.5em 0.75em;
+  border-bottom: 2px solid var(--background-modifier-border);
+}
+
+/* Table cell styling */
+.callout[data-callout="table"] .callout-content td {
+  padding: 0.4em 0.75em;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+
+/* Alternating row colors */
+.callout[data-callout="table"] .callout-content tr:nth-child(even) {
+  background-color: var(--background-secondary-alt);
+}
+
+/* Style the caption text (paragraphs after the table) */
+.callout[data-callout="table"] .callout-content > p:last-child {
+  font-size: 0.9em;
+  color: var(--text-muted);
+  text-align: left;
+  line-height: 1.4;
+  margin-top: 0.5em;
+  padding: 0.5em 0;
+  border-top: 2px solid var(--interactive-accent);
+}
+
+/* Make options visible in edit mode as faint text */
+.callout[data-callout="table"] .callout-title-inner {
+  display: inline-block;
+  font-size: 0.75em;
+  color: var(--text-faint);
+  font-family: var(--font-monospace);
+  margin-bottom: 0.5em;
+}
+
+/* Reading mode adjustments */
+.markdown-reading-view .callout[data-callout="table"] {
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Print/export adjustments */
+@media print {
+  .callout[data-callout="table"] .callout-content > p:last-child {
+    border-top: 1px solid #ccc;
+    padding-top: 0.3em;
+    font-size: 0.85em;
+  }
+}

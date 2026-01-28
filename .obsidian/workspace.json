@@ -4,26 +4,43 @@
     "type": "split",
     "children": [
       {
-        "id": "6dc87753ae6bb7af",
+        "id": "7a080ccf6bd73a1b",
         "type": "tabs",
         "children": [
           {
-            "id": "08ccd4533f6561a1",
+            "id": "12dd304a7d201954",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "02-md-manuscript-maintext.md",
                 "mode": "source",
                 "source": false,
                 "annotationGutterFolded": false,
                 "annotationGutterWidth": 300
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "02-md-manuscript-maintext"
+            }
+          },
+          {
+            "id": "dec1948b418bdd86",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "WRITING.md",
+                "mode": "source",
+                "source": false,
+                "annotationGutterFolded": false,
+                "annotationGutterWidth": 300
+              },
+              "icon": "lucide-file",
+              "title": "WRITING"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -158,13 +175,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md",
+                "file": "WRITING.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of README"
+              "title": "Outline of WRITING"
             }
           }
         ],
@@ -184,33 +201,39 @@
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
       "terminal:Open terminal": false,
-      "manuscript-build:Build Manuscript": false
+      "manuscript-build:Build Manuscript": false,
+      "templater-obsidian:Templater": false
     }
   },
-  "active": "08ccd4533f6561a1",
+  "active": "dec1948b418bdd86",
   "lastOpenFiles": [
-    "README.md",
-    "WRITING.md",
-    "WRITING",
-    "export/02-md-manuscript-maintext.pdf",
     "_temp_config.yaml",
-    "_temp_02-md-manuscript-maintext_merged.md",
-    "01-md-manuscript-frontmatter.md",
-    "02-md-manuscript-maintext.md",
-    "03-md-manuscript_supp_info.md",
-    "export/~$-md-manuscript-maintext.docx",
-    "export/02-md-manuscript-maintext.docx",
-    "__pycache__/build.cpython-311.pyc",
-    "__pycache__",
     "figures/figure2.png",
     "figures/figure1.png",
-    "export/~$-md-manuscript_supp_info.docx",
-    "export/03-md-manuscript_supp_info.docx",
-    "_temp_03-md-manuscript_supp_info_merged.md",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "README.md",
+    "resources/templater/insert_table.md",
+    "resources/templater/insert_landscape_table.md",
+    "resources/templater/insert_figure.md",
+    "WRITING.md",
+    "export/02-md-manuscript-maintext.pdf",
+    "02-md-manuscript-maintext.md",
     "export/md-manuscript-maintext.pdf",
+    "examples/md-manuscript-maintext.md",
+    "export",
+    "_si_header.tex",
+    "export/02-md-manuscript-maintext.docx",
+    "export/md-manuscript_supp_info.pdf",
+    "export/md-manuscript_supp_info.docx",
+    "export/md-manuscript-maintext.docx",
+    "03-md-manuscript_supp_info.md",
+    "md-manuscript_supp_info.md",
+    "md-manuscript-maintext.md",
+    "resources/reference_doc.docx",
+    "01-md-manuscript-frontmatter.md",
+    "_temp_03-md-manuscript_supp_info_merged.md",
     "md-manuscript-frontmatter.md",
     "_temp_md-manuscript-maintext_merged.md",
-    "md-manuscript-maintext.md",
     "md-thesis.md",
     "md-notes_technical.md",
     "Untitled 2.md",
@@ -218,16 +241,11 @@
     "_debug_merged.md",
     "figures/plugin_button.png",
     "figures/Screenshot 2026-01-25 at 20.06.48.png",
-    "md-manuscript_supp_info.md",
     "md-notes_narrative.md",
     "examples/md-thesis.md",
     "examples/md-notes_technical.md",
     "examples/md-notes_narrative.md",
     "examples/md-manuscript_supp_info.md",
-    "examples/md-manuscript-maintext.md",
-    "examples/md-manuscript-frontmatter.md",
-    "thesis.md",
-    "notes_technical.md",
     "figures/figure.png",
     "figures/input_singlepage.png"
   ]

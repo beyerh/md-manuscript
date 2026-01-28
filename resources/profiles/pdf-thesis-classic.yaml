@@ -46,6 +46,8 @@ variables:
   header-includes:
     # Classic Thesis colors
     - \usepackage{xcolor}
+    - \usepackage{pdflscape}
+    - \usepackage{adjustbox}
     - \definecolor{CTsemi}{RGB}{128,0,0}
     - \definecolor{CTnumber}{RGB}{180,180,180}
     - \providecommand{\mdtwocolumnstart}{}

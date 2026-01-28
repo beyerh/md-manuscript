@@ -30,6 +30,8 @@ variables:
   
   header-includes:
     - \usepackage{lineno}
+    - \usepackage{pdflscape}
+    - \usepackage{adjustbox}
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.5\baselineskip}
     # Bold sans-serif headings

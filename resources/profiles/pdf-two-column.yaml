@@ -13,12 +13,14 @@ profile:
 pdf-engine: tectonic
 
 # --- Reader/Writer ---
-reader: markdown+mark+raw_html+raw_tex
+reader: markdown+mark+raw_html+raw_tex+implicit_figures
 
 # --- Filters ---
 # Custom filter to convert longtable to tabular for twocolumn compatibility
 filters:
   - resources/color-text.lua
+  - resources/figure-callouts.lua
+  - resources/table-callouts.lua
   - pandoc-crossref
   - citeproc
   - resources/no-longtable.lua
@@ -42,6 +44,8 @@ variables:
   
   header-includes:
     - \usepackage{xcolor}
+    - \usepackage{pdflscape}
+    - \usepackage{adjustbox}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \usepackage{cuted}
     - \providecommand{\mdtwocolumnstart}{\begin{strip}}

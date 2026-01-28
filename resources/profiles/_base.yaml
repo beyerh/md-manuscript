@@ -3,11 +3,13 @@
 
 # --- Input/Output Settings ---
 # Enable mark extension for ==highlighted text== and raw_html for <font color> tags
-reader: markdown+mark+raw_html+raw_tex
+reader: markdown+mark+raw_html+raw_tex+implicit_figures
 
 # --- Bibliography ---
 filters:
   - resources/color-text.lua
+  - resources/figure-callouts.lua
+  - resources/table-callouts.lua
   - pandoc-crossref
   - citeproc
 bibliography: resources/references.json
@@ -24,6 +26,8 @@ metadata:
 
   header-includes:
     - \usepackage{xcolor}
+    - \usepackage{pdflscape}
+    - \usepackage{adjustbox}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdonecolumn}{}
     - \providecommand{\mdtwocolumn}{}

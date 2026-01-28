@@ -120,10 +120,7 @@ FONT_PRESETS = {
         "monofont": "TeX Gyre Cursor",
     },
     "computer-modern": {
-        "name": "Computer Modern (LaTeX default)",
-        "mainfont": "Latin Modern Roman",
-        "sansfont": "Latin Modern Sans",
-        "monofont": "Latin Modern Mono",
+        "name": "LaTeX Default (Compatibility)",
     },
 }
 
@@ -460,6 +457,71 @@ def strip_csl_from_defaults_file(defaults_path: str) -> None:
     path.write_text(''.join(out))
 
 
+def strip_font_variables_from_defaults_file(defaults_path: str) -> None:
+    path = Path(defaults_path)
+    if not path.exists():
+        return
+
+    lines = path.read_text().splitlines(True)
+
+    variables_idx = None
+    variables_indent = None
+    for i, line in enumerate(lines):
+        if line.strip() == "variables:":
+            variables_idx = i
+            variables_indent = len(line) - len(line.lstrip())
+            break
+
+    if variables_idx is None or variables_indent is None:
+        return
+
+    end_idx = len(lines)
+    for j in range(variables_idx + 1, len(lines)):
+        candidate = lines[j]
+        stripped = candidate.strip()
+        if not stripped:
+            continue
+        indent = len(candidate) - len(candidate.lstrip())
+        if indent <= variables_indent and not stripped.startswith('#'):
+            end_idx = j
+            break
+
+    keys_to_remove = {"mainfont:", "sansfont:", "monofont:"}
+    new_block: List[str] = []
+    for line in lines[variables_idx + 1 : end_idx]:
+        stripped = line.strip()
+        if any(stripped.startswith(k) for k in keys_to_remove):
+            continue
+        new_block.append(line)
+
+    out = []
+    out.extend(lines[: variables_idx + 1])
+    out.extend(new_block)
+    out.extend(lines[end_idx:])
+    path.write_text(''.join(out))
+
+
+def convert_tex_file_to_body_only(tex_path: str) -> None:
+    path = Path(tex_path)
+    if not path.exists():
+        return
+
+    text = path.read_text()
+
+    begin = "\\begin{document}"
+    end = "\\end{document}"
+
+    begin_idx = text.find(begin)
+    end_idx = text.rfind(end)
+    if begin_idx == -1 or end_idx == -1 or end_idx <= begin_idx:
+        return
+
+    body = text[begin_idx + len(begin) : end_idx]
+    body = body.lstrip("\r\n")
+    body = body.rstrip() + "\n"
+    path.write_text(body)
+
+
 def apply_font_overrides_to_defaults_file(
     defaults_path: str,
     font: Optional[str] = None,
@@ -538,13 +600,14 @@ def apply_font_overrides_to_defaults_file(
     override_lines: List[str] = []
     if font and font in FONT_PRESETS:
         font_info = FONT_PRESETS[font]
-        override_lines.extend(
-            [
-                f"{child_indent_str}mainfont: \"{font_info['mainfont']}\"\n",
-                f"{child_indent_str}sansfont: \"{font_info['sansfont']}\"\n",
-                f"{child_indent_str}monofont: \"{font_info['monofont']}\"\n",
-            ]
-        )
+        if all(k in font_info for k in ("mainfont", "sansfont", "monofont")):
+            override_lines.extend(
+                [
+                    f"{child_indent_str}mainfont: \"{font_info['mainfont']}\"\n",
+                    f"{child_indent_str}sansfont: \"{font_info['sansfont']}\"\n",
+                    f"{child_indent_str}monofont: \"{font_info['monofont']}\"\n",
+                ]
+            )
     if fontsize:
         override_lines.append(f"{child_indent_str}fontsize: {fontsize}\n")
     if linespacing and linespacing in LINE_SPACING_PRESETS:
@@ -850,19 +913,28 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
                    si_file: Optional[str] = None, is_si: bool = False,
                    linespacing: Optional[str] = None, paragraph_style: Optional[str] = None,
                    linenumbers: Optional[bool] = None, numbered_headings: Optional[bool] = None,
-                   language: Optional[str] = None):
+                   language: Optional[str] = None, tex_mode: Optional[str] = None):
     """Build the document with specified profile."""
     # Get profile info
     _, _, fmt = get_profile_info(profile)
+    
+    # Override format if --tex flag is used (export LaTeX source from PDF profile)
+    if tex_mode in ("source", "portable", "body") and fmt == "pdf":
+        fmt = "latex"
     
     # Determine output file name from source file
     source_path = Path(source_file)
     output_name = source_path.stem
     
-    output_file = f"{EXPORT_DIR}/{output_name}.{fmt}"
+    # Map format to file extension (latex -> .tex for standard naming)
+    ext = "tex" if fmt == "latex" else fmt
+    output_file = f"{EXPORT_DIR}/{output_name}.{ext}"
     temp_merged = f"_temp_{output_name}_merged.md"
     
-    print(f">> Building {source_file} ({fmt.upper()})...")
+    if fmt == "latex" and tex_mode:
+        print(f">> Building {source_file} (LATEX/{tex_mode.upper()})...")
+    else:
+        print(f">> Building {source_file} ({fmt.upper()})...")
     
     # Merge frontmatter if requested
     input_file = source_file
@@ -899,6 +971,12 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     profile_path = f"{PROFILES_DIR}/{profile}.yaml"
     config_file = merge_configs(BASE_PROFILE, profile_path)
 
+    is_latex_default_compat_font = font == "computer-modern"
+    if fmt == "latex" and tex_mode in ("portable", "body"):
+        strip_font_variables_from_defaults_file(config_file)
+    if fmt in ("pdf", "latex") and is_latex_default_compat_font:
+        strip_font_variables_from_defaults_file(config_file)
+
     effective_gap = paragraph_style == "gap" or (
         not paragraph_style and _profile_uses_gap_paragraphs(config_file)
     )
@@ -908,16 +986,23 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
             input_file = temp_merged
         _normalize_inline_parindent_for_gap(input_file)
 
-    # Apply typography overrides directly to defaults file (prevents fontspec issues)
-    has_overrides = any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, numbered_headings is not None, language])
-    if fmt == "pdf" and has_overrides:
+    # Apply typography overrides directly to defaults file
+    # Portable/body modes explicitly ignore explicit font selection for portability.
+    effective_font = None if (
+        (fmt == "latex" and tex_mode in ("portable", "body"))
+        or is_latex_default_compat_font
+    ) else font
+    has_overrides = any([effective_font, fontsize, linespacing, paragraph_style, linenumbers is not None, numbered_headings is not None, language])
+    if fmt in ("pdf", "latex") and has_overrides:
         apply_font_overrides_to_defaults_file(
-            config_file, font=font, fontsize=fontsize,
+            config_file, font=effective_font, fontsize=fontsize,
             linespacing=linespacing, paragraph_style=paragraph_style,
             linenumbers=linenumbers, numbered_headings=numbered_headings,
             language=language
         )
-        if font and font in FONT_PRESETS:
+        if effective_font and effective_font in FONT_PRESETS:
+            print(f"   Using font: {FONT_PRESETS[effective_font]['name']}")
+        elif fmt == "pdf" and is_latex_default_compat_font:
             print(f"   Using font: {FONT_PRESETS[font]['name']}")
         if fontsize:
             print(f"   Using font size: {fontsize}")
@@ -938,6 +1023,10 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     
     # Build pandoc command
     cmd = ["pandoc", input_file, "-o", output_file, f"--defaults={config_file}"]
+    
+    # Add standalone flag for LaTeX output (PDF output is always standalone)
+    if fmt == "latex":
+        cmd.append("-s")
     
     # Add citation style
     if citation_style:
@@ -974,6 +1063,9 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
             os.remove(SI_HEADER)
         sys.exit(1)
     
+    if fmt == "latex" and tex_mode == "body":
+        convert_tex_file_to_body_only(output_file)
+
     # Cleanup
     # Remove temporary files
     for f in [temp_merged, config_file]:
@@ -1014,6 +1106,10 @@ def print_header():
 def print_build_summary(config: Dict[str, Any]) -> None:
     """Print build configuration summary."""
     _, _, fmt = get_profile_info(config["profile"])
+    if fmt == "pdf" and config.get("tex_mode") in ("source", "portable", "body"):
+        fmt = "latex"
+    if fmt == "pdf" and config.get("output_tex") and not config.get("tex_mode"):
+        fmt = "latex"
     print(box_top("Build Configuration"))
     print(box_row(f"Document:     {config.get('source_file', config.get('doc_type', 'unknown'))}"))
     print(box_row(f"Profile:      {config['profile']}"))
@@ -1025,12 +1121,16 @@ def print_build_summary(config: Dict[str, Any]) -> None:
     print(box_row(f"SI Refs:      {'Yes' if config['include_si_refs'] else 'No'}"))
     if config.get('is_si'):
         print(box_row("SI Format:    Yes (S-prefixed figures/tables)"))
-    if fmt == "pdf" and config.get('font'):
+    if config.get('tex_mode') in ("source", "portable", "body"):
+        print(box_row(f"LaTeX Mode:   {config.get('tex_mode')}"))
+    elif config.get('output_tex'):
+        print(box_row("LaTeX Mode:   portable"))
+    if fmt in ("pdf", "latex") and config.get('font'):
         font_name = FONT_PRESETS[config['font']]['name']
         print(box_row(f"Font:         {font_name}"))
-    if fmt == "pdf" and config.get('fontsize'):
+    if fmt in ("pdf", "latex") and config.get('fontsize'):
         print(box_row(f"Font Size:    {config['fontsize']}"))
-    if fmt in ("pdf", "docx") and config.get('citation_style'):
+    if fmt in ("pdf", "latex", "docx") and config.get('citation_style'):
         style_key = config['citation_style']
         # Get display name from local file or use key
         local_styles = list_local_csl_files()
@@ -1336,9 +1436,26 @@ def interactive_menu() -> Dict[str, Any]:
     print(box_top("Output Format"))
     print(box_row("1) Word Document (DOCX)"))
     print(box_row("2) PDF"))
+    print(box_row("3) LaTeX Source (profile exact)"))
+    print(box_row("4) Portable LaTeX"))
+    print(box_row("5) LaTeX Body-only (for journal templates)"))
     print(box_bottom())
-    fmt_choice = input("Select format [1-2]: ").strip()
-    fmt = "docx" if fmt_choice == "1" else "pdf"
+    fmt_choice = input("Select format [1-5]: ").strip()
+    if fmt_choice == "1":
+        fmt = "docx"
+        tex_mode = None
+    elif fmt_choice == "3":
+        fmt = "pdf"  # Use PDF profile but output LaTeX
+        tex_mode = "source"
+    elif fmt_choice == "4":
+        fmt = "pdf"  # Use PDF profile but output LaTeX
+        tex_mode = "portable"
+    elif fmt_choice == "5":
+        fmt = "pdf"  # Use PDF profile but output LaTeX
+        tex_mode = "body"
+    else:
+        fmt = "pdf"
+        tex_mode = None
     print()
     
     # Profile selection (skip for DOCX since there's only one)
@@ -1352,7 +1469,9 @@ def interactive_menu() -> Dict[str, Any]:
             print(box_row(f"{category}:"))
             for profile in profiles:
                 name, description, profile_fmt = get_profile_info(profile)
-                if profile_fmt == fmt:
+                # All LaTeX modes use the PDF profiles as their base configuration.
+                desired_profile_fmt = "pdf" if tex_mode in ("source", "portable", "body") else fmt
+                if profile_fmt == desired_profile_fmt:
                     all_profiles.append(profile)
                     print(box_row(f"  {idx:2}) {name}"))
                     idx += 1
@@ -1429,6 +1548,7 @@ def interactive_menu() -> Dict[str, Any]:
         "include_si_refs": include_si_refs,
         "si_file": si_file,
         "is_si": is_si,
+        "tex_mode": tex_mode,
         "font": defaults.get('font'),
         "fontsize": defaults.get('fontsize'),
         "citation_style": defaults.get('citation_style'),
@@ -1466,6 +1586,7 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         "include_si_refs": False,
         "si_file": None,
         "is_si": False,
+        "tex_mode": None,
         "font": None,
         "fontsize": None,
         "citation_style": None,
@@ -1512,6 +1633,14 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
             config["include_si_refs"] = True
         elif arg == "--si":
             config["is_si"] = True
+        elif arg == "--tex":
+            config["tex_mode"] = "portable"
+        elif arg == "--tex-portable":
+            config["tex_mode"] = "portable"
+        elif arg == "--tex-source":
+            config["tex_mode"] = "source"
+        elif arg == "--tex-body":
+            config["tex_mode"] = "body"
         # Legacy support for main|si
         elif arg == "main":
             config["source_file"] = MAINTEXT
@@ -1561,6 +1690,10 @@ Options:
   --include-si-refs          Include SI citations in bibliography
   --si-file=FILE             SI file for reference extraction
   --si                       Apply SI formatting (S-prefixed figures/tables)
+  --tex                      Export Portable LaTeX (.tex) instead of PDF
+  --tex-source               Export LaTeX source that matches the PDF profile (including fonts)
+  --tex-portable             Export Portable LaTeX (.tex) instead of PDF
+  --tex-body                 Export LaTeX body-only (no preamble/document wrapper)
   --list, -l                 List all available profiles
   --last                     Repeat last build configuration
   --help, -h                 Show this help message
@@ -1571,6 +1704,9 @@ Examples:
   python build.py --source=01_maintext.md --frontmatter=00_frontmatter.md
   python build.py --source=my_draft.md --profile=pdf-nature --csl=nature
   python build.py --source=02_supp_info.md --si --profile=pdf-default
+  python build.py --source=manuscript.md --profile=pdf-default --tex
+  python build.py --source=manuscript.md --profile=pdf-default --tex-source
+  python build.py --source=manuscript.md --profile=pdf-default --tex-body
   python build.py main --profile=pdf-nature
   python build.py --last
 """)
@@ -1600,6 +1736,14 @@ def main():
     
     if not config:
         config = interactive_menu()
+
+    if config is not None and "tex_mode" not in config:
+        if config.get("output_tex"):
+            config["tex_mode"] = "portable"
+        else:
+            config["tex_mode"] = None
+    if config is not None and "output_tex" in config:
+        config.pop("output_tex", None)
     
     # Save configuration
     save_config(config)
@@ -1627,6 +1771,7 @@ def main():
         config.get("linenumbers"),
         config.get("numbered_headings"),
         config.get("language"),
+        config.get("tex_mode"),
     )
     
     print()

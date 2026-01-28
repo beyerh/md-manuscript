@@ -36,6 +36,7 @@ interface BuildConfig {
 	includeSiRefs: boolean;
 	siFile: string | null;
 	isSi: boolean;
+	texMode: "" | "source" | "portable" | "body";
 	font: string;
 	fontSize: string;
 	citationStyle: string;
@@ -81,7 +82,7 @@ const FONT_PRESETS: Record<string, string> = {
 	arial: "Arial",
 	helvetica: "Helvetica-like (TeX Gyre Heros)",
 	charter: "Charter",
-	"computer-modern": "Computer Modern (LaTeX default)",
+	"computer-modern": "LaTeX Default (Compatibility)",
 };
 
 const FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"];
@@ -356,6 +357,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			includeSiRefs: false,
 			siFile: null,
 			isSi: false,
+			texMode: "",
 			font: this.settings.defaultFont,
 			fontSize: this.settings.defaultFontSize,
 			citationStyle: this.settings.defaultCitationStyle,
@@ -383,6 +385,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					includeSiRefs: data.include_si_refs || false,
 					siFile: data.si_file || null,
 					isSi: data.is_si || false,
+					texMode: (data.tex_mode as BuildConfig["texMode"]) || (data.output_tex ? "portable" : ""),
 					font: data.font !== undefined ? data.font : this.settings.defaultFont,
 					fontSize: data.fontsize || this.settings.defaultFontSize,
 					citationStyle: data.citation_style || this.settings.defaultCitationStyle,
@@ -410,6 +413,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			include_si_refs: config.includeSiRefs,
 			si_file: config.siFile,
 			is_si: config.isSi,
+			tex_mode: config.texMode || null,
 			font: config.font || null,
 			fontsize: config.fontSize,
 			citation_style: config.citationStyle,
@@ -512,6 +516,14 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			args.push("--si");
 		}
 
+		if (config.texMode === "source") {
+			args.push("--tex-source");
+		} else if (config.texMode === "portable") {
+			args.push("--tex");
+		} else if (config.texMode === "body") {
+			args.push("--tex-body");
+		}
+
 		if (config.font) {
 			args.push(`--font=${config.font}`);
 		}
@@ -597,6 +609,7 @@ class BuildModal extends Modal {
 	private isSiToggle: ToggleComponent;
 	private pngToggle: ToggleComponent;
 	private pngContainer: HTMLElement;
+	private latexModeContainer: HTMLElement;
 
 	constructor(app: App, plugin: ManuscriptBuildPlugin, lastConfig: BuildConfig | null = null) {
 		super(app);
@@ -615,6 +628,7 @@ class BuildModal extends Modal {
 				includeSiRefs: false,
 				siFile: null,
 				isSi: false,
+				texMode: "",
 				font: plugin.settings.defaultFont,
 				fontSize: plugin.settings.defaultFontSize,
 				citationStyle: plugin.settings.defaultCitationStyle,
@@ -700,28 +714,56 @@ class BuildModal extends Modal {
 		this.createSectionHeader(contentEl, "Output");
 
 		// Format selection
-		const currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+		// Determine current format: docx, pdf, or latex (pdf with texMode set)
+		let currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+		if (currentFormat === "pdf" && this.config.texMode) {
+			currentFormat = "latex";
+		}
 		new Setting(contentEl)
 			.setName("Format")
 			.setDesc("Output document format")
 			.addDropdown((dropdown) => {
 				this.formatDropdown = dropdown;
 				dropdown.addOption("pdf", "PDF");
+				dropdown.addOption("latex", "LaTeX");
 				dropdown.addOption("docx", "Word Document (DOCX)");
 				dropdown.setValue(currentFormat);
 				dropdown.onChange((value) => {
-					this.updateProfilesForFormat(value);
+					// LaTeX uses PDF profiles but outputs .tex
+					const profileFormat = value === "latex" ? "pdf" : value;
+					if (value !== "latex") {
+						this.config.texMode = "";
+					} else if (!this.config.texMode) {
+						this.config.texMode = "portable";
+					}
+					this.updateProfilesForFormat(profileFormat);
 					this.updateFormatOptions(value);
 				});
 			});
 
+		// LaTeX mode selection (only relevant when format is LaTeX)
+		this.latexModeContainer = contentEl.createDiv();
+		new Setting(this.latexModeContainer)
+			.setName("LaTeX Mode")
+			.setDesc("Choose how LaTeX is exported")
+			.addDropdown((dropdown) => {
+				dropdown.addOption("source", "LaTeX Source (profile exact)");
+				dropdown.addOption("portable", "Portable LaTeX");
+				dropdown.addOption("body", "Body-only (paste into journal templates)");
+				dropdown.setValue(this.config.texMode || "portable");
+				dropdown.onChange((value) => {
+					this.config.texMode = value as BuildConfig["texMode"];
+				});
+			});
+
 		// Profile selection
+		const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
 		new Setting(contentEl)
 			.setName("Profile")
 			.setDesc("Document style and layout")
 			.addDropdown((dropdown) => {
 				this.profileDropdown = dropdown;
-				this.populateProfiles(dropdown, currentFormat);
+				this.populateProfiles(dropdown, profileFormat);
 				dropdown.setValue(this.config.profile);
 				dropdown.onChange((value) => {
 					this.config.profile = value;
@@ -740,7 +782,7 @@ class BuildModal extends Modal {
 					this.config.usePng = value;
 				});
 			});
-		// Show/hide PNG option based on format (must be after pngContainer is created)
+		// Show/hide PNG/LaTeX options based on format (must be after containers are created)
 		this.updateFormatOptions(currentFormat);
 
 		// ─────────────────────────────────────────────────────────────────────
@@ -995,6 +1037,7 @@ class BuildModal extends Modal {
 		this.config.usePng = false;
 		this.config.includeSiRefs = false;
 		this.config.isSi = false;
+		this.config.texMode = "";
 
 		// Reset source file to sensible default
 		const maintext = mdFiles.find((f) => f.includes("maintext"));
@@ -1009,12 +1052,16 @@ class BuildModal extends Modal {
 		this.config.siFile = siFile || mdFiles[0] || null;
 
 		// Update UI components
-		const currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+		let currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+		if (currentFormat === "pdf" && this.config.texMode) {
+			currentFormat = "latex";
+		}
+		const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
 		
 		this.sourceDropdown?.setValue(this.config.sourceFile);
 		this.frontmatterDropdown?.setValue(this.config.frontmatterFile || "");
 		this.formatDropdown?.setValue(currentFormat);
-		this.populateProfiles(this.profileDropdown, currentFormat);
+		this.populateProfiles(this.profileDropdown, profileFormat);
 		this.profileDropdown?.setValue(this.config.profile);
 		this.fontDropdown?.setValue(this.config.font);
 		this.fontSizeDropdown?.setValue(this.config.fontSize);
@@ -1083,6 +1130,10 @@ class BuildModal extends Modal {
 	private updateFormatOptions(format: string) {
 		// Show/hide PNG option for DOCX
 		this.pngContainer.style.display = format === "docx" ? "block" : "none";
+		// Show/hide LaTeX mode for LaTeX
+		if (this.latexModeContainer) {
+			this.latexModeContainer.style.display = format === "latex" ? "block" : "none";
+		}
 	}
 }
 

@@ -304,6 +304,41 @@ The template uses **profiles** (YAML files in `resources/profiles/`) to define o
 - `pdf-*.yaml` - PDF-specific profiles
 - `docx-manuscript.yaml` - Word document profile
 
+### Portable LaTeX Export
+
+You can export LaTeX (`.tex`) from any PDF profile in three modes.
+
+**1) LaTeX Source (profile exact)**
+
+Exports a `.tex` file that aims to reproduce the PDF output of the selected profile as closely as possible (including profile fonts and other LaTeX variables).
+
+```bash
+python build.py --source=01_maintext.md --profile=pdf-nature --tex-source
+```
+
+**2) Portable LaTeX**
+
+Exports a `.tex` file intended to be portable across LaTeX environments for journal submission workflows.
+
+- The output is written to `export/<name>.tex`.
+- For portability, the exporter strips profile font settings (`mainfont`, `sansfont`, `monofont`) so the `.tex` does not depend on system fonts.
+
+```bash
+python build.py --source=01_maintext.md --profile=pdf-nature --tex
+```
+
+**3) LaTeX Body-only (for journal templates)**
+
+Exports only the content between `\begin{document}` and `\end{document}`. This is useful if a journal provides a class/template and you want to paste the manuscript content into their `.tex`.
+
+```bash
+python build.py --source=01_maintext.md --profile=pdf-nature --tex-body
+```
+
+**Compiling the exported `.tex`:**
+- Recommended (typical journal toolchain): `pdflatex` / `latexmk`.
+- If you use `tectonic`, it should compile as well; any reproducibility warnings about system font paths indicate local font discovery and do not affect journal compilation.
+
 **Create custom PDF profiles:**
 1. Copy `pdf-default.yaml` to `pdf-my-journal.yaml`
 2. Edit settings (fonts, margins, spacing)

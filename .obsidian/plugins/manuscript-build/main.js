@@ -63,7 +63,7 @@ var FONT_PRESETS = {
   arial: "Arial",
   helvetica: "Helvetica-like (TeX Gyre Heros)",
   charter: "Charter",
-  "computer-modern": "Computer Modern (LaTeX default)"
+  "computer-modern": "LaTeX Default (Compatibility)"
 };
 var FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"];
 var LINE_SPACING_PRESETS = {
@@ -273,6 +273,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       includeSiRefs: false,
       siFile: null,
       isSi: false,
+      texMode: "",
       font: this.settings.defaultFont,
       fontSize: this.settings.defaultFontSize,
       citationStyle: this.settings.defaultCitationStyle,
@@ -299,6 +300,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           includeSiRefs: data.include_si_refs || false,
           siFile: data.si_file || null,
           isSi: data.is_si || false,
+          texMode: data.tex_mode || (data.output_tex ? "portable" : ""),
           font: data.font !== void 0 ? data.font : this.settings.defaultFont,
           fontSize: data.fontsize || this.settings.defaultFontSize,
           citationStyle: data.citation_style || this.settings.defaultCitationStyle,
@@ -325,6 +327,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       include_si_refs: config.includeSiRefs,
       si_file: config.siFile,
       is_si: config.isSi,
+      tex_mode: config.texMode || null,
       font: config.font || null,
       fontsize: config.fontSize,
       citation_style: config.citationStyle,
@@ -410,6 +413,13 @@ Error: ${err.message}`, true);
     if (config.isSi) {
       args.push("--si");
     }
+    if (config.texMode === "source") {
+      args.push("--tex-source");
+    } else if (config.texMode === "portable") {
+      args.push("--tex");
+    } else if (config.texMode === "body") {
+      args.push("--tex-body");
+    }
     if (config.font) {
       args.push(`--font=${config.font}`);
     }
@@ -472,6 +482,7 @@ var BuildModal = class extends import_obsidian.Modal {
         includeSiRefs: false,
         siFile: null,
         isSi: false,
+        texMode: "",
         font: plugin.settings.defaultFont,
         fontSize: plugin.settings.defaultFontSize,
         citationStyle: plugin.settings.defaultCitationStyle,
@@ -533,20 +544,41 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.createSectionHeader(contentEl, "Output");
-    const currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+    let currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+    if (currentFormat === "pdf" && this.config.texMode) {
+      currentFormat = "latex";
+    }
     new import_obsidian.Setting(contentEl).setName("Format").setDesc("Output document format").addDropdown((dropdown) => {
       this.formatDropdown = dropdown;
       dropdown.addOption("pdf", "PDF");
+      dropdown.addOption("latex", "LaTeX");
       dropdown.addOption("docx", "Word Document (DOCX)");
       dropdown.setValue(currentFormat);
       dropdown.onChange((value) => {
-        this.updateProfilesForFormat(value);
+        const profileFormat2 = value === "latex" ? "pdf" : value;
+        if (value !== "latex") {
+          this.config.texMode = "";
+        } else if (!this.config.texMode) {
+          this.config.texMode = "portable";
+        }
+        this.updateProfilesForFormat(profileFormat2);
         this.updateFormatOptions(value);
       });
     });
+    this.latexModeContainer = contentEl.createDiv();
+    new import_obsidian.Setting(this.latexModeContainer).setName("LaTeX Mode").setDesc("Choose how LaTeX is exported").addDropdown((dropdown) => {
+      dropdown.addOption("source", "LaTeX Source (profile exact)");
+      dropdown.addOption("portable", "Portable LaTeX");
+      dropdown.addOption("body", "Body-only (paste into journal templates)");
+      dropdown.setValue(this.config.texMode || "portable");
+      dropdown.onChange((value) => {
+        this.config.texMode = value;
+      });
+    });
+    const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
     new import_obsidian.Setting(contentEl).setName("Profile").setDesc("Document style and layout").addDropdown((dropdown) => {
       this.profileDropdown = dropdown;
-      this.populateProfiles(dropdown, currentFormat);
+      this.populateProfiles(dropdown, profileFormat);
       dropdown.setValue(this.config.profile);
       dropdown.onChange((value) => {
         this.config.profile = value;
@@ -730,17 +762,22 @@ var BuildModal = class extends import_obsidian.Modal {
     this.config.usePng = false;
     this.config.includeSiRefs = false;
     this.config.isSi = false;
+    this.config.texMode = "";
     const maintext = mdFiles.find((f) => f.includes("maintext"));
     this.config.sourceFile = maintext || mdFiles[0] || "";
     const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
     this.config.frontmatterFile = frontmatter || null;
     const siFile = mdFiles.find((f) => f.includes("supp"));
     this.config.siFile = siFile || mdFiles[0] || null;
-    const currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+    let currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+    if (currentFormat === "pdf" && this.config.texMode) {
+      currentFormat = "latex";
+    }
+    const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
     (_a = this.sourceDropdown) == null ? void 0 : _a.setValue(this.config.sourceFile);
     (_b = this.frontmatterDropdown) == null ? void 0 : _b.setValue(this.config.frontmatterFile || "");
     (_c = this.formatDropdown) == null ? void 0 : _c.setValue(currentFormat);
-    this.populateProfiles(this.profileDropdown, currentFormat);
+    this.populateProfiles(this.profileDropdown, profileFormat);
     (_d = this.profileDropdown) == null ? void 0 : _d.setValue(this.config.profile);
     (_e = this.fontDropdown) == null ? void 0 : _e.setValue(this.config.font);
     (_f = this.fontSizeDropdown) == null ? void 0 : _f.setValue(this.config.fontSize);
@@ -794,6 +831,9 @@ var BuildModal = class extends import_obsidian.Modal {
   }
   updateFormatOptions(format) {
     this.pngContainer.style.display = format === "docx" ? "block" : "none";
+    if (this.latexModeContainer) {
+      this.latexModeContainer.style.display = format === "latex" ? "block" : "none";
+    }
   }
 };
 var BuildOutputModal = class extends import_obsidian.Modal {

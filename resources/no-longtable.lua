@@ -11,6 +11,28 @@ local function escape_latex(s)
   return s
 end
 
+local is_twocolumn = false
+
+local function meta_list_contains(meta_value, needle)
+  if meta_value == nil then
+    return false
+  end
+  if type(meta_value) == "table" and meta_value.t == "MetaList" then
+    for _, item in ipairs(meta_value) do
+      if pandoc.utils.stringify(item) == needle then
+        return true
+      end
+    end
+    return false
+  end
+  return pandoc.utils.stringify(meta_value) == needle
+end
+
+function Meta(meta)
+  is_twocolumn = meta_list_contains(meta["classoption"], "twocolumn")
+  return nil
+end
+
 local function render_inlines(inlines)
   -- Render inlines to LaTeX string
   local result = pandoc.write(pandoc.Pandoc({pandoc.Para(inlines)}), 'latex')
@@ -25,8 +47,10 @@ function Table(tbl)
   end
 
   local md_align = nil
+  local md_span = nil
   if tbl.attr and tbl.attr.attributes then
     md_align = tbl.attr.attributes["md-align"]
+    md_span = tbl.attr.attributes["md-span"]
   end
   
   -- Build column alignment string
@@ -52,7 +76,11 @@ function Table(tbl)
   local latex = {}
   
   -- Start table environment
-  table.insert(latex, '\\begin{table}[htbp]')
+  local env = 'table'
+  if md_span == 'full' then
+    env = 'table*'
+  end
+  table.insert(latex, '\\begin{' .. env .. '}[t]')
 
   if md_align == 'left' then
     table.insert(latex, '\\raggedright')
@@ -109,7 +137,7 @@ function Table(tbl)
   
   table.insert(latex, '\\hline')
   table.insert(latex, '\\end{tabular}')
-  table.insert(latex, '\\end{table}')
+  table.insert(latex, '\\end{' .. env .. '}')
   
   return pandoc.RawBlock('latex', table.concat(latex, '\n'))
 end

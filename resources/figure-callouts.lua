@@ -12,6 +12,28 @@
 
 local stringify = pandoc.utils.stringify
 
+local is_twocolumn = false
+
+local function meta_list_contains(meta_value, needle)
+  if meta_value == nil then
+    return false
+  end
+  if type(meta_value) == "table" and meta_value.t == "MetaList" then
+    for _, item in ipairs(meta_value) do
+      if stringify(item) == needle then
+        return true
+      end
+    end
+    return false
+  end
+  return stringify(meta_value) == needle
+end
+
+function Meta(meta)
+  is_twocolumn = meta_list_contains(meta["classoption"], "twocolumn")
+  return nil
+end
+
 local function parse_width_value(header_text)
   local width = header_text:match("width=([%d%%%.\\%a]+)")
   if not width then
@@ -53,6 +75,68 @@ local function parse_width_value(header_text)
 
   -- Otherwise, keep as-is (e.g. "8cm", "120mm").
   return width
+end
+
+local function render_inlines_as_latex(inlines)
+  local doc = pandoc.Pandoc({ pandoc.Plain(inlines) })
+  local result = pandoc.write(doc, "latex")
+  result = result:gsub("^%s*", ""):gsub("%s*$", "")
+  return result
+end
+
+local function width_to_latex_dimension(width_str)
+  if not width_str or width_str == "" then
+    return "\\textwidth"
+  end
+
+  if width_str:match("%%$") then
+    local pct = tonumber(width_str:match("^([%d%.]+)%%$"))
+    if pct then
+      if pct >= 100 then
+        return "\\textwidth"
+      end
+      return string.format("%.4f\\textwidth", pct / 100)
+    end
+  end
+
+  if width_str == "\\linewidth" or width_str == "linewidth" then
+    return "\\textwidth"
+  end
+  if width_str == "\\textwidth" or width_str == "textwidth" then
+    return "\\textwidth"
+  end
+
+  local factor = width_str:match("^([%d%.]+)\\linewidth$") or width_str:match("^([%d%.]+)linewidth$")
+  if factor then
+    local f = tonumber(factor)
+    if f then
+      if f >= 1 then
+        return "\\textwidth"
+      end
+      return string.format("%.4f\\textwidth", f)
+    end
+  end
+
+  local factor_tw = width_str:match("^([%d%.]+)\\textwidth$") or width_str:match("^([%d%.]+)textwidth$")
+  if factor_tw then
+    local f = tonumber(factor_tw)
+    if f then
+      if f >= 1 then
+        return "\\textwidth"
+      end
+      return string.format("%.4f\\textwidth", f)
+    end
+  end
+
+  local bare = tonumber(width_str)
+  if bare then
+    if bare <= 1 then
+      return string.format("%.4f\\textwidth", bare)
+    end
+    return tostring(bare)
+  end
+
+  return width_str
 end
 
 local function replace_first_image_in_blocks(blocks, new_image)
@@ -120,6 +204,7 @@ function BlockQuote(block)
   local label = nil
   local width_value = nil
   local align_value = nil
+  local span_value = nil
   local image = nil
   local caption_inlines = {}
   local found_image = false
@@ -147,6 +232,13 @@ function BlockQuote(block)
           local a = text:match("align=(%w+)")
           if a == "left" or a == "center" or a == "right" then
             align_value = a
+          end
+        end
+
+        if span_value == nil then
+          local s = text:match("span=(%w+)")
+          if s == "full" then
+            span_value = s
           end
         end
       end
@@ -244,12 +336,46 @@ function BlockQuote(block)
   if fig and fig.t == "Figure" then
     fig.caption.long = { pandoc.Plain(caption_inlines) }
     if fig_id ~= "" then
-      fig.attr = pandoc.Attr(fig_id, {}, {})
+      local attrs = {}
+      if span_value == "full" then
+        attrs["md-span"] = "full"
+      end
+      fig.attr = pandoc.Attr(fig_id, {}, attrs)
     end
 
     -- Replace the placeholder image with our real image (attrs/title/alt)
     if fig.content then
       replace_first_image_in_blocks(fig.content, new_image)
+    end
+
+    if is_latex and span_value == "full" then
+      local latex = {}
+      table.insert(latex, "\\begin{figure*}[t]")
+
+      local align_cmd = "\\centering"
+      local cap_just = "centering"
+      if align_value == "left" then
+        align_cmd = "\\raggedright"
+        cap_just = "raggedright"
+      elseif align_value == "right" then
+        align_cmd = "\\raggedleft"
+        cap_just = "raggedleft"
+      end
+      table.insert(latex, align_cmd)
+      table.insert(latex, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=false}\\fi")
+
+      local w = img_attrs["width"]
+      local wdim = width_to_latex_dimension(w)
+      table.insert(latex, "\\includegraphics[width=" .. wdim .. "]{" .. image.src .. "}")
+
+      if #caption_inlines > 0 then
+        table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}")
+      end
+      if fig_id ~= "" then
+        table.insert(latex, "\\label{" .. fig_id .. "}")
+      end
+      table.insert(latex, "\\end{figure*}")
+      return pandoc.RawBlock("latex", table.concat(latex, "\n"))
     end
 
     if is_latex and align_value ~= nil and fig.content ~= nil then
@@ -280,5 +406,6 @@ function BlockQuote(block)
 end
 
 return {
-  {BlockQuote = BlockQuote}
+  Meta = Meta,
+  BlockQuote = BlockQuote
 }

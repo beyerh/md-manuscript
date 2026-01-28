@@ -68,6 +68,11 @@ Fusce convallis metus id felis luctus adipiscing. Aliquam erat volutpat. Nam dui
 >
 > **Example Figure.** Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 
+> [!figure] #fig:fullwidth span=full width=90% align=center
+> ![](figures/figure2.pdf)
+>
+> **Example Figure (full width, two-column).** Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
 > [!table] #tbl:data width=80% align=left columns=0.25,0.45,0.30 colsep=4pt fontsize=footnotesize spacing=1.1
 >
 > **Example Table.** Results summary.

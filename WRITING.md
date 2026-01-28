@@ -134,6 +134,9 @@ This is paragraph two.
 **Figure alignment options:**
 - `align=left|center|right` - figure + caption alignment (LaTeX/PDF only).
 
+**Figure spanning option (two-column profiles):**
+- `span=full` - span both columns (LaTeX/PDF only; emits a `figure*` in two-column profiles).
+
 ### Tables
 
 - Caption goes **above** the table (in a `[!table]` header callout)
@@ -178,6 +181,7 @@ Recommended: keep tables as normal Markdown tables (so Obsidian's table editor w
 - `#tbl:label` - pandoc-crossref label for referencing
 - `width=X` - total table width (LaTeX/PDF only). Supported: `100%`, `80%`, `\linewidth`, `\textwidth`, or numeric factors like `0.9\linewidth`, `0.9\textwidth`.
 - `align=left|center|right` - table placement on the page (LaTeX/PDF only). This does **not** affect per-column alignment.
+- `span=full` - span both columns in two-column profiles (LaTeX/PDF only; emits a `table*` in two-column profiles).
 - `columns=a,b,c,...` - relative column widths (LaTeX/PDF only). Values are normalized; must match the number of columns.
 - `colsep=X` - horizontal padding between columns (LaTeX/PDF only), sets `\tabcolsep`, e.g. `colsep=4pt`.
 - `fontsize=X` - LaTeX font size for the table (LaTeX/PDF only), e.g. `footnotesize`, `small`.
@@ -314,27 +318,21 @@ The `examples/` folder contains ready-to-use templates for different document ty
 
 # 4. Full-width Elements (Two-Column Layouts)
 
-For for two-column profiles if you want to include full-width figures or tables that span both columns, use raw LaTeX as follows:
+For two-column profiles if you want to include full-width figures or tables that span both columns, use the `span=full` option:
 
-```latex
-\begin{figure*}[t]
-\centering
-\includegraphics[width=0.9\textwidth]{figures/image.pdf}
-\caption{**Figure Title.** Legend text.}
-\label{fig:label}
-\end{figure*}
+```markdown
+> [!figure] #fig:label span=full width=90% align=center
+> ![](figures/image.pdf)
+>
+> **Figure Title.** Legend text.
 ```
 
-```latex
-\begin{table*}[t]
-\centering
-\caption{**Table Title.** Description.}
-\label{tbl:label}
-\begin{tabular}{ll}
-Column A & Column B \\
-\hline
-Value 1  & Value 2
-\end{tabular}
-\end{table*}
-```
+```markdown
+> [!table] #tbl:label span=full align=center
+>
+> **Table Title.** Description.
 
+| Column A | Column B |
+|---------:|:---------|
+| Value 1  | Value 2  |
+```

@@ -4,23 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "7a080ccf6bd73a1b",
+        "id": "fd3e0e0112f340ee",
         "type": "tabs",
         "children": [
           {
-            "id": "12dd304a7d201954",
+            "id": "1da7ebe1fe5e9255",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "02-md-manuscript-maintext.md",
-                "mode": "source",
-                "source": false,
-                "annotationGutterFolded": false,
-                "annotationGutterWidth": 300
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "02-md-manuscript-maintext"
+              "title": "New tab"
             }
           }
         ]
@@ -158,13 +152,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "02-md-manuscript-maintext.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 02-md-manuscript-maintext"
+              "title": "Outline"
             }
           }
         ],
@@ -188,27 +181,27 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "12dd304a7d201954",
+  "active": "1da7ebe1fe5e9255",
   "lastOpenFiles": [
+    "WRITING.md",
     "export/02-md-manuscript-maintext.pdf",
-    "_temp_config.yaml",
+    "02-md-manuscript-maintext.md",
     "_temp_02-md-manuscript-maintext_merged.md",
+    "_temp_config.yaml",
+    "resources/templater/insert_table.md",
+    "resources/templater/insert_landscape_table.md",
+    "resources/templater/insert_figure.md",
+    "export/02-md-manuscript-maintext.tex",
     "export",
     "export/figures/figure1.pdf",
     "export/figures",
-    "export/02-md-manuscript-maintext.tex",
     "export/02-md-manuscript-maintext.aux",
     "export/02-md-manuscript-maintext.log",
     "export/figures/plugin_button.jpg",
     "export/figures/figure2.pdf",
-    "WRITING.md",
     "figures/figure2.png",
     "figures/figure1.png",
     "README.md",
-    "resources/templater/insert_table.md",
-    "resources/templater/insert_landscape_table.md",
-    "resources/templater/insert_figure.md",
-    "02-md-manuscript-maintext.md",
     "export/md-manuscript-maintext.pdf",
     "examples/md-manuscript-maintext.md",
     "03-md-manuscript_supp_info.md",

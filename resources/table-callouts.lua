@@ -128,6 +128,7 @@ local function parse_options(header_text)
     fontsize = nil,
     spacing = nil,
     align = "center",
+    span = nil,
     columns = nil,
     colsep = nil,
     family = nil
@@ -199,6 +200,12 @@ local function parse_options(header_text)
       opts.align = align
     end
   end
+
+  -- Extract spanning behavior (two-column helpers)
+  local span = header_text:match("span=(%w+)")
+  if span == "full" then
+    opts.span = span
+  end
   
   return opts
 end
@@ -245,6 +252,9 @@ local function style_table(tbl, opts)
     end
     if opts.align ~= nil and opts.align ~= "" then
       attrs["md-align"] = opts.align
+    end
+    if opts.span ~= nil and opts.span ~= "" then
+      attrs["md-span"] = opts.span
     end
     if id ~= "" or #classes > 0 or next(attrs) ~= nil then
       tbl.attr = pandoc.Attr(id, classes, attrs)

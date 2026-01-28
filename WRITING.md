@@ -111,123 +111,68 @@ This is paragraph two.
 ## Part 2: Scientific Writing using md-manuscript
 ### Figures
 
-- Use **PDF format** (auto-converted to PNG for Word)
-- Store in `figures/` folder
-- Caption goes **below** the figure
-- Reference with `**@Fig:label**`
-- Default width in PDF/LaTeX is full width (`\linewidth`); override with `width=...`
+**Default way:** Use the **Templater** plugin (click the `< %` icon in Obsidian’s left ribbon). It inserts a simple template you can edit.
+
+The templates live in `resources/templater/` and look like this:
 
 ```markdown
-> [!figure] #fig:label width=100% align=center
-> ![](figures/image.pdf)
+> [!figure] #fig:yourfigurelabel width=100% align=center
+> ![](figures/yourfigure.pdf)
 >
-> **Figure Title.** Legend text describing the figure.
+> **Figure Title.** Caption text.
 ```
 
-**To reference:** Use `**@Fig:label**` in text → renders as "Figure 1"
+**How to use**
+1. Insert the template via **Templater** plugin (click the `< %` icon in the left ribbon).
+2. Change `yourfigurelabel` and `yourfigure.pdf` to your label and file.
+3. Write your caption.
+4. (Optional) Adjust `width` or `align`. Common options:
+   - `width=80%` or `width=0.9\linewidth`
+   - `align=left|center|right`
+   - `span=full` for full-width figures in two-column layouts
 
-**Options are optional to use, you can omit them and the defaults apply.**
+**Reference in text:** `**@Fig:yourfigurelabel**` → “Figure 1”
 
-**Figure width options:**
-- `width=X` - LaTeX/PDF only. Supported: `100%`, `80%`, `\linewidth`, `\textwidth`, or numeric factors like `0.9\linewidth`, `0.9\textwidth`.
-
-**Figure alignment options:**
-- `align=left|center|right` - figure + caption alignment (LaTeX/PDF only).
-
-**Figure spanning option (two-column profiles):**
-- `span=full` - span both columns (LaTeX/PDF only; emits a `figure*` in two-column profiles).
+**Tips**
+- Use PDF figures (auto-converted to PNG for Word).
+- Store figures in the `figures/` folder.
+- Options are optional; defaults work fine and you could delete them.
 
 ### Tables
 
-- Caption goes **above** the table (in a `[!table]` header callout)
-- Reference with `**@Tbl:label**`
-- The actual table stays a normal Markdown table (Obsidian table editor works)
-- Use pipe (`|`) to separate columns
-- Use colons (`:`) to align columns
+**Default way:** Use the **Templater** plugin (click the `< %` icon). It inserts a simple template you can edit.
+
+The table template looks like this:
 
 ```markdown
-> [!table] #tbl:label
+> [!table] #tbl:yourtablelabel width=100% align=center columns=0.25,0.45,0.30 colsep=4pt fontsize=footnotesize spacing=1.1
 >
-> **Table Title.** Description of the table.
+> **Table Title.** Caption text.
 
 | Column A | Column B | Column C |
-|:---------|:--------:|---------:|
-| Left     | Center   | Right    |
-| Value 1  | Value 2  | Value 3  |
+|---|---|---|
+|   |   |   |
 ```
 
-**Alignment:**
-- `:---` = left-aligned
-- `:---:` = centered
-- `---:` = right-aligned
+**How to use**
+1. Insert the template via Templater.
+2. Change `yourtablelabel` to your label.
+3. Write your caption.
+4. Edit the Markdown table (Obsidian’s table editor works).
+5. (Optional) Adjust options:
+   - `width=80%` or `width=\textwidth`
+   - `align=left|center|right`
+   - `span=full` for full-width tables in two-column layouts
+   - `fontsize=small` or `footnotesize`
+   - `columns=0.3,0.7` (relative widths)
+   - `colsep=4pt` (column spacing)
+   - `spacing=1.2` (row spacing)
 
-**To reference:** Use `**@Tbl:label**` in text → renders as "Table 1" (numbering is automatic; do not write "Table 1" manually).
+**Reference in text:** `**@Tbl:yourtablelabel**` → “Table 1”
 
-#### Styled Tables (with width, font size, spacing)
-
-Recommended: keep tables as normal Markdown tables (so Obsidian's table editor works), but put a figure-like `[!table]` header callout above it. The callout carries label/options + caption and is used during export.
-
-```markdown
-> [!table] #tbl:label width=100% align=center fontsize=small spacing=1.2 columns=0.22,0.38,0.28,0.12 colsep=4pt
->
-> **Table Title.** Description of the table.
-
-| Column A | Column B | Column C |
-|:---------|:--------:|---------:|
-| Left     | Center   | Right    |
-```
-
-**Available options:**
-- `#tbl:label` - pandoc-crossref label for referencing
-- `width=X` - total table width (LaTeX/PDF only). Supported: `100%`, `80%`, `\linewidth`, `\textwidth`, or numeric factors like `0.9\linewidth`, `0.9\textwidth`.
-- `align=left|center|right` - table placement on the page (LaTeX/PDF only). This does **not** affect per-column alignment.
-- `span=full` - span both columns in two-column profiles (LaTeX/PDF only; emits a `table*` in two-column profiles).
-- `columns=a,b,c,...` - relative column widths (LaTeX/PDF only). Values are normalized; must match the number of columns.
-- `colsep=X` - horizontal padding between columns (LaTeX/PDF only), sets `\tabcolsep`, e.g. `colsep=4pt`.
-- `fontsize=X` - LaTeX font size for the table (LaTeX/PDF only), e.g. `footnotesize`, `small`.
-- `family=X` - LaTeX font family for the table (LaTeX/PDF only): `rmfamily`, `sffamily`, `ttfamily`.
-- `spacing=X` - vertical row spacing multiplier (LaTeX/PDF only), sets `\arraystretch`, e.g. `spacing=1.2`.
-
-**Examples:**
-```markdown
-> [!table] #tbl:results fontsize=footnotesize
->
-> Gene expression results from RNA-seq analysis.
-
-| Gene | Expression | p-value |
-|------|------------|---------|
-| ABC1 | 2.5        | 0.001   |
-
-> [!table] #tbl:wide-data width=100% fontsize=small spacing=1.3
->
-> Measurements across replicates with summary statistics.
-
-| Sample | Condition | Rep 1 | Rep 2 | Rep 3 | Mean | SD |
-|--------|-----------|-------|-------|-------|------|-----|
-| S1     | Control   | 1.2   | 1.3   | 1.1   | 1.2  | 0.1 |
-```
-
-#### Landscape Tables (PDF)
-
-Wrap wide tables with the raw LaTeX `landscape` environment (requires `pdflscape`, already included in the PDF profiles):
-
-```markdown
-```{=latex}
-\begin{landscape}
-```
-
-> [!table] #tbl:label width=\textwidth fontsize=small spacing=1.1
->
-> **Table Title.** Description of the table.
-
-| Column A | Column B | Column C | Column D |
-|:---------|:--------:|---------:|:---------|
-| Left     | Center   | Right    | Left     |
-
-```{=latex}
-\end{landscape}
-```
-```
+**Tips**
+- Column alignment in the table uses `:---` (left), `:---:` (center), `---:` (right).
+- Options are optional; defaults work fine and you could delete them.
 
 ### Cross-References
 
@@ -316,23 +261,23 @@ This statement needs clarification^[This is the footnote text.].
 
 The `examples/` folder contains ready-to-use templates for different document types. Each template is optimized for specific use cases and profiles.
 
-# 4. Full-width Elements (Two-Column Layouts)
+# Full-width Elements (Two-Column Layouts)
 
-For two-column profiles if you want to include full-width figures or tables that span both columns, use the `span=full` option:
+For two-column profiles, add `span=full` to make figures or tables span both columns:
 
 ```markdown
 > [!figure] #fig:label span=full width=90% align=center
 > ![](figures/image.pdf)
 >
-> **Figure Title.** Legend text.
+> **Figure Title.** Caption.
 ```
 
 ```markdown
 > [!table] #tbl:label span=full align=center
 >
-> **Table Title.** Description.
+> **Table Title.** Caption.
 
-| Column A | Column B |
-|---------:|:---------|
-| Value 1  | Value 2  |
+| A | B |
+|---|---|
+| 1 | 2 |
 ```

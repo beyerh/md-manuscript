@@ -8,9 +8,9 @@ This guide will help you write scientific manuscripts, theses, and notes using M
 
 ### What is Markdown?
 
-Markdown is a lightweight markup language that uses plain text formatting syntax. It's easy to read and write, and can be converted to beautifully formatted documents (PDF, Word, HTML, etc.).
+Markdown is a simple way to format text that can be converted to PDF, Word, HTML, and more. It's designed to be easy to read and write.
 
-### Basic Syntax
+### Basic Formatting
 
 #### Headers
 
@@ -111,7 +111,7 @@ This is paragraph two.
 ## Part 2: Scientific Writing using md-manuscript
 ### Figures
 
-**Default way:** Use the **Templater** plugin (click the `< %` icon in Obsidian’s left ribbon). It inserts a simple template you can edit.
+**Easiest method:** Use the **Templater** plugin (click the `< %` icon in Obsidian's left ribbon). It inserts a ready-to-use template.
 
 The templates live in `resources/templater/` and look like this:
 
@@ -122,25 +122,23 @@ The templates live in `resources/templater/` and look like this:
 > **Figure Title.** Caption text.
 ```
 
-**How to use**
-1. Insert the template via **Templater** plugin (click the `< %` icon in the left ribbon).
-2. Change `yourfigurelabel` and `yourfigure.pdf` to your label and file.
-3. Write your caption.
-4. (Optional) Adjust `width` or `align`. Common options:
-   - `width=80%` or `width=0.9\linewidth`
-   - `align=left|center|right`
-   - `span=full` for full-width figures in two-column layouts
+**How to use:**
+1. Click the `< %` icon and select the figure template
+2. Change `yourfigurelabel` to something descriptive (e.g., `results`)
+3. Change `yourfigure.pdf` to your actual file name
+4. Write your title and caption
+5. (Optional) Adjust size/alignment if needed
 
-**Reference in text:** `**@Fig:yourfigurelabel**` → “Figure 1”
+**Reference in text:** `See **@Fig:yourfigurelabel**` → automatically becomes "See Figure 1"
 
-**Tips**
-- Use PDF figures (auto-converted to PNG for Word).
-- Store figures in the `figures/` folder.
-- Options are optional; defaults work fine and you could delete them.
+**Tips:**
+- Use PDF figures when possible (automatically converted to PNG for Word if needed)
+- Keep figures in the `figures/` folder
+- The options (width, align) are optional - defaults work fine and you can delete them if you want
 
 ### Tables
 
-**Default way:** Use the **Templater** plugin (click the `< %` icon). It inserts a simple template you can edit.
+**Easiest method:** Use the **Templater** plugin (click the `< %` icon) for a ready-to-use template.
 
 The table template looks like this:
 
@@ -159,7 +157,7 @@ The table template looks like this:
 2. Change `yourtablelabel` to your label.
 3. Write your caption.
 4. Edit the Markdown table (Obsidian’s table editor works).
-5. (Optional) Adjust options:
+5. (Optional) Adjust options or delete them if you want:
    - `width=80%` or `width=\textwidth`
    - `align=left|center|right`
    - `span=full` for full-width tables in two-column layouts
@@ -239,6 +237,7 @@ Smith et al. [-@smith2023] reported...
 ```markdown
 The results show ==significant improvement== in all metrics.
 ```
+You can use the Toolbar button to apply highlighting.
 
 **Colored text** (PDF only):
 ```markdown
@@ -246,8 +245,9 @@ This is <font color="red">red text</font>.
 This is <font color="#0000ff">blue text</font>.
 This is <font color="green">green text</font>.
 ```
+You can use the Toolbar button to apply colors.
 
-**Note:** Colored text works in PDF but **not in DOCX**. For Word documents, apply colors manually after export, or use highlighting which works in both formats.
+**Note:** Colored text works in PDF/LaTeX but **not in DOCX**. For Word documents, apply colors manually after export, or use highlighting which works in both formats.
 
 ### Footnotes
 

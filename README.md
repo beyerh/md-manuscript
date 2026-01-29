@@ -1,25 +1,28 @@
 # Scientific Manuscript Template
 
-Write scientific manuscripts and theses in Markdown and export to Word and PDF using a custom Obsidian plugin or a script.
+Write scientific manuscripts and theses in Markdown and export to PDF, Word, and LaTeX using a custom Obsidian plugin or a script.
 
 ## Quick Start
 
-**Using Obsidian (recommended):**
-1. Open this folder as an Obsidian vault
-2. Click the **Build** icon in the left ribbon
-3. Configure options and click Build (Defaults in the plugin settings)
+**Option 1: Obsidian (Easiest)**
+1. Download and extract this folder
+2. Open in Obsidian
+3. Click the **Build** button in the left sidebar
+4. Choose your document type and click **Build**
+
 <img src="/figures/plugin_button.jpg" alt="drawing" width="500"/>
 
-**Using the terminal in case you want to use a different editor:**
+
+**Option 2: Terminal**
 ```bash
 python build.py
 ```
 
 Both methods support:
-- Multiple output formats (Word / PDF)
-- Journal-specific profiles (Nature, Cell, etc.)
+- Multiple output formats (PDF, Word, LaTeX)
+- Style/journal-specific profiles
 - Templates/examples
-- Custom fonts and citation styles
+- Custom fonts, citation styles, formatting options
 
 **Output:** All documents are created in the `export/` folder.
 
@@ -235,21 +238,18 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
 - **Zotero Integration** - Insert citations from Zotero
 - **Pandoc Reference List** - View formatted references
 - **Editing Toolbar** - Text formatting
+- **Templater** - Insert tables, figures, etc.
 - **Commentator** - Track Changes
 - **LanguageTool Integration** - Improved spell check
 - **Git** - Version control
 
 **Zotero Integration:**
-- Citation Format: Set e.g. as `Cite` with **Pandoc** output format
-- Set hotkey (e.g., `Alt+Z`) for quick citation insertion
+- In the plugin settings, Citation Format: Set e.g. as `Cite` with **Pandoc** output format
+- Set hotkey (e.g., `Alt+Z`) or use `Cmd/Ctrl + P` for quick citation insertion
 
 **Pandoc Reference List:**
 - Set path to: `your/path/to/resources/references.json`
 - Enable "Show citations in sidebar"
-
-**Terminal:**
-- Open integrated terminal from ribbon icon
-- Here you can run: `python build.py`
 
 ## Zotero Setup (References)
 
@@ -261,15 +261,6 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
    - Save as `resources/references.json`
 
 **Citation syntax:** `[@smith2023]` or `[@smith2023; @jones2024]` or use the Zotero Integraion plugin 
-
-### Configure Defaults
-
-The manuscript build plugin and the build script have a "Configure Defaults" option to set:
-- **Font** (default: Libertinus)
-- **Font Size** (default: 11pt)
-- **Citation Style** (default: Vancouver)
-
-Once configured, these settings are used for all builds unless you reconfigure them.
 
 ### Word Customization
 
@@ -292,10 +283,8 @@ Then:
 
 **Option 2: From existing output**
 1. Build a document once with the provided `reference_doc.docx`
-2. Open the generated Word document
-3. Format all styles as desired (Normal, Heading 1-3, Figure Caption, Table Caption)
-4. **Important:** Create a `FrontMatter` style for author information
-5. Save as `resources/reference_doc.docx`
+2. Format all styles as desired (Normal, Heading 1-3, Figure Caption, Table Caption)
+3. Save as `resources/reference_doc.docx`
 
 ### PDF Customization
 
@@ -303,6 +292,11 @@ The template uses **profiles** (YAML files in `resources/profiles/`) to define o
 - `_base.yaml` - Shared defaults inherited by all profiles
 - `pdf-*.yaml` - PDF-specific profiles
 - `docx-manuscript.yaml` - Word document profile
+
+**Create custom PDF profiles:**
+1. Copy `pdf-default.yaml` to `pdf-my-journal.yaml`
+2. Edit settings (fonts, margins, spacing)
+3. The build script will automatically show it in the profile list
 
 ### Portable LaTeX Export
 
@@ -323,26 +317,13 @@ Exports a `.tex` file intended to be portable across LaTeX environments for jour
 - The output is written to `export/<name>.tex`.
 - For portability, the exporter strips profile font settings (`mainfont`, `sansfont`, `monofont`) so the `.tex` does not depend on system fonts.
 
-```bash
-python build.py --source=01_maintext.md --profile=pdf-nature --tex
-```
-
 **3) LaTeX Body-only (for journal templates)**
 
 Exports only the content between `\begin{document}` and `\end{document}`. This is useful if a journal provides a class/template and you want to paste the manuscript content into their `.tex`.
 
-```bash
-python build.py --source=01_maintext.md --profile=pdf-nature --tex-body
-```
-
-**Compiling the exported `.tex`:**
+**Test-Compiling the exported `.tex`:**
 - Recommended (typical journal toolchain): `pdflatex` / `latexmk`.
 - If you use `tectonic`, it should compile as well; any reproducibility warnings about system font paths indicate local font discovery and do not affect journal compilation.
-
-**Create custom PDF profiles:**
-1. Copy `pdf-default.yaml` to `pdf-my-journal.yaml`
-2. Edit settings (fonts, margins, spacing)
-3. The build script will automatically show it in the profile list
 
 ---
 ## Development

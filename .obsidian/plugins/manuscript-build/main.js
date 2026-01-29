@@ -280,6 +280,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       lineSpacing: "",
       paragraphStyle: "",
       lineNumbers: null,
+      pageNumbers: null,
       numberedHeadings: null,
       language: ""
     };
@@ -307,6 +308,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           lineSpacing: data.linespacing || "",
           paragraphStyle: data.paragraph_style || "",
           lineNumbers: data.linenumbers !== void 0 ? data.linenumbers : null,
+          pageNumbers: data.pagenumbers !== void 0 ? data.pagenumbers : null,
           numberedHeadings: data.numbered_headings !== void 0 ? data.numbered_headings : null,
           language: data.language || ""
         };
@@ -334,6 +336,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       linespacing: config.lineSpacing || null,
       paragraph_style: config.paragraphStyle || null,
       linenumbers: config.lineNumbers,
+      pagenumbers: config.pageNumbers,
       numbered_headings: config.numberedHeadings,
       language: config.language || null
     };
@@ -437,6 +440,11 @@ Error: ${err.message}`, true);
     } else if (config.lineNumbers === false) {
       args.push("--no-linenumbers");
     }
+    if (config.pageNumbers === true) {
+      args.push("--pagenumbers");
+    } else if (config.pageNumbers === false) {
+      args.push("--no-pagenumbers");
+    }
     if (config.numberedHeadings === true) {
       args.push("--numbered-headings");
     } else if (config.numberedHeadings === false) {
@@ -489,6 +497,7 @@ var BuildModal = class extends import_obsidian.Modal {
         lineSpacing: "",
         paragraphStyle: "",
         lineNumbers: null,
+        pageNumbers: null,
         numberedHeadings: null,
         language: ""
       };
@@ -521,15 +530,14 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     new import_obsidian.Setting(contentEl).setName("Frontmatter").setDesc("Optional file to prepend (title, authors, etc.)").addDropdown((dropdown) => {
-      var _a;
       this.frontmatterDropdown = dropdown;
       dropdown.addOption("", "None");
       mdFiles.forEach((file) => {
         dropdown.addOption(file, file);
       });
-      if (((_a = this.lastConfig) == null ? void 0 : _a.frontmatterFile) && mdFiles.includes(this.lastConfig.frontmatterFile)) {
+      if (this.lastConfig && this.lastConfig.frontmatterFile !== void 0) {
         this.config.frontmatterFile = this.lastConfig.frontmatterFile;
-        dropdown.setValue(this.lastConfig.frontmatterFile);
+        dropdown.setValue(this.lastConfig.frontmatterFile || "");
       } else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
         dropdown.setValue(this.config.frontmatterFile);
       } else {
@@ -650,6 +658,21 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
+    new import_obsidian.Setting(contentEl).setName("Page Numbers").setDesc("Override page numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+      this.pageNumbersDropdown = dropdown;
+      dropdown.addOption("default", "Profile Default");
+      dropdown.addOption("on", "On");
+      dropdown.addOption("off", "Off");
+      const currentValue = this.config.pageNumbers === null ? "default" : this.config.pageNumbers ? "on" : "off";
+      dropdown.setValue(currentValue);
+      dropdown.onChange((value) => {
+        if (value === "default") {
+          this.config.pageNumbers = null;
+        } else {
+          this.config.pageNumbers = value === "on";
+        }
+      });
+    });
     new import_obsidian.Setting(contentEl).setName("Numbered Headings").setDesc("Override heading numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
       this.numberedHeadingsDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
@@ -747,7 +770,7 @@ var BuildModal = class extends import_obsidian.Modal {
     });
   }
   restoreDefaults() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
     const mdFiles = this.plugin.getMarkdownFiles();
     const settings = this.plugin.settings;
     this.config.profile = settings.defaultProfile;
@@ -757,6 +780,7 @@ var BuildModal = class extends import_obsidian.Modal {
     this.config.lineSpacing = "";
     this.config.paragraphStyle = "";
     this.config.lineNumbers = null;
+    this.config.pageNumbers = null;
     this.config.numberedHeadings = null;
     this.config.language = "";
     this.config.usePng = false;
@@ -784,13 +808,14 @@ var BuildModal = class extends import_obsidian.Modal {
     (_g = this.lineSpacingDropdown) == null ? void 0 : _g.setValue(this.config.lineSpacing);
     (_h = this.paragraphStyleDropdown) == null ? void 0 : _h.setValue(this.config.paragraphStyle);
     (_i = this.lineNumbersDropdown) == null ? void 0 : _i.setValue("default");
-    (_j = this.numberedHeadingsDropdown) == null ? void 0 : _j.setValue("default");
-    (_k = this.languageDropdown) == null ? void 0 : _k.setValue(this.config.language);
-    (_l = this.citationDropdown) == null ? void 0 : _l.setValue(this.config.citationStyle);
-    (_m = this.pngToggle) == null ? void 0 : _m.setValue(this.config.usePng);
-    (_n = this.siRefsToggle) == null ? void 0 : _n.setValue(this.config.includeSiRefs);
-    (_o = this.siFileDropdown) == null ? void 0 : _o.setValue(this.config.siFile || "");
-    (_p = this.isSiToggle) == null ? void 0 : _p.setValue(this.config.isSi);
+    (_j = this.pageNumbersDropdown) == null ? void 0 : _j.setValue("default");
+    (_k = this.numberedHeadingsDropdown) == null ? void 0 : _k.setValue("default");
+    (_l = this.languageDropdown) == null ? void 0 : _l.setValue(this.config.language);
+    (_m = this.citationDropdown) == null ? void 0 : _m.setValue(this.config.citationStyle);
+    (_n = this.pngToggle) == null ? void 0 : _n.setValue(this.config.usePng);
+    (_o = this.siRefsToggle) == null ? void 0 : _o.setValue(this.config.includeSiRefs);
+    (_p = this.siFileDropdown) == null ? void 0 : _p.setValue(this.config.siFile || "");
+    (_q = this.isSiToggle) == null ? void 0 : _q.setValue(this.config.isSi);
     this.updateFormatOptions(currentFormat);
     this.siFileContainer.style.display = "none";
     new import_obsidian.Notice("Settings restored to defaults");

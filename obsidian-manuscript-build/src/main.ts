@@ -43,6 +43,7 @@ interface BuildConfig {
 	lineSpacing: string;
 	paragraphStyle: string;
 	lineNumbers: boolean | null;
+	pageNumbers: boolean | null;
 	numberedHeadings: boolean | null;
 	language: string;
 }
@@ -364,6 +365,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			lineSpacing: "",
 			paragraphStyle: "",
 			lineNumbers: null,
+			pageNumbers: null,
 			numberedHeadings: null,
 			language: "",
 		};
@@ -392,6 +394,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					lineSpacing: data.linespacing || "",
 					paragraphStyle: data.paragraph_style || "",
 					lineNumbers: data.linenumbers !== undefined ? data.linenumbers : null,
+					pageNumbers: data.pagenumbers !== undefined ? data.pagenumbers : null,
 					numberedHeadings: data.numbered_headings !== undefined ? data.numbered_headings : null,
 					language: data.language || "",
 				};
@@ -420,6 +423,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			linespacing: config.lineSpacing || null,
 			paragraph_style: config.paragraphStyle || null,
 			linenumbers: config.lineNumbers,
+			pagenumbers: config.pageNumbers,
 			numbered_headings: config.numberedHeadings,
 			language: config.language || null,
 		};
@@ -546,6 +550,12 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			args.push("--no-linenumbers");
 		}
 
+		if (config.pageNumbers === true) {
+			args.push("--pagenumbers");
+		} else if (config.pageNumbers === false) {
+			args.push("--no-pagenumbers");
+		}
+
 		if (config.numberedHeadings === true) {
 			args.push("--numbered-headings");
 		} else if (config.numberedHeadings === false) {
@@ -600,6 +610,7 @@ class BuildModal extends Modal {
 	private lineSpacingDropdown: DropdownComponent;
 	private paragraphStyleDropdown: DropdownComponent;
 	private lineNumbersDropdown: DropdownComponent;
+	private pageNumbersDropdown: DropdownComponent;
 	private numberedHeadingsDropdown: DropdownComponent;
 	private languageDropdown: DropdownComponent;
 	private citationDropdown: DropdownComponent;
@@ -635,6 +646,7 @@ class BuildModal extends Modal {
 				lineSpacing: "",
 				paragraphStyle: "",
 				lineNumbers: null,
+				pageNumbers: null,
 				numberedHeadings: null,
 				language: "",
 			};
@@ -691,12 +703,13 @@ class BuildModal extends Modal {
 					dropdown.addOption(file, file);
 				});
 				// Use lastConfig value if available, otherwise find sensible default
-				if (this.lastConfig?.frontmatterFile && mdFiles.includes(this.lastConfig.frontmatterFile)) {
-					this.config.frontmatterFile = this.lastConfig.frontmatterFile;
-					dropdown.setValue(this.lastConfig.frontmatterFile);
-				} else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
-					dropdown.setValue(this.config.frontmatterFile);
-				} else {
+		if (this.lastConfig && this.lastConfig.frontmatterFile !== undefined) {
+			// Explicitly respect "None" selection (null) from last config
+			this.config.frontmatterFile = this.lastConfig.frontmatterFile;
+			dropdown.setValue(this.lastConfig.frontmatterFile || "");
+		} else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
+			dropdown.setValue(this.config.frontmatterFile);
+		} else {
 					const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
 					if (frontmatter) {
 						this.config.frontmatterFile = frontmatter;
@@ -871,6 +884,26 @@ class BuildModal extends Modal {
 				});
 			});
 
+		// Page numbers
+		new Setting(contentEl)
+			.setName("Page Numbers")
+			.setDesc("Override page numbering (three-state: Profile Default / On / Off)")
+			.addDropdown((dropdown) => {
+				this.pageNumbersDropdown = dropdown;
+				dropdown.addOption("default", "Profile Default");
+				dropdown.addOption("on", "On");
+				dropdown.addOption("off", "Off");
+				const currentValue = this.config.pageNumbers === null ? "default" : (this.config.pageNumbers ? "on" : "off");
+				dropdown.setValue(currentValue);
+				dropdown.onChange((value) => {
+					if (value === "default") {
+						this.config.pageNumbers = null;
+					} else {
+						this.config.pageNumbers = value === "on";
+					}
+				});
+			});
+
 		// Numbered headings
 		new Setting(contentEl)
 			.setName("Numbered Headings")
@@ -1032,6 +1065,7 @@ class BuildModal extends Modal {
 		this.config.lineSpacing = "";
 		this.config.paragraphStyle = "";
 		this.config.lineNumbers = null;
+		this.config.pageNumbers = null;
 		this.config.numberedHeadings = null;
 		this.config.language = "";
 		this.config.usePng = false;
@@ -1068,6 +1102,7 @@ class BuildModal extends Modal {
 		this.lineSpacingDropdown?.setValue(this.config.lineSpacing);
 		this.paragraphStyleDropdown?.setValue(this.config.paragraphStyle);
 		this.lineNumbersDropdown?.setValue("default");
+		this.pageNumbersDropdown?.setValue("default");
 		this.numberedHeadingsDropdown?.setValue("default");
 		this.languageDropdown?.setValue(this.config.language);
 		this.citationDropdown?.setValue(this.config.citationStyle);

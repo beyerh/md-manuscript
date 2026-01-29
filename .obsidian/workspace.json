@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "fd3e0e0112f340ee",
+        "id": "0079f50c04697bd6",
         "type": "tabs",
         "children": [
           {
-            "id": "1da7ebe1fe5e9255",
+            "id": "f5382b300ae41246",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -181,13 +181,14 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "1da7ebe1fe5e9255",
+  "active": "beb314a26d857518",
   "lastOpenFiles": [
-    "WRITING.md",
     "export/02-md-manuscript-maintext.pdf",
-    "02-md-manuscript-maintext.md",
-    "_temp_02-md-manuscript-maintext_merged.md",
+    "_si_header.tex",
     "_temp_config.yaml",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "WRITING.md",
+    "02-md-manuscript-maintext.md",
     "resources/templater/insert_table.md",
     "resources/templater/insert_landscape_table.md",
     "resources/templater/insert_figure.md",
@@ -202,7 +203,6 @@
     "figures/figure2.png",
     "figures/figure1.png",
     "README.md",
-    "export/md-manuscript-maintext.pdf",
     "examples/md-manuscript-maintext.md",
     "03-md-manuscript_supp_info.md",
     "md-manuscript_supp_info.md",

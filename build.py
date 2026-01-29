@@ -41,6 +41,7 @@ DEFAULT_SETTINGS = {
     "linespacing": "",
     "paragraph_style": "",
     "linenumbers": None,
+    "pagenumbers": None,
     "numbered_headings": None,
     "language": ""
 }
@@ -529,6 +530,7 @@ def apply_font_overrides_to_defaults_file(
     linespacing: Optional[str] = None,
     paragraph_style: Optional[str] = None,
     linenumbers: Optional[bool] = None,
+    pagenumbers: Optional[bool] = None,
     numbered_headings: Optional[bool] = None,
     language: Optional[str] = None,
 ) -> None:
@@ -537,7 +539,7 @@ def apply_font_overrides_to_defaults_file(
     This avoids situations where multiple settings (from profile + CLI)
     end up concatenated in the generated LaTeX.
     """
-    if not any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, numbered_headings is not None, language]):
+    if not any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, pagenumbers is not None, numbered_headings is not None, language]):
         return
 
     path = Path(defaults_path)
@@ -633,13 +635,17 @@ def apply_font_overrides_to_defaults_file(
     if linenumbers is not None:
         _apply_linenumbers_override(defaults_path, linenumbers)
     
+    # Handle page numbers - need to modify header-includes
+    if pagenumbers is not None:
+        _apply_pagenumbers_override(defaults_path, pagenumbers)
+    
     # Handle paragraph style - need to modify parindent/parskip in header-includes
     if paragraph_style:
         _apply_paragraph_style_override(defaults_path, paragraph_style)
 
 
 def _apply_linenumbers_override(defaults_path: str, enable: bool) -> None:
-    """Add or remove \\linenumbers from header-includes inside variables block."""
+    r"""Add or remove \linenumbers from header-includes inside variables block."""
     path = Path(defaults_path)
     if not path.exists():
         return
@@ -684,6 +690,53 @@ def _apply_linenumbers_override(defaults_path: str, enable: bool) -> None:
             path.write_text(''.join(result_lines))
     else:
         # Just write back the file with lineno lines removed
+        path.write_text(''.join(new_lines))
+
+
+def _apply_pagenumbers_override(defaults_path: str, enable: bool) -> None:
+    """Add or remove page numbering from header-includes inside variables block."""
+    path = Path(defaults_path)
+    if not path.exists():
+        return
+    
+    content = path.read_text()
+    lines = content.splitlines(True)
+    
+    # First, remove any existing page numbering related lines
+    new_lines = []
+    for line in lines:
+        if r'\pagenumbering{gobble}' in line or r'\pagenumbering{arabic}' in line:
+            continue
+        new_lines.append(line)
+    
+    # If disabling page numbers, add \pagenumbering{gobble}
+    # If enabling explicitly, add \pagenumbering{arabic}
+    result_lines = []
+    in_variables = False
+    in_header_includes = False
+    added = False
+    
+    for line in new_lines:
+        result_lines.append(line)
+        stripped = line.strip()
+        indent = len(line) - len(line.lstrip())
+        
+        if stripped == "variables:":
+            in_variables = True
+        elif in_variables and stripped == "header-includes:":
+            in_header_includes = True
+        elif in_header_includes and not added:
+            if stripped.startswith("- "):
+                item_indent = indent
+                indent_str = " " * item_indent
+                injection = r"\pagenumbering{arabic}" if enable else r"\pagenumbering{gobble}"
+                result_lines.insert(-1, f"{indent_str}- {injection}\n")
+                added = True
+                in_header_includes = False
+    
+    if added:
+        path.write_text(''.join(result_lines))
+    else:
         path.write_text(''.join(new_lines))
 
 
@@ -853,14 +906,25 @@ def resolve_citation_style(citation_style: str) -> Tuple[Optional[str], Optional
     return None, None
 
 
-def create_si_header():
-    """Create the SI header file for LaTeX."""
-    content = r"""\usepackage{lineno}
-\setcounter{page}{1}
-\renewcommand{\thefigure}{S\arabic{figure}}
-\renewcommand{\thetable}{S\arabic{table}}
-\renewcommand{\thepage}{S\arabic{page}}
-"""
+def create_si_header(pagenumbers: Optional[bool] = None):
+    """Create the SI header file for LaTeX.
+    
+    Args:
+        pagenumbers: If False, skip the \\thepage redefinition to allow
+                     \\pagenumbering{gobble} to work. If True or None,
+                     include S-prefixed page numbering.
+    """
+    lines = [
+        r"\usepackage{lineno}",
+        r"\setcounter{page}{1}",
+        r"\renewcommand{\thefigure}{S\arabic{figure}}",
+        r"\renewcommand{\thetable}{S\arabic{table}}",
+    ]
+    # Only include S-prefixed page numbers if page numbering is not explicitly disabled
+    if pagenumbers in (None, True):
+        lines.append(r"\renewcommand{\thepage}{S\arabic{page}}")
+    
+    content = "\n".join(lines) + "\n"
     with open(SI_HEADER, "w") as f:
         f.write(content)
 
@@ -912,7 +976,8 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
                    fontsize: Optional[str] = None, citation_style: Optional[str] = None,
                    si_file: Optional[str] = None, is_si: bool = False,
                    linespacing: Optional[str] = None, paragraph_style: Optional[str] = None,
-                   linenumbers: Optional[bool] = None, numbered_headings: Optional[bool] = None,
+                   linenumbers: Optional[bool] = None, pagenumbers: Optional[bool] = None,
+                   numbered_headings: Optional[bool] = None,
                    language: Optional[str] = None, tex_mode: Optional[str] = None):
     """Build the document with specified profile."""
     # Get profile info
@@ -992,12 +1057,13 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
         (fmt == "latex" and tex_mode in ("portable", "body"))
         or is_latex_default_compat_font
     ) else font
-    has_overrides = any([effective_font, fontsize, linespacing, paragraph_style, linenumbers is not None, numbered_headings is not None, language])
+    has_overrides = any([effective_font, fontsize, linespacing, paragraph_style, linenumbers is not None, pagenumbers is not None, numbered_headings is not None, language])
     if fmt in ("pdf", "latex") and has_overrides:
         apply_font_overrides_to_defaults_file(
             config_file, font=effective_font, fontsize=fontsize,
             linespacing=linespacing, paragraph_style=paragraph_style,
-            linenumbers=linenumbers, numbered_headings=numbered_headings,
+            linenumbers=linenumbers, pagenumbers=pagenumbers,
+            numbered_headings=numbered_headings,
             language=language
         )
         if effective_font and effective_font in FONT_PRESETS:
@@ -1014,6 +1080,10 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
             print(f"   Line numbers: enabled")
         elif linenumbers is False:
             print(f"   Line numbers: disabled")
+        if pagenumbers is True:
+            print(f"   Page numbers: enabled")
+        elif pagenumbers is False:
+            print(f"   Page numbers: disabled")
         if numbered_headings is True:
             print(f"   Numbered headings: enabled")
         elif numbered_headings is False:
@@ -1039,7 +1109,7 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     
     # Add SI-specific options
     if is_si:
-        create_si_header()
+        create_si_header(pagenumbers=pagenumbers)
         cmd.extend([
             "--metadata", 'figPrefix=["Fig.","Figs."]',
             "--metadata", 'tblPrefix=["Table","Tables"]',
@@ -1183,6 +1253,9 @@ def configure_defaults() -> None:
     nh = defaults.get('numbered_headings')
     nh_str = "Profile Default" if nh is None else ("Numbered" if nh else "Unnumbered")
     print(box_row(f"Headings: {nh_str}"))
+    pn = defaults.get('pagenumbers')
+    pn_str = "Profile Default" if pn is None else ("Enabled" if pn else "Disabled")
+    print(box_row(f"Page Numbers: {pn_str}"))
     lang = defaults.get('language', '')
     print(box_row(f"Language: {LANGUAGE_PRESETS.get(lang, 'Profile Default')}"))
     print(box_bottom())
@@ -1337,6 +1410,22 @@ def configure_defaults() -> None:
             defaults['numbered_headings'] = True
         elif nh_choice == "2":
             defaults['numbered_headings'] = False
+
+    # Page numbers
+    print(box_row(""))
+    cur_pn = defaults.get('pagenumbers')
+    print(box_row("Page Numbers:"))
+    print(box_row(f"  0) Profile Default{' (current)' if cur_pn is None else ''}"))
+    print(box_row(f"  1) Enable{' (current)' if cur_pn is True else ''}"))
+    print(box_row(f"  2) Disable{' (current)' if cur_pn is False else ''}"))
+    pn_choice = input("│  Select page numbering [0-2, Enter=keep current]: ").strip()
+    if pn_choice:
+        if pn_choice == "0":
+            defaults['pagenumbers'] = None
+        elif pn_choice == "1":
+            defaults['pagenumbers'] = True
+        elif pn_choice == "2":
+            defaults['pagenumbers'] = False
     
     # Language
     print(box_row(""))
@@ -1555,6 +1644,7 @@ def interactive_menu() -> Dict[str, Any]:
         "linespacing": defaults.get('linespacing') or None,
         "paragraph_style": defaults.get('paragraph_style') or None,
         "linenumbers": defaults.get('linenumbers'),
+        "pagenumbers": defaults.get('pagenumbers'),
         "numbered_headings": defaults.get('numbered_headings'),
         "language": defaults.get('language') or None,
     }
@@ -1593,6 +1683,7 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         "linespacing": None,
         "paragraph_style": None,
         "linenumbers": None,
+        "pagenumbers": None,
         "numbered_headings": None,
         "language": None,
     }
@@ -1621,6 +1712,10 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
             config["linenumbers"] = True
         elif arg == "--no-linenumbers":
             config["linenumbers"] = False
+        elif arg == "--pagenumbers":
+            config["pagenumbers"] = True
+        elif arg == "--no-pagenumbers":
+            config["pagenumbers"] = False
         elif arg == "--numbered-headings":
             config["numbered_headings"] = True
         elif arg == "--no-numbered-headings":
@@ -1682,6 +1777,8 @@ Options:
   --paragraph-style=NAME     Override paragraph style ({para_list})
   --linenumbers              Enable line numbers
   --no-linenumbers           Disable line numbers
+  --pagenumbers              Enable page numbers
+  --no-pagenumbers           Disable page numbers
   --numbered-headings        Enable numbered headings
   --no-numbered-headings     Disable numbered headings
   --lang=CODE                Set document language ({lang_list})
@@ -1769,6 +1866,7 @@ def main():
         config.get("linespacing"),
         config.get("paragraph_style"),
         config.get("linenumbers"),
+        config.get("pagenumbers"),
         config.get("numbered_headings"),
         config.get("language"),
         config.get("tex_mode"),

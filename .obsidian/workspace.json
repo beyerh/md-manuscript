@@ -4,23 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "09b580868f9c747d",
+        "id": "865aec5d137da08b",
         "type": "tabs",
         "children": [
           {
-            "id": "e7f5bf4b810f6268",
+            "id": "4e1b5eb7861f0cf4",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "README.md",
-                "mode": "source",
-                "source": false,
-                "annotationGutterFolded": false,
-                "annotationGutterWidth": 300
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "README"
+              "title": "New tab"
             }
           }
         ]
@@ -158,13 +152,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of README"
+              "title": "Outline"
             }
           }
         ],
@@ -188,12 +181,13 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "e7f5bf4b810f6268",
+  "active": "4e1b5eb7861f0cf4",
   "lastOpenFiles": [
     "export/02-md-manuscript-maintext.pdf",
-    "_si_header.tex",
     "_temp_config.yaml",
     "_temp_02-md-manuscript-maintext_merged.md",
+    "README.md",
+    "_si_header.tex",
     "WRITING.md",
     "02-md-manuscript-maintext.md",
     "resources/templater/insert_table.md",
@@ -209,7 +203,6 @@
     "export/figures/figure2.pdf",
     "figures/figure2.png",
     "figures/figure1.png",
-    "README.md",
     "examples/md-manuscript-maintext.md",
     "03-md-manuscript_supp_info.md",
     "md-manuscript_supp_info.md",

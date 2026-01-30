@@ -233,15 +233,21 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
 
 ## Configuration
 ***
-**The plugins are included in this repository and pre-configured. However, you still have to install and configure Zotero***
+**The plugins are included in this repository and pre-configured. However, you still have to install and configure Zotero***.
 
+**Selected included plugins in this vault:**
+
+- **ManuscriptBuild** - md-manuscript custom plugin (included)
 - **Zotero Integration** - Insert citations from Zotero
 - **Pandoc Reference List** - View formatted references
 - **Editing Toolbar** - Text formatting
 - **Templater** - Insert tables, figures, etc.
 - **Commentator** - Track Changes
-- **LanguageTool Integration** - Improved spell check
+- **Harper** - AI-free and local spell/grammar checker. You can consider LanguageTool as an non-local alternative that supports many languages.
+- **Style Settings** - Allows the included customized theme derived from the [template](https://www.linkingyourthinking.com/thank-you/lyt-anuppucin-style-settings) of Nick Milo
 - **Git** - Version control
+- **Sort & Permute lines** - Sort and permute lines in whole text or selection
+- **Terminal** - open a terminal in obsidian (e.g. to execute scripts/commands)
 
 **Zotero Integration:**
 - In the plugin settings, Citation Format: Set e.g. as `Cite` with **Pandoc** output format

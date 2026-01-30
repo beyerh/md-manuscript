@@ -4,17 +4,23 @@
     "type": "split",
     "children": [
       {
-        "id": "0079f50c04697bd6",
+        "id": "09b580868f9c747d",
         "type": "tabs",
         "children": [
           {
-            "id": "f5382b300ae41246",
+            "id": "e7f5bf4b810f6268",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false,
+                "annotationGutterFolded": false,
+                "annotationGutterWidth": 300
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "README"
             }
           }
         ]
@@ -152,12 +158,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of README"
             }
           }
         ],
@@ -181,7 +188,7 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "beb314a26d857518",
+  "active": "e7f5bf4b810f6268",
   "lastOpenFiles": [
     "export/02-md-manuscript-maintext.pdf",
     "_si_header.tex",

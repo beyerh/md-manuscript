@@ -2,11 +2,11 @@
   "obsidian-pandoc-reference-list",
   "obsidian-zotero-desktop-connector",
   "commentator",
-  "obsidian-languagetool-plugin",
   "editing-toolbar",
   "terminal",
   "manuscript-build",
   "obsidian-style-settings",
   "obsidian-sort-and-permute-lines",
-  "templater-obsidian"
+  "templater-obsidian",
+  "harper"
 ]

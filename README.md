@@ -333,12 +333,4 @@ Exports only the content between `\begin{document}` and `\end{document}`. This i
 
 ---
 ## Development
-If you modify the plugin source code:
-```bash
-cd obsidian-manuscript-build
-npm install
-npm run build
-```
-
-Then copy `main.js`, `manifest.json`, and `styles.css` to `.obsidian/plugins/manuscript-build/`.
-
+See `obsidian-manuscript-build/README.md`

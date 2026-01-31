@@ -20,6 +20,7 @@ import * as path from "path";
 interface ManuscriptBuildSettings {
 	pythonPath: string;
 	buildScriptPath: string;
+	bibliographyPath: string;
 	defaultProfile: string;
 	defaultFont: string;
 	defaultFontSize: string;
@@ -46,6 +47,8 @@ interface BuildConfig {
 	pageNumbers: boolean | null;
 	numberedHeadings: boolean | null;
 	language: string;
+	figureFormat: string;
+	figureBackground: string;
 }
 
 interface ProfileInfo {
@@ -62,6 +65,7 @@ interface ProfileInfo {
 const DEFAULT_SETTINGS: ManuscriptBuildSettings = {
 	pythonPath: "python3",
 	buildScriptPath: "build.py",
+	bibliographyPath: "references.json",
 	defaultProfile: "pdf-default",
 	defaultFont: "",
 	defaultFontSize: "11pt",
@@ -368,6 +372,8 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			pageNumbers: null,
 			numberedHeadings: null,
 			language: "",
+			figureFormat: "png",
+			figureBackground: "white",
 		};
 		this.executeBuild(config);
 	}
@@ -397,6 +403,8 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					pageNumbers: data.pagenumbers !== undefined ? data.pagenumbers : null,
 					numberedHeadings: data.numbered_headings !== undefined ? data.numbered_headings : null,
 					language: data.language || "",
+					figureFormat: data.figure_format || "png",
+					figureBackground: data.figure_background || "white",
 				};
 			}
 		} catch (e) {
@@ -426,6 +434,8 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			pagenumbers: config.pageNumbers,
 			numbered_headings: config.numberedHeadings,
 			language: config.language || null,
+			figure_format: config.figureFormat || null,
+			figure_background: config.figureBackground || null,
 		};
 		try {
 			fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
@@ -570,6 +580,16 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			args.push(`--csl=${config.citationStyle}`);
 		}
 
+		// Flattened markdown options
+		if (config.profile === "md-flattened") {
+			if (config.figureFormat) {
+				args.push(`--figure-format=${config.figureFormat}`);
+			}
+			if (config.figureBackground) {
+				args.push(`--figure-bg=${config.figureBackground}`);
+			}
+		}
+
 		return args;
 	}
 
@@ -621,6 +641,10 @@ class BuildModal extends Modal {
 	private pngToggle: ToggleComponent;
 	private pngContainer: HTMLElement;
 	private latexModeContainer: HTMLElement;
+	private flattenedMdContainer: HTMLElement;
+	private figureFormatDropdown: DropdownComponent;
+	private figureBackgroundDropdown: DropdownComponent;
+	private figureBackgroundContainer: HTMLElement;
 
 	constructor(app: App, plugin: ManuscriptBuildPlugin, lastConfig: BuildConfig | null = null) {
 		super(app);
@@ -649,6 +673,8 @@ class BuildModal extends Modal {
 				pageNumbers: null,
 				numberedHeadings: null,
 				language: "",
+				figureFormat: "png",
+				figureBackground: "white",
 			};
 		}
 	}
@@ -727,8 +753,9 @@ class BuildModal extends Modal {
 		this.createSectionHeader(contentEl, "Output");
 
 		// Format selection
-		// Determine current format: docx, pdf, or latex (pdf with texMode set)
-		let currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+		// Determine current format: docx, pdf, md (flattened), or latex (pdf with texMode set)
+		let currentFormat = this.config.profile.startsWith("docx") ? "docx" :
+			this.config.profile === "md-flattened" ? "md" : "pdf";
 		if (currentFormat === "pdf" && this.config.texMode) {
 			currentFormat = "latex";
 		}
@@ -740,16 +767,25 @@ class BuildModal extends Modal {
 				dropdown.addOption("pdf", "PDF");
 				dropdown.addOption("latex", "LaTeX");
 				dropdown.addOption("docx", "Word Document (DOCX)");
+				dropdown.addOption("md", "Flattened Markdown (Digital Garden)");
 				dropdown.setValue(currentFormat);
 				dropdown.onChange((value) => {
 					// LaTeX uses PDF profiles but outputs .tex
-					const profileFormat = value === "latex" ? "pdf" : value;
+					// Flattened markdown uses its own profile
+					let profileFormat = value;
+					if (value === "latex") {
+						profileFormat = "pdf";
+					} else if (value === "md") {
+						this.config.profile = "md-flattened";
+					}
 					if (value !== "latex") {
 						this.config.texMode = "";
 					} else if (!this.config.texMode) {
 						this.config.texMode = "portable";
 					}
-					this.updateProfilesForFormat(profileFormat);
+					if (value !== "md") {
+						this.updateProfilesForFormat(profileFormat);
+					}
 					this.updateFormatOptions(value);
 				});
 			});
@@ -795,7 +831,48 @@ class BuildModal extends Modal {
 					this.config.usePng = value;
 				});
 			});
-		// Show/hide PNG/LaTeX options based on format (must be after containers are created)
+
+		// Flattened Markdown options container
+		this.flattenedMdContainer = contentEl.createDiv();
+		
+		// Figure format (Flattened Markdown only)
+		new Setting(this.flattenedMdContainer)
+			.setName("Figure Format")
+			.setDesc("Output format for figures")
+			.addDropdown((dropdown) => {
+				this.figureFormatDropdown = dropdown;
+				dropdown.addOption("png", "PNG");
+				dropdown.addOption("webp", "WebP");
+				dropdown.addOption("jpg", "JPEG");
+				dropdown.addOption("original", "Keep Original");
+				dropdown.setValue(this.config.figureFormat || "png");
+				dropdown.onChange((value) => {
+					this.config.figureFormat = value;
+					// Show/hide background option based on format
+					if (this.figureBackgroundContainer) {
+						this.figureBackgroundContainer.style.display = value !== "original" ? "block" : "none";
+					}
+				});
+			});
+
+		// Figure background (Flattened Markdown only, not for original format)
+		this.figureBackgroundContainer = this.flattenedMdContainer.createDiv();
+		new Setting(this.figureBackgroundContainer)
+			.setName("Figure Background")
+			.setDesc("Background color for converted figures")
+			.addDropdown((dropdown) => {
+				this.figureBackgroundDropdown = dropdown;
+				dropdown.addOption("white", "White");
+				dropdown.addOption("transparent", "Transparent");
+				dropdown.setValue(this.config.figureBackground || "white");
+				dropdown.onChange((value) => {
+					this.config.figureBackground = value;
+				});
+			});
+		// Hide background option if format is "original"
+		this.figureBackgroundContainer.style.display = this.config.figureFormat !== "original" ? "block" : "none";
+
+		// Show/hide PNG/LaTeX/Flattened MD options based on format (must be after containers are created)
 		this.updateFormatOptions(currentFormat);
 
 		// ─────────────────────────────────────────────────────────────────────
@@ -1072,6 +1149,8 @@ class BuildModal extends Modal {
 		this.config.includeSiRefs = false;
 		this.config.isSi = false;
 		this.config.texMode = "";
+		this.config.figureFormat = "png";
+		this.config.figureBackground = "white";
 
 		// Reset source file to sensible default
 		const maintext = mdFiles.find((f) => f.includes("maintext"));
@@ -1110,10 +1189,15 @@ class BuildModal extends Modal {
 		this.siRefsToggle?.setValue(this.config.includeSiRefs);
 		this.siFileDropdown?.setValue(this.config.siFile || "");
 		this.isSiToggle?.setValue(this.config.isSi);
+		this.figureFormatDropdown?.setValue(this.config.figureFormat);
+		this.figureBackgroundDropdown?.setValue(this.config.figureBackground);
 
 		// Update visibility
 		this.updateFormatOptions(currentFormat);
 		this.siFileContainer.style.display = "none";
+		if (this.figureBackgroundContainer) {
+			this.figureBackgroundContainer.style.display = "block";
+		}
 
 		new Notice("Settings restored to defaults");
 	}
@@ -1168,6 +1252,17 @@ class BuildModal extends Modal {
 		// Show/hide LaTeX mode for LaTeX
 		if (this.latexModeContainer) {
 			this.latexModeContainer.style.display = format === "latex" ? "block" : "none";
+		}
+		// Show/hide Flattened Markdown options
+		if (this.flattenedMdContainer) {
+			this.flattenedMdContainer.style.display = format === "md" ? "block" : "none";
+		}
+		// Show/hide profile dropdown (hide for flattened markdown since it has only one profile)
+		if (this.profileDropdown) {
+			const profileContainer = this.profileDropdown.selectEl.closest(".setting-item");
+			if (profileContainer) {
+				(profileContainer as HTMLElement).style.display = format === "md" ? "none" : "block";
+			}
 		}
 	}
 }
@@ -1282,6 +1377,19 @@ class ManuscriptBuildSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.buildScriptPath)
 					.onChange(async (value) => {
 						this.plugin.settings.buildScriptPath = value || "build.py";
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Bibliography File")
+			.setDesc("Path to references.json file relative to vault root")
+			.addText((text) =>
+				text
+					.setPlaceholder("references.json")
+					.setValue(this.plugin.settings.bibliographyPath)
+					.onChange(async (value) => {
+						this.plugin.settings.bibliographyPath = value || "references.json";
 						await this.plugin.saveSettings();
 					})
 			);

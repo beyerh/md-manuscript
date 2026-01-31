@@ -12,7 +12,7 @@ filters:
   - resources/table-callouts.lua
   - pandoc-crossref
   - citeproc
-bibliography: resources/references.json
+bibliography: references.json
 
 # --- Cross-Reference Settings ---
 metadata:

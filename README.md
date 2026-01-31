@@ -1,6 +1,6 @@
 # Scientific Manuscript Template
 
-Write scientific manuscripts and theses in Markdown and export to PDF, Word, and LaTeX using a custom Obsidian plugin or a script.
+Write scientific manuscripts and theses in Markdown and export to PDF, Word, LaTeX, and web-ready Markdown using a custom Obsidian plugin or a script.
 
 ## Quick Start
 
@@ -19,10 +19,11 @@ python build.py
 ```
 
 Both methods support:
-- Multiple output formats (PDF, Word, LaTeX)
+- Multiple output formats (PDF, Word, LaTeX, Flattened Markdown)
 - Style/journal-specific profiles
 - Templates/examples
 - Custom fonts, citation styles, formatting options
+- Web-ready markdown export for digital gardens (Vercel, GitHub Pages, etc.)
 
 **Output:** All documents are created in the `export/` folder.
 
@@ -217,7 +218,7 @@ Alternatively, install fonts manually:
 
 ## Obsidian Setup
 
-The folder `obsidian-manuscript-build` is for development and can be deleted. The included hidden `.obsidian` folder contains all plugins and settings, and a custom AnuPpuccin theme. The **Manuscript Build Plugin** should work out of the box. You might want to update the path to `resources/references.json` in the `pandoc-crossref` plugin settings.
+The folder `obsidian-manuscript-build` is for development and can be deleted. The included hidden `.obsidian` folder contains all plugins and settings, and a custom AnuPpuccin theme. The **Manuscript Build Plugin** should work out of the box. You might want to update the path to `references.json` in the plugin settings (now in root directory instead of `resources/`).
 
 ### Using the Build Plugin
 
@@ -254,7 +255,7 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
 - Set hotkey (e.g., `Alt+Z`) or use `Cmd/Ctrl + P` for quick citation insertion
 
 **Pandoc Reference List:**
-- Set path to: `your/path/to/resources/references.json`
+- Set path to: `your/path/to/references.json` (now in root directory)
 - Enable "Show citations in sidebar"
 
 ## Zotero Setup (References)
@@ -264,7 +265,7 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
    - Right-click collection → Export Collection
    - Format: **BetterBibTeX JSON**
    - ✓ **Keep updated**
-   - Save as `resources/references.json`
+   - Save as `references.json` in the vault root directory
 
 **Citation syntax:** `[@smith2023]` or `[@smith2023; @jones2024]` or use the Zotero Integraion plugin 
 
@@ -330,6 +331,33 @@ Exports only the content between `\begin{document}` and `\end{document}`. This i
 **Test-Compiling the exported `.tex`:**
 - Recommended (typical journal toolchain): `pdflatex` / `latexmk`.
 - If you use `tectonic`, it should compile as well; any reproducibility warnings about system font paths indicate local font discovery and do not affect journal compilation.
+
+### Flattened Markdown Export (Digital Gardens)
+
+Export web-ready markdown for digital gardens, static site generators (Vercel, GitHub Pages, etc.), or content management systems.
+
+**Features:**
+- Cross-references resolved to plain text (e.g., "**Figure 1**", "**Table 1**")
+- Citations rendered with bibliography in selected style
+- Figures/tables converted to standard markdown format
+- PDF figures converted to PNG/WebP/JPEG with white or transparent background
+- LaTeX-specific code removed
+- Math equations preserved (`$...$` and `$$...$$`)
+- Output includes both markdown file and converted figures in `export/figures/`
+
+
+**Output:**
+- `export/<filename>_flat.md` - Web-ready markdown file
+- `export/figures/` - Converted figures (PNG/WebP/JPEG)
+
+### Web Publishing (Digital Garden)
+
+For publishing your manuscript as a digital garden, you can use the **Digital Garden** plugin for Obsidian. This allows you to publish your notes directly to the web, hosting them on Vercel or GitHub Pages.
+
+**Resources:**
+- **Documentation:** [dg-docs.ole.dev](https://dg-docs.ole.dev/)
+- **Plugin Repository:** [oleeskild/digitalgarden](https://github.com/oleeskild/digitalgarden)
+- **GitHub Pages Template:** [foxblock/digitalgarden_gh-pages](https://github.com/foxblock/digitalgarden_gh-pages) (allows publishing to GitHub Pages instead of Vercel)
 
 ---
 ## Development

@@ -43,6 +43,7 @@ var path = __toESM(require("path"));
 var DEFAULT_SETTINGS = {
   pythonPath: "python3",
   buildScriptPath: "build.py",
+  bibliographyPath: "references.json",
   defaultProfile: "pdf-default",
   defaultFont: "",
   defaultFontSize: "11pt",
@@ -282,7 +283,9 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       lineNumbers: null,
       pageNumbers: null,
       numberedHeadings: null,
-      language: ""
+      language: "",
+      figureFormat: "png",
+      figureBackground: "white"
     };
     this.executeBuild(config);
   }
@@ -310,7 +313,9 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           lineNumbers: data.linenumbers !== void 0 ? data.linenumbers : null,
           pageNumbers: data.pagenumbers !== void 0 ? data.pagenumbers : null,
           numberedHeadings: data.numbered_headings !== void 0 ? data.numbered_headings : null,
-          language: data.language || ""
+          language: data.language || "",
+          figureFormat: data.figure_format || "png",
+          figureBackground: data.figure_background || "white"
         };
       }
     } catch (e) {
@@ -338,7 +343,9 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       linenumbers: config.lineNumbers,
       pagenumbers: config.pageNumbers,
       numbered_headings: config.numberedHeadings,
-      language: config.language || null
+      language: config.language || null,
+      figure_format: config.figureFormat || null,
+      figure_background: config.figureBackground || null
     };
     try {
       fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
@@ -456,6 +463,14 @@ Error: ${err.message}`, true);
     if (config.citationStyle) {
       args.push(`--csl=${config.citationStyle}`);
     }
+    if (config.profile === "md-flattened") {
+      if (config.figureFormat) {
+        args.push(`--figure-format=${config.figureFormat}`);
+      }
+      if (config.figureBackground) {
+        args.push(`--figure-bg=${config.figureBackground}`);
+      }
+    }
     return args;
   }
   openExportFolder() {
@@ -499,7 +514,9 @@ var BuildModal = class extends import_obsidian.Modal {
         lineNumbers: null,
         pageNumbers: null,
         numberedHeadings: null,
-        language: ""
+        language: "",
+        figureFormat: "png",
+        figureBackground: "white"
       };
     }
   }
@@ -552,7 +569,7 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.createSectionHeader(contentEl, "Output");
-    let currentFormat = this.config.profile.startsWith("docx") ? "docx" : "pdf";
+    let currentFormat = this.config.profile.startsWith("docx") ? "docx" : this.config.profile === "md-flattened" ? "md" : "pdf";
     if (currentFormat === "pdf" && this.config.texMode) {
       currentFormat = "latex";
     }
@@ -561,15 +578,23 @@ var BuildModal = class extends import_obsidian.Modal {
       dropdown.addOption("pdf", "PDF");
       dropdown.addOption("latex", "LaTeX");
       dropdown.addOption("docx", "Word Document (DOCX)");
+      dropdown.addOption("md", "Flattened Markdown (Digital Garden)");
       dropdown.setValue(currentFormat);
       dropdown.onChange((value) => {
-        const profileFormat2 = value === "latex" ? "pdf" : value;
+        let profileFormat2 = value;
+        if (value === "latex") {
+          profileFormat2 = "pdf";
+        } else if (value === "md") {
+          this.config.profile = "md-flattened";
+        }
         if (value !== "latex") {
           this.config.texMode = "";
         } else if (!this.config.texMode) {
           this.config.texMode = "portable";
         }
-        this.updateProfilesForFormat(profileFormat2);
+        if (value !== "md") {
+          this.updateProfilesForFormat(profileFormat2);
+        }
         this.updateFormatOptions(value);
       });
     });
@@ -600,6 +625,32 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.usePng = value;
       });
     });
+    this.flattenedMdContainer = contentEl.createDiv();
+    new import_obsidian.Setting(this.flattenedMdContainer).setName("Figure Format").setDesc("Output format for figures").addDropdown((dropdown) => {
+      this.figureFormatDropdown = dropdown;
+      dropdown.addOption("png", "PNG");
+      dropdown.addOption("webp", "WebP");
+      dropdown.addOption("jpg", "JPEG");
+      dropdown.addOption("original", "Keep Original");
+      dropdown.setValue(this.config.figureFormat || "png");
+      dropdown.onChange((value) => {
+        this.config.figureFormat = value;
+        if (this.figureBackgroundContainer) {
+          this.figureBackgroundContainer.style.display = value !== "original" ? "block" : "none";
+        }
+      });
+    });
+    this.figureBackgroundContainer = this.flattenedMdContainer.createDiv();
+    new import_obsidian.Setting(this.figureBackgroundContainer).setName("Figure Background").setDesc("Background color for converted figures").addDropdown((dropdown) => {
+      this.figureBackgroundDropdown = dropdown;
+      dropdown.addOption("white", "White");
+      dropdown.addOption("transparent", "Transparent");
+      dropdown.setValue(this.config.figureBackground || "white");
+      dropdown.onChange((value) => {
+        this.config.figureBackground = value;
+      });
+    });
+    this.figureBackgroundContainer.style.display = this.config.figureFormat !== "original" ? "block" : "none";
     this.updateFormatOptions(currentFormat);
     this.createSectionHeader(contentEl, "Typography");
     new import_obsidian.Setting(contentEl).setName("Font").setDesc("Document typeface").addDropdown((dropdown) => {
@@ -770,7 +821,7 @@ var BuildModal = class extends import_obsidian.Modal {
     });
   }
   restoreDefaults() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s;
     const mdFiles = this.plugin.getMarkdownFiles();
     const settings = this.plugin.settings;
     this.config.profile = settings.defaultProfile;
@@ -787,6 +838,8 @@ var BuildModal = class extends import_obsidian.Modal {
     this.config.includeSiRefs = false;
     this.config.isSi = false;
     this.config.texMode = "";
+    this.config.figureFormat = "png";
+    this.config.figureBackground = "white";
     const maintext = mdFiles.find((f) => f.includes("maintext"));
     this.config.sourceFile = maintext || mdFiles[0] || "";
     const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
@@ -816,8 +869,13 @@ var BuildModal = class extends import_obsidian.Modal {
     (_o = this.siRefsToggle) == null ? void 0 : _o.setValue(this.config.includeSiRefs);
     (_p = this.siFileDropdown) == null ? void 0 : _p.setValue(this.config.siFile || "");
     (_q = this.isSiToggle) == null ? void 0 : _q.setValue(this.config.isSi);
+    (_r = this.figureFormatDropdown) == null ? void 0 : _r.setValue(this.config.figureFormat);
+    (_s = this.figureBackgroundDropdown) == null ? void 0 : _s.setValue(this.config.figureBackground);
     this.updateFormatOptions(currentFormat);
     this.siFileContainer.style.display = "none";
+    if (this.figureBackgroundContainer) {
+      this.figureBackgroundContainer.style.display = "block";
+    }
     new import_obsidian.Notice("Settings restored to defaults");
   }
   onClose() {
@@ -858,6 +916,15 @@ var BuildModal = class extends import_obsidian.Modal {
     this.pngContainer.style.display = format === "docx" ? "block" : "none";
     if (this.latexModeContainer) {
       this.latexModeContainer.style.display = format === "latex" ? "block" : "none";
+    }
+    if (this.flattenedMdContainer) {
+      this.flattenedMdContainer.style.display = format === "md" ? "block" : "none";
+    }
+    if (this.profileDropdown) {
+      const profileContainer = this.profileDropdown.selectEl.closest(".setting-item");
+      if (profileContainer) {
+        profileContainer.style.display = format === "md" ? "none" : "block";
+      }
     }
   }
 };
@@ -921,6 +988,12 @@ var ManuscriptBuildSettingTab = class extends import_obsidian.PluginSettingTab {
     new import_obsidian.Setting(containerEl).setName("Build Script Path").setDesc("Path to build.py relative to vault root").addText(
       (text) => text.setPlaceholder("build.py").setValue(this.plugin.settings.buildScriptPath).onChange(async (value) => {
         this.plugin.settings.buildScriptPath = value || "build.py";
+        await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian.Setting(containerEl).setName("Bibliography File").setDesc("Path to references.json file relative to vault root").addText(
+      (text) => text.setPlaceholder("references.json").setValue(this.plugin.settings.bibliographyPath).onChange(async (value) => {
+        this.plugin.settings.bibliographyPath = value || "references.json";
         await this.plugin.saveSettings();
       })
     );

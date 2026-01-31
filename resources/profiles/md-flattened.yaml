@@ -1,0 +1,67 @@
+# md-flattened.yaml - Flattened markdown for digital gardens and web publishing
+# 
+# This profile produces clean, web-ready markdown with:
+# - All cross-references resolved (Figure 1, Table 1, etc.)
+# - Citations rendered with bibliography
+# - Figures/tables converted to standard markdown
+# - LaTeX-specific code removed
+#
+# Usage: python build.py --profile=md-flattened --source=your-document.md
+
+profile:
+  name: "Flattened Markdown"
+  description: "Web-ready markdown with resolved references for digital gardens"
+  format: md
+
+# --- Input Settings ---
+# Enable mark extension for ==highlighted text== and raw_html for <font color> tags
+reader: markdown+mark+raw_html+raw_tex+implicit_figures
+
+# --- Output Settings ---
+# Use markdown_strict with extensions for clean, portable output
+# This preserves standard $...$ math syntax while handling raw HTML naturally
+writer: markdown_strict+pipe_tables+raw_html+strikeout+superscript+subscript+tex_math_dollars
+
+# Prevent line wrapping (important for clean output)
+wrap: none
+columns: 10000
+
+# --- Filters ---
+# Order matters:
+# 1. figure-callouts-md.lua - Convert figure callouts to standard markdown
+# 2. table-callouts-md.lua - Convert table callouts to standard markdown  
+# 3. pandoc-crossref - Resolve cross-references
+# 4. citeproc - Process citations and generate bibliography
+# 5. strip-latex.lua - Remove remaining LaTeX code
+filters:
+  - resources/figure-callouts-md.lua
+  - resources/table-callouts-md.lua
+  - pandoc-crossref
+  - citeproc
+  - resources/strip-latex.lua
+
+# --- Bibliography ---
+bibliography: references.json
+
+# --- Metadata ---
+metadata:
+  # Disable link-citations for cleaner output (no hyperlinks in bibliography)
+  link-citations: false
+  
+  # Cross-reference settings
+  figureTitle: "Figure"
+  tableTitle: "Table"
+  figPrefix: ["Figure", "Figures"]
+  tblPrefix: ["Table", "Tables"]
+  
+  # Don't create hyperlinks for references (plain text output)
+  linkReferences: false
+  nameInLink: false
+  
+  # Custom settings for the markdown filters
+  # Note: figure-format is set via command line (--figure-format=png/webp/jpg)
+  # to avoid metadata concatenation issues
+  number-figures: true
+  number-tables: true
+  keep-color-as-html: true
+  keep-highlighting: true

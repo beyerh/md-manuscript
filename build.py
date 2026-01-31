@@ -43,7 +43,23 @@ DEFAULT_SETTINGS = {
     "linenumbers": None,
     "pagenumbers": None,
     "numbered_headings": None,
-    "language": ""
+    "language": "",
+    "figure_format": "png",
+    "figure_background": "white"
+}
+
+# Figure format presets for flattened markdown export
+FIGURE_FORMAT_PRESETS = {
+    "png": {"name": "PNG", "ext": "png"},
+    "webp": {"name": "WebP", "ext": "webp"},
+    "jpg": {"name": "JPEG", "ext": "jpg"},
+    "original": {"name": "Keep Original", "ext": None}
+}
+
+# Figure background presets
+FIGURE_BACKGROUND_PRESETS = {
+    "white": {"name": "White", "color": "white"},
+    "transparent": {"name": "Transparent", "color": "none"}
 }
 
 # Font presets for PDF output
@@ -948,6 +964,85 @@ def convert_figures_to_png():
                     pass
 
 
+def convert_figures_for_web(
+    figure_format: str = "png",
+    figure_background: str = "white",
+    density: int = 300,
+    quality: int = 90,
+    copy_to_export: bool = False
+) -> None:
+    """Convert PDF figures to web-friendly formats with background options.
+    
+    Args:
+        figure_format: Output format (png, webp, jpg, or original to skip)
+        figure_background: Background color (white, transparent)
+        density: DPI for PDF rasterization
+        quality: JPEG/WebP quality (1-100)
+        copy_to_export: If True, copy converted figures to export/figures/
+    """
+    figures_dir = Path("figures")
+    export_figures_dir = Path("export/figures")
+    
+    if figure_format == "original":
+        # Just copy original figures to export if requested
+        if copy_to_export and figures_dir.exists():
+            export_figures_dir.mkdir(parents=True, exist_ok=True)
+            import shutil
+            for fig_file in figures_dir.iterdir():
+                if fig_file.is_file():
+                    shutil.copy2(fig_file, export_figures_dir / fig_file.name)
+            print("   Copied original figures to export/figures/")
+        return
+    
+    if not figures_dir.exists():
+        return
+    
+    pdf_files = list(figures_dir.glob("*.pdf"))
+    if not pdf_files:
+        return
+    
+    format_info = FIGURE_FORMAT_PRESETS.get(figure_format, FIGURE_FORMAT_PRESETS["png"])
+    bg_info = FIGURE_BACKGROUND_PRESETS.get(figure_background, FIGURE_BACKGROUND_PRESETS["white"])
+    
+    print(f"   Converting PDF figures to {format_info['name']} ({bg_info['name']} background)...")
+    
+    # Create export figures directory if copying
+    if copy_to_export:
+        export_figures_dir.mkdir(parents=True, exist_ok=True)
+    
+    for pdf_file in pdf_files:
+        try:
+            output_file = pdf_file.with_suffix(f".{format_info['ext']}")
+            
+            # Build ImageMagick command with correct order:
+            # magick -density DPI input.pdf [processing options] output.png
+            cmd = ["magick", "-density", str(density), str(pdf_file)]
+            
+            # Handle background
+            if figure_background == "transparent":
+                cmd.extend(["-background", "none", "-alpha", "set"])
+            else:
+                cmd.extend(["-background", bg_info["color"], "-alpha", "remove", "-alpha", "off"])
+            
+            # Add quality for lossy formats
+            if figure_format in ("webp", "jpg"):
+                cmd.extend(["-quality", str(quality)])
+            
+            cmd.append(str(output_file))
+            
+            subprocess.run(cmd, capture_output=True, check=False)
+            
+            # Copy to export directory if requested
+            if copy_to_export and output_file.exists():
+                import shutil
+                shutil.copy2(output_file, export_figures_dir / output_file.name)
+        except Exception as e:
+            print(f"   Warning: Failed to convert {pdf_file.name}: {e}")
+    
+    if copy_to_export:
+        print(f"   Copied converted figures to export/figures/")
+
+
 def list_markdown_files() -> List[str]:
     """List all markdown files in the current directory."""
     md_files = sorted([f.name for f in Path(".").glob("*.md") 
@@ -971,14 +1066,15 @@ def extract_si_citations(si_file: Optional[str] = None) -> str:
     return "; ".join(sorted(filtered))
 
 
-def build_document(source_file: str, profile: str, use_png: bool, include_si_refs: bool, 
-                   frontmatter_file: Optional[str] = None, font: Optional[str] = None, 
+def build_document(source_file: str, profile: str, use_png: bool, include_si_refs: bool,
+                   frontmatter_file: Optional[str] = None, font: Optional[str] = None,
                    fontsize: Optional[str] = None, citation_style: Optional[str] = None,
                    si_file: Optional[str] = None, is_si: bool = False,
                    linespacing: Optional[str] = None, paragraph_style: Optional[str] = None,
                    linenumbers: Optional[bool] = None, pagenumbers: Optional[bool] = None,
                    numbered_headings: Optional[bool] = None,
-                   language: Optional[str] = None, tex_mode: Optional[str] = None):
+                   language: Optional[str] = None, tex_mode: Optional[str] = None,
+                   figure_format: Optional[str] = None, figure_background: Optional[str] = None):
     """Build the document with specified profile."""
     # Get profile info
     _, _, fmt = get_profile_info(profile)
@@ -991,6 +1087,10 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     source_path = Path(source_file)
     output_name = source_path.stem
     
+    # Add suffix for flattened markdown
+    if fmt == "md":
+        output_name += "_flat"
+    
     # Map format to file extension (latex -> .tex for standard naming)
     ext = "tex" if fmt == "latex" else fmt
     output_file = f"{EXPORT_DIR}/{output_name}.{ext}"
@@ -998,6 +1098,8 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     
     if fmt == "latex" and tex_mode:
         print(f">> Building {source_file} (LATEX/{tex_mode.upper()})...")
+    elif fmt == "md":
+        print(f">> Building {source_file} (FLATTENED MARKDOWN)...")
     else:
         print(f">> Building {source_file} ({fmt.upper()})...")
     
@@ -1031,6 +1133,14 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     # Convert figures for DOCX
     if fmt == "docx" and use_png:
         convert_figures_to_png()
+    
+    # Convert figures for flattened markdown (always copy to export for md format)
+    if fmt == "md":
+        convert_figures_for_web(
+            figure_format=figure_format or "png",
+            figure_background=figure_background or "white",
+            copy_to_export=True
+        )
     
     # Merge configs
     profile_path = f"{PROFILES_DIR}/{profile}.yaml"
@@ -1109,16 +1219,30 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     
     # Add SI-specific options
     if is_si:
-        create_si_header(pagenumbers=pagenumbers)
-        cmd.extend([
-            "--metadata", 'figPrefix=["Fig.","Figs."]',
-            "--metadata", 'tblPrefix=["Table","Tables"]',
-            f"--include-in-header={SI_HEADER}"
-        ])
+        if fmt in ("pdf", "latex"):
+            create_si_header(pagenumbers=pagenumbers)
+            cmd.extend([
+                "--metadata", 'figPrefix=["Fig.","Figs."]',
+                "--metadata", 'tblPrefix=["Table","Tables"]',
+                f"--include-in-header={SI_HEADER}"
+            ])
+        elif fmt == "md":
+            # For markdown, append metadata to the config file to ensure it overrides
+            # profile defaults (CLI args might not correctly override list structures in defaults)
+            with open(config_file, "a") as f:
+                f.write('\n\n# --- SI Metadata Overrides ---\n')
+                f.write('metadata:\n')
+                f.write('  is_si: true\n')
+                f.write('  figPrefix: ["Figure", "Figures"]\n')
+                f.write('  tblPrefix: ["Table", "Tables"]\n')
     
     # Add lua filter for DOCX
     if fmt == "docx":
         cmd.append(f"--lua-filter={LUA_FILTER}")
+    
+    # Add figure format metadata for flattened markdown
+    if fmt == "md" and figure_format:
+        cmd.extend(["--metadata", f"figure-format:{figure_format}"])
     
     # Run pandoc
     try:
@@ -1525,21 +1649,25 @@ def interactive_menu() -> Dict[str, Any]:
     print(box_top("Output Format"))
     print(box_row("1) Word Document (DOCX)"))
     print(box_row("2) PDF"))
-    print(box_row("3) LaTeX Source (profile exact)"))
-    print(box_row("4) Portable LaTeX"))
-    print(box_row("5) LaTeX Body-only (for journal templates)"))
+    print(box_row("3) Flattened Markdown (for digital gardens)"))
+    print(box_row("4) LaTeX Source (profile exact)"))
+    print(box_row("5) Portable LaTeX"))
+    print(box_row("6) LaTeX Body-only (for journal templates)"))
     print(box_bottom())
-    fmt_choice = input("Select format [1-5]: ").strip()
+    fmt_choice = input("Select format [1-6]: ").strip()
     if fmt_choice == "1":
         fmt = "docx"
         tex_mode = None
     elif fmt_choice == "3":
-        fmt = "pdf"  # Use PDF profile but output LaTeX
-        tex_mode = "source"
+        fmt = "md"  # Flattened markdown
+        tex_mode = None
     elif fmt_choice == "4":
         fmt = "pdf"  # Use PDF profile but output LaTeX
-        tex_mode = "portable"
+        tex_mode = "source"
     elif fmt_choice == "5":
+        fmt = "pdf"  # Use PDF profile but output LaTeX
+        tex_mode = "portable"
+    elif fmt_choice == "6":
         fmt = "pdf"  # Use PDF profile but output LaTeX
         tex_mode = "body"
     else:
@@ -1547,9 +1675,11 @@ def interactive_menu() -> Dict[str, Any]:
         tex_mode = None
     print()
     
-    # Profile selection (skip for DOCX since there's only one)
+    # Profile selection (skip for DOCX and flattened markdown since there's only one each)
     if fmt == "docx":
         profile = "docx-manuscript"
+    elif fmt == "md":
+        profile = "md-flattened"
     else:
         print(box_top("Output Profile"))
         all_profiles = []
@@ -1623,6 +1753,43 @@ def interactive_menu() -> Dict[str, Any]:
         png_choice = input("│  Convert PDF figures to PNG? [y/N]: ").strip().lower()
         use_png = png_choice == 'y'
     
+    # Figure format options for flattened markdown
+    figure_format = defaults.get('figure_format', 'png')
+    figure_background = defaults.get('figure_background', 'white')
+    
+    if fmt == "md":
+        print("│")
+        print("│  Figure Format:")
+        format_list = list(FIGURE_FORMAT_PRESETS.items())
+        for i, (key, info) in enumerate(format_list, 1):
+            marker = " (current)" if key == figure_format else ""
+            print(f"│    {i}) {info['name']}{marker}")
+        fig_fmt_choice = input(f"│  Select figure format [1-{len(format_list)}, Enter=keep current]: ").strip()
+        if fig_fmt_choice:
+            try:
+                fig_fmt_idx = int(fig_fmt_choice) - 1
+                if 0 <= fig_fmt_idx < len(format_list):
+                    figure_format = format_list[fig_fmt_idx][0]
+            except (ValueError, IndexError):
+                pass
+        
+        # Only ask for background if not keeping original format
+        if figure_format != "original":
+            print("│")
+            print("│  Figure Background:")
+            bg_list = list(FIGURE_BACKGROUND_PRESETS.items())
+            for i, (key, info) in enumerate(bg_list, 1):
+                marker = " (current)" if key == figure_background else ""
+                print(f"│    {i}) {info['name']}{marker}")
+            fig_bg_choice = input(f"│  Select background [1-{len(bg_list)}, Enter=keep current]: ").strip()
+            if fig_bg_choice:
+                try:
+                    fig_bg_idx = int(fig_bg_choice) - 1
+                    if 0 <= fig_bg_idx < len(bg_list):
+                        figure_background = bg_list[fig_bg_idx][0]
+                except (ValueError, IndexError):
+                    pass
+    
     # Ask if this is an SI document (for SI-specific formatting)
     is_si_choice = input("│  Apply SI formatting (S-prefixed figures/tables)? [y/N]: ").strip().lower()
     is_si = is_si_choice == 'y'
@@ -1647,6 +1814,8 @@ def interactive_menu() -> Dict[str, Any]:
         "pagenumbers": defaults.get('pagenumbers'),
         "numbered_headings": defaults.get('numbered_headings'),
         "language": defaults.get('language') or None,
+        "figure_format": figure_format if fmt == "md" else None,
+        "figure_background": figure_background if fmt == "md" else None,
     }
 
 
@@ -1686,6 +1855,8 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         "pagenumbers": None,
         "numbered_headings": None,
         "language": None,
+        "figure_format": None,
+        "figure_background": None,
     }
     
     for arg in args:
@@ -1736,6 +1907,13 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
             config["tex_mode"] = "source"
         elif arg == "--tex-body":
             config["tex_mode"] = "body"
+        # Flattened markdown options
+        elif arg == "--flatten":
+            config["profile"] = "md-flattened"
+        elif arg.startswith("--figure-format="):
+            config["figure_format"] = arg.split("=", 1)[1]
+        elif arg.startswith("--figure-bg="):
+            config["figure_background"] = arg.split("=", 1)[1]
         # Legacy support for main|si
         elif arg == "main":
             config["source_file"] = MAINTEXT
@@ -1791,6 +1969,9 @@ Options:
   --tex-source               Export LaTeX source that matches the PDF profile (including fonts)
   --tex-portable             Export Portable LaTeX (.tex) instead of PDF
   --tex-body                 Export LaTeX body-only (no preamble/document wrapper)
+  --flatten                  Export as flattened markdown (for digital gardens)
+  --figure-format=FORMAT     Figure format for flattened markdown (png, webp, jpg, original)
+  --figure-bg=COLOR          Figure background for flattened markdown (white, transparent)
   --list, -l                 List all available profiles
   --last                     Repeat last build configuration
   --help, -h                 Show this help message
@@ -1804,6 +1985,7 @@ Examples:
   python build.py --source=manuscript.md --profile=pdf-default --tex
   python build.py --source=manuscript.md --profile=pdf-default --tex-source
   python build.py --source=manuscript.md --profile=pdf-default --tex-body
+  python build.py --source=manuscript.md --flatten --figure-format=png --figure-bg=white
   python build.py main --profile=pdf-nature
   python build.py --last
 """)
@@ -1870,6 +2052,8 @@ def main():
         config.get("numbered_headings"),
         config.get("language"),
         config.get("tex_mode"),
+        config.get("figure_format"),
+        config.get("figure_background"),
     )
     
     print()

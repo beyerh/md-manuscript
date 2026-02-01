@@ -49,6 +49,10 @@ interface BuildConfig {
 	language: string;
 	figureFormat: string;
 	figureBackground: string;
+	paperSize: string;
+	margins: string;
+	visualizeCaptions: boolean;
+	captionStyle: string;
 }
 
 interface ProfileInfo {
@@ -124,6 +128,19 @@ const LANGUAGE_PRESETS: Record<string, string> = {
 	ru: "Russian (Русский)",
 	zh: "Chinese (中文)",
 	ja: "Japanese (日本語)",
+};
+
+const PAPER_SIZE_PRESETS: Record<string, string> = {
+	"": "Profile Default",
+	a4: "A4",
+	letter: "US Letter",
+};
+
+const MARGIN_PRESETS: Record<string, string> = {
+	"": "Profile Default",
+	standard: "Standard (2.5cm)",
+	narrow: "Narrow (1.27cm)",
+	wide: "Wide (3.0cm)",
 };
 
 // Citation styles are loaded dynamically from resources/citation_styles/
@@ -374,6 +391,10 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			language: "",
 			figureFormat: "png",
 			figureBackground: "white",
+			paperSize: "",
+			margins: "",
+			visualizeCaptions: false,
+			captionStyle: "plain",
 		};
 		this.executeBuild(config);
 	}
@@ -405,6 +426,10 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					language: data.language || "",
 					figureFormat: data.figure_format || "png",
 					figureBackground: data.figure_background || "white",
+					paperSize: data.papersize || "",
+					margins: data.margins || "",
+					visualizeCaptions: data.visualize_captions || false,
+					captionStyle: data.caption_style || "plain",
 				};
 			}
 		} catch (e) {
@@ -436,6 +461,10 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			language: config.language || null,
 			figure_format: config.figureFormat || null,
 			figure_background: config.figureBackground || null,
+			papersize: config.paperSize || null,
+			margins: config.margins || null,
+			visualize_captions: config.visualizeCaptions || false,
+			caption_style: config.captionStyle || "plain",
 		};
 		try {
 			fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
@@ -576,6 +605,14 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			args.push(`--lang=${config.language}`);
 		}
 
+		if (config.paperSize) {
+			args.push(`--papersize=${config.paperSize}`);
+		}
+
+		if (config.margins) {
+			args.push(`--margins=${config.margins}`);
+		}
+
 		if (config.citationStyle) {
 			args.push(`--csl=${config.citationStyle}`);
 		}
@@ -587,6 +624,12 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			}
 			if (config.figureBackground) {
 				args.push(`--figure-bg=${config.figureBackground}`);
+			}
+			if (config.visualizeCaptions) {
+				args.push("--captions");
+			}
+			if (config.captionStyle === "html") {
+				args.push("--html-captions");
 			}
 		}
 
@@ -633,6 +676,8 @@ class BuildModal extends Modal {
 	private pageNumbersDropdown: DropdownComponent;
 	private numberedHeadingsDropdown: DropdownComponent;
 	private languageDropdown: DropdownComponent;
+	private paperSizeDropdown: DropdownComponent;
+	private marginsDropdown: DropdownComponent;
 	private citationDropdown: DropdownComponent;
 	private siRefsToggle: ToggleComponent;
 	private siFileDropdown: DropdownComponent;
@@ -645,6 +690,10 @@ class BuildModal extends Modal {
 	private figureFormatDropdown: DropdownComponent;
 	private figureBackgroundDropdown: DropdownComponent;
 	private figureBackgroundContainer: HTMLElement;
+	private visualizeCaptionsToggle: ToggleComponent;
+	private captionStyleToggle: ToggleComponent;
+	private typographySection: HTMLElement;
+	private citationsSection: HTMLElement;
 
 	constructor(app: App, plugin: ManuscriptBuildPlugin, lastConfig: BuildConfig | null = null) {
 		super(app);
@@ -675,6 +724,10 @@ class BuildModal extends Modal {
 				language: "",
 				figureFormat: "png",
 				figureBackground: "white",
+				paperSize: "",
+				margins: "",
+				visualizeCaptions: false,
+				captionStyle: "plain",
 			};
 		}
 	}
@@ -872,16 +925,41 @@ class BuildModal extends Modal {
 		// Hide background option if format is "original"
 		this.figureBackgroundContainer.style.display = this.config.figureFormat !== "original" ? "block" : "none";
 
+		// Visualize Captions (Flattened Markdown only)
+		new Setting(this.flattenedMdContainer)
+			.setName("Visualize Captions")
+			.setDesc("Output visible captions below images (for digital gardens)")
+			.addToggle((toggle) => {
+				this.visualizeCaptionsToggle = toggle;
+				toggle.setValue(this.config.visualizeCaptions || false);
+				toggle.onChange((value) => {
+					this.config.visualizeCaptions = value;
+				});
+			});
+
+		// HTML Captions (Flattened Markdown only)
+		new Setting(this.flattenedMdContainer)
+			.setName("HTML Figures & Captions")
+			.setDesc("Use HTML <figure> tags to retain size/alignment")
+			.addToggle((toggle) => {
+				this.captionStyleToggle = toggle;
+				toggle.setValue(this.config.captionStyle === "html");
+				toggle.onChange((value) => {
+					this.config.captionStyle = value ? "html" : "plain";
+				});
+			});
+
 		// Show/hide PNG/LaTeX/Flattened MD options based on format (must be after containers are created)
 		this.updateFormatOptions(currentFormat);
 
 		// ─────────────────────────────────────────────────────────────────────
 		// Typography Section (PDF only)
 		// ─────────────────────────────────────────────────────────────────────
-		this.createSectionHeader(contentEl, "Typography");
+		this.typographySection = contentEl.createDiv();
+		this.createSectionHeader(this.typographySection, "Typography");
 
 		// Font
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Font")
 			.setDesc("Document typeface")
 			.addDropdown((dropdown) => {
@@ -897,7 +975,7 @@ class BuildModal extends Modal {
 			});
 
 		// Font size
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Font Size")
 			.setDesc("Base font size")
 			.addDropdown((dropdown) => {
@@ -912,7 +990,7 @@ class BuildModal extends Modal {
 			});
 
 		// Line spacing
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Line Spacing")
 			.setDesc("Override line spacing (leave as Profile Default to use profile setting)")
 			.addDropdown((dropdown) => {
@@ -927,7 +1005,7 @@ class BuildModal extends Modal {
 			});
 
 		// Paragraph style
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Paragraph Style")
 			.setDesc("Indented, Gap, or Both")
 			.addDropdown((dropdown) => {
@@ -941,8 +1019,38 @@ class BuildModal extends Modal {
 				});
 			});
 
+		// Paper size
+		new Setting(this.typographySection)
+			.setName("Paper Size")
+			.setDesc("Override paper size")
+			.addDropdown((dropdown) => {
+				this.paperSizeDropdown = dropdown;
+				Object.entries(PAPER_SIZE_PRESETS).forEach(([key, name]) => {
+					dropdown.addOption(key, name);
+				});
+				dropdown.setValue(this.config.paperSize);
+				dropdown.onChange((value) => {
+					this.config.paperSize = value;
+				});
+			});
+
+		// Margins
+		new Setting(this.typographySection)
+			.setName("Margins")
+			.setDesc("Override document margins")
+			.addDropdown((dropdown) => {
+				this.marginsDropdown = dropdown;
+				Object.entries(MARGIN_PRESETS).forEach(([key, name]) => {
+					dropdown.addOption(key, name);
+				});
+				dropdown.setValue(this.config.margins);
+				dropdown.onChange((value) => {
+					this.config.margins = value;
+				});
+			});
+
 		// Line numbers
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Line Numbers")
 			.setDesc("Override line numbering (three-state: Profile Default / On / Off)")
 			.addDropdown((dropdown) => {
@@ -962,7 +1070,7 @@ class BuildModal extends Modal {
 			});
 
 		// Page numbers
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Page Numbers")
 			.setDesc("Override page numbering (three-state: Profile Default / On / Off)")
 			.addDropdown((dropdown) => {
@@ -982,7 +1090,7 @@ class BuildModal extends Modal {
 			});
 
 		// Numbered headings
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Numbered Headings")
 			.setDesc("Override heading numbering (three-state: Profile Default / On / Off)")
 			.addDropdown((dropdown) => {
@@ -1002,7 +1110,7 @@ class BuildModal extends Modal {
 			});
 
 		// Language
-		new Setting(contentEl)
+		new Setting(this.typographySection)
 			.setName("Document Language")
 			.setDesc("Set document language for hyphenation and localization")
 			.addDropdown((dropdown) => {
@@ -1019,11 +1127,12 @@ class BuildModal extends Modal {
 		// ─────────────────────────────────────────────────────────────────────
 		// Citations Section
 		// ─────────────────────────────────────────────────────────────────────
-		this.createSectionHeader(contentEl, "Citations");
+		this.citationsSection = contentEl.createDiv();
+		this.createSectionHeader(this.citationsSection, "Citations");
 
 		// Citation style (dynamically loaded from resources/citation_styles/)
 		const citationStyles = this.plugin.getCitationStyles();
-		new Setting(contentEl)
+		new Setting(this.citationsSection)
 			.setName("Citation Style")
 			.setDesc("Bibliography format")
 			.addDropdown((dropdown) => {
@@ -1151,6 +1260,10 @@ class BuildModal extends Modal {
 		this.config.texMode = "";
 		this.config.figureFormat = "png";
 		this.config.figureBackground = "white";
+		this.config.paperSize = "";
+		this.config.margins = "";
+		this.config.visualizeCaptions = false;
+		this.config.captionStyle = "plain";
 
 		// Reset source file to sensible default
 		const maintext = mdFiles.find((f) => f.includes("maintext"));
@@ -1184,6 +1297,8 @@ class BuildModal extends Modal {
 		this.pageNumbersDropdown?.setValue("default");
 		this.numberedHeadingsDropdown?.setValue("default");
 		this.languageDropdown?.setValue(this.config.language);
+		this.paperSizeDropdown?.setValue(this.config.paperSize);
+		this.marginsDropdown?.setValue(this.config.margins);
 		this.citationDropdown?.setValue(this.config.citationStyle);
 		this.pngToggle?.setValue(this.config.usePng);
 		this.siRefsToggle?.setValue(this.config.includeSiRefs);
@@ -1191,6 +1306,8 @@ class BuildModal extends Modal {
 		this.isSiToggle?.setValue(this.config.isSi);
 		this.figureFormatDropdown?.setValue(this.config.figureFormat);
 		this.figureBackgroundDropdown?.setValue(this.config.figureBackground);
+		this.visualizeCaptionsToggle?.setValue(this.config.visualizeCaptions);
+		this.captionStyleToggle?.setValue(this.config.captionStyle === "html");
 
 		// Update visibility
 		this.updateFormatOptions(currentFormat);
@@ -1263,6 +1380,16 @@ class BuildModal extends Modal {
 			if (profileContainer) {
 				(profileContainer as HTMLElement).style.display = format === "md" ? "none" : "block";
 			}
+		}
+
+		// Show/hide Typography section (PDF/LaTeX only)
+		if (this.typographySection) {
+			this.typographySection.style.display = (format === "pdf" || format === "latex") ? "block" : "none";
+		}
+
+		// Citations section is valid for all formats (including Markdown via citeproc)
+		if (this.citationsSection) {
+			this.citationsSection.style.display = "block";
 		}
 	}
 }

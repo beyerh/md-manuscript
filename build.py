@@ -163,6 +163,19 @@ NUMBERED_HEADINGS_PRESETS = {
     "off": {"value": False, "name": "Unnumbered"},
 }
 
+# Paper size presets
+PAPER_SIZE_PRESETS = {
+    "a4": "A4",
+    "letter": "US Letter",
+}
+
+# Margin presets
+MARGIN_PRESETS = {
+    "standard": {"name": "Standard (2.5cm)", "values": ["top=2.5cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm"]},
+    "narrow": {"name": "Narrow (1.27cm)", "values": ["top=1.27cm", "bottom=1.27cm", "left=1.27cm", "right=1.27cm"]},
+    "wide": {"name": "Wide (3cm)", "values": ["top=3cm", "bottom=3cm", "left=3cm", "right=3cm"]},
+}
+
 # Language presets (ISO 639-1 codes)
 LANGUAGE_PRESETS = {
     "en": "English",
@@ -549,13 +562,15 @@ def apply_font_overrides_to_defaults_file(
     pagenumbers: Optional[bool] = None,
     numbered_headings: Optional[bool] = None,
     language: Optional[str] = None,
+    papersize: Optional[str] = None,
+    margins: Optional[str] = None,
 ) -> None:
     """Apply font/fontsize/linespacing/paragraph style/headings/language overrides to Pandoc defaults file.
 
     This avoids situations where multiple settings (from profile + CLI)
     end up concatenated in the generated LaTeX.
     """
-    if not any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, pagenumbers is not None, numbered_headings is not None, language]):
+    if not any([font, fontsize, linespacing, paragraph_style, linenumbers is not None, pagenumbers is not None, numbered_headings is not None, language, papersize, margins]):
         return
 
     path = Path(defaults_path)
@@ -572,6 +587,9 @@ def apply_font_overrides_to_defaults_file(
             variables_idx = i
             variables_indent = len(line) - len(line.lstrip())
             break
+            
+    if variables_idx is not None:
+        print(f"DEBUG: Found variables block at line {variables_idx}")
 
     # If there's no variables block, we can't safely inject (all PDF profiles
     # currently have it, but keep this defensive).
@@ -606,6 +624,10 @@ def apply_font_overrides_to_defaults_file(
         keys_to_remove.add("numbersections:")
     if language:
         keys_to_remove.add("lang:")
+    if papersize:
+        keys_to_remove.add("papersize:")
+    if margins:
+        keys_to_remove.add("geometry:")
     
     new_block: List[str] = []
     for line in lines[variables_idx + 1 : end_idx]:
@@ -638,6 +660,12 @@ def apply_font_overrides_to_defaults_file(
         override_lines.append(f"{child_indent_str}numbersections: {'true' if numbered_headings else 'false'}\n")
     if language and language in LANGUAGE_PRESETS:
         override_lines.append(f"{child_indent_str}lang: {language}\n")
+    if papersize and papersize in PAPER_SIZE_PRESETS:
+        override_lines.append(f"{child_indent_str}papersize: {papersize}\n")
+    if margins and margins in MARGIN_PRESETS:
+        override_lines.append(f"{child_indent_str}geometry:\n")
+        for val in MARGIN_PRESETS[margins]["values"]:
+            override_lines.append(f"{child_indent_str}  - {val}\n")
 
     # Write back file: keep everything, but replace variables block content.
     out = []
@@ -645,6 +673,11 @@ def apply_font_overrides_to_defaults_file(
     out.extend(override_lines)
     out.extend(new_block)
     out.extend(lines[end_idx:])
+    
+    print(f"DEBUG: Writing {len(override_lines)} override lines. Papersize={papersize}, Margins={margins}")
+    if papersize:
+        print(f"DEBUG: Papersize override active: {papersize}")
+    
     path.write_text(''.join(out))
     
     # Handle line numbers - need to modify header-includes
@@ -1074,7 +1107,9 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
                    linenumbers: Optional[bool] = None, pagenumbers: Optional[bool] = None,
                    numbered_headings: Optional[bool] = None,
                    language: Optional[str] = None, tex_mode: Optional[str] = None,
-                   figure_format: Optional[str] = None, figure_background: Optional[str] = None):
+                   figure_format: Optional[str] = None, figure_background: Optional[str] = None,
+                   papersize: Optional[str] = None, margins: Optional[str] = None,
+                   visualize_captions: bool = False, caption_style: str = "plain"):
     """Build the document with specified profile."""
     # Get profile info
     _, _, fmt = get_profile_info(profile)
@@ -1167,14 +1202,16 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
         (fmt == "latex" and tex_mode in ("portable", "body"))
         or is_latex_default_compat_font
     ) else font
-    has_overrides = any([effective_font, fontsize, linespacing, paragraph_style, linenumbers is not None, pagenumbers is not None, numbered_headings is not None, language])
+    has_overrides = any([effective_font, fontsize, linespacing, paragraph_style, linenumbers is not None, pagenumbers is not None, numbered_headings is not None, language, papersize, margins])
     if fmt in ("pdf", "latex") and has_overrides:
         apply_font_overrides_to_defaults_file(
             config_file, font=effective_font, fontsize=fontsize,
             linespacing=linespacing, paragraph_style=paragraph_style,
             linenumbers=linenumbers, pagenumbers=pagenumbers,
             numbered_headings=numbered_headings,
-            language=language
+            language=language,
+            papersize=papersize,
+            margins=margins
         )
         if effective_font and effective_font in FONT_PRESETS:
             print(f"   Using font: {FONT_PRESETS[effective_font]['name']}")
@@ -1200,6 +1237,10 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
             print(f"   Numbered headings: disabled")
         if language and language in LANGUAGE_PRESETS:
             print(f"   Using language: {LANGUAGE_PRESETS[language]}")
+        if papersize and papersize in PAPER_SIZE_PRESETS:
+            print(f"   Using paper size: {PAPER_SIZE_PRESETS[papersize]}")
+        if margins and margins in MARGIN_PRESETS:
+            print(f"   Using margins: {MARGIN_PRESETS[margins]['name']}")
     
     # Build pandoc command
     cmd = ["pandoc", input_file, "-o", output_file, f"--defaults={config_file}"]
@@ -1243,6 +1284,13 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     # Add figure format metadata for flattened markdown
     if fmt == "md" and figure_format:
         cmd.extend(["--metadata", f"figure-format:{figure_format}"])
+    
+    # Add visualize captions metadata for flattened markdown
+    if fmt == "md":
+        if visualize_captions:
+            cmd.extend(["--metadata", "visualize-captions=true"])
+        if caption_style and caption_style != "plain":
+            cmd.extend(["--metadata", f"caption-style:{caption_style}"])
     
     # Run pandoc
     try:
@@ -1315,6 +1363,11 @@ def print_build_summary(config: Dict[str, Any]) -> None:
     print(box_row(f"SI Refs:      {'Yes' if config['include_si_refs'] else 'No'}"))
     if config.get('is_si'):
         print(box_row("SI Format:    Yes (S-prefixed figures/tables)"))
+    if fmt == "md":
+        if config.get('visualize_captions'):
+            print(box_row("Captions:     Visible (Visualized)"))
+        if config.get('caption_style') == "html":
+            print(box_row("Caption Style: HTML"))
     if config.get('tex_mode') in ("source", "portable", "body"):
         print(box_row(f"LaTeX Mode:   {config.get('tex_mode')}"))
     elif config.get('output_tex'):
@@ -1794,6 +1847,17 @@ def interactive_menu() -> Dict[str, Any]:
     is_si_choice = input("│  Apply SI formatting (S-prefixed figures/tables)? [y/N]: ").strip().lower()
     is_si = is_si_choice == 'y'
 
+    if fmt == "md":
+        visualize_captions_choice = input("│  Visualize captions? [y/N]: ").strip().lower()
+        visualize_captions = visualize_captions_choice == 'y'
+        
+        # HTML Captions option
+        html_captions_choice = input("│  Use HTML <figure> tags (for sizing/alignment)? [y/N]: ").strip().lower()
+        caption_style = "html" if html_captions_choice == 'y' else "plain"
+    else:
+        visualize_captions = False
+        caption_style = "plain"
+
     print(box_bottom())
     
     return {
@@ -1816,6 +1880,8 @@ def interactive_menu() -> Dict[str, Any]:
         "language": defaults.get('language') or None,
         "figure_format": figure_format if fmt == "md" else None,
         "figure_background": figure_background if fmt == "md" else None,
+        "visualize_captions": visualize_captions if fmt == "md" else False,
+        "caption_style": caption_style if fmt == "md" else "plain",
     }
 
 
@@ -1857,6 +1923,10 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         "language": None,
         "figure_format": None,
         "figure_background": None,
+        "papersize": None,
+        "margins": None,
+        "visualize_captions": False,
+        "caption_style": "plain",
     }
     
     for arg in args:
@@ -1914,6 +1984,16 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
             config["figure_format"] = arg.split("=", 1)[1]
         elif arg.startswith("--figure-bg="):
             config["figure_background"] = arg.split("=", 1)[1]
+        elif arg.startswith("--papersize="):
+            config["papersize"] = arg.split("=", 1)[1]
+        elif arg.startswith("--margins="):
+            config["margins"] = arg.split("=", 1)[1]
+        elif arg == "--captions" or arg == "--visualize-captions":
+            config["visualize_captions"] = True
+        elif arg == "--html-captions":
+            config["caption_style"] = "html"
+        elif arg.startswith("--caption-style="):
+            config["caption_style"] = arg.split("=", 1)[1]
         # Legacy support for main|si
         elif arg == "main":
             config["source_file"] = MAINTEXT
@@ -1933,6 +2013,8 @@ def print_help():
     spacing_list = ", ".join(LINE_SPACING_PRESETS.keys())
     para_list = ", ".join(PARAGRAPH_STYLE_PRESETS.keys())
     lang_list = ", ".join(LANGUAGE_PRESETS.keys())
+    papersize_list = ", ".join(PAPER_SIZE_PRESETS.keys())
+    margin_list = ", ".join(MARGIN_PRESETS.keys())
     # Get installed citation styles or show placeholder
     local_styles = list_local_csl_files()
     style_list = ", ".join(k for k, _, _ in local_styles) if local_styles else "install from zotero.org/styles"
@@ -1959,6 +2041,8 @@ Options:
   --no-pagenumbers           Disable page numbers
   --numbered-headings        Enable numbered headings
   --no-numbered-headings     Disable numbered headings
+  --papersize=SIZE           Set paper size ({papersize_list})
+  --margins=SIZE             Set margins ({margin_list})
   --lang=CODE                Set document language ({lang_list})
   --csl=STYLE                Use citation style (installed: {style_list})
   --png                      Convert PDF figures to PNG (for DOCX)
@@ -1972,6 +2056,8 @@ Options:
   --flatten                  Export as flattened markdown (for digital gardens)
   --figure-format=FORMAT     Figure format for flattened markdown (png, webp, jpg, original)
   --figure-bg=COLOR          Figure background for flattened markdown (white, transparent)
+  --captions                 Visualize captions in flattened markdown (output text below image)
+  --html-captions            Use HTML <figure> tags in flattened markdown (preserves sizing/alignment)
   --list, -l                 List all available profiles
   --last                     Repeat last build configuration
   --help, -h                 Show this help message
@@ -1985,7 +2071,7 @@ Examples:
   python build.py --source=manuscript.md --profile=pdf-default --tex
   python build.py --source=manuscript.md --profile=pdf-default --tex-source
   python build.py --source=manuscript.md --profile=pdf-default --tex-body
-  python build.py --source=manuscript.md --flatten --figure-format=png --figure-bg=white
+  python build.py --source=manuscript.md --flatten --figure-format=png --figure-bg=white --captions
   python build.py main --profile=pdf-nature
   python build.py --last
 """)
@@ -2054,6 +2140,10 @@ def main():
         config.get("tex_mode"),
         config.get("figure_format"),
         config.get("figure_background"),
+        config.get("papersize"),
+        config.get("margins"),
+        config.get("visualize_captions", False),
+        config.get("caption_style", "plain"),
     )
     
     print()

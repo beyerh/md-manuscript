@@ -95,6 +95,17 @@ var LANGUAGE_PRESETS = {
   zh: "Chinese (\u4E2D\u6587)",
   ja: "Japanese (\u65E5\u672C\u8A9E)"
 };
+var PAPER_SIZE_PRESETS = {
+  "": "Profile Default",
+  a4: "A4",
+  letter: "US Letter"
+};
+var MARGIN_PRESETS = {
+  "": "Profile Default",
+  standard: "Standard (2.5cm)",
+  narrow: "Narrow (1.27cm)",
+  wide: "Wide (3.0cm)"
+};
 var CITATION_STYLE_NAMES = {
   vancouver: "Vancouver",
   nature: "Nature",
@@ -285,7 +296,11 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       numberedHeadings: null,
       language: "",
       figureFormat: "png",
-      figureBackground: "white"
+      figureBackground: "white",
+      paperSize: "",
+      margins: "",
+      visualizeCaptions: false,
+      captionStyle: "plain"
     };
     this.executeBuild(config);
   }
@@ -315,7 +330,11 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           numberedHeadings: data.numbered_headings !== void 0 ? data.numbered_headings : null,
           language: data.language || "",
           figureFormat: data.figure_format || "png",
-          figureBackground: data.figure_background || "white"
+          figureBackground: data.figure_background || "white",
+          paperSize: data.papersize || "",
+          margins: data.margins || "",
+          visualizeCaptions: data.visualize_captions || false,
+          captionStyle: data.caption_style || "plain"
         };
       }
     } catch (e) {
@@ -345,7 +364,11 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       numbered_headings: config.numberedHeadings,
       language: config.language || null,
       figure_format: config.figureFormat || null,
-      figure_background: config.figureBackground || null
+      figure_background: config.figureBackground || null,
+      papersize: config.paperSize || null,
+      margins: config.margins || null,
+      visualize_captions: config.visualizeCaptions || false,
+      caption_style: config.captionStyle || "plain"
     };
     try {
       fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
@@ -460,6 +483,12 @@ Error: ${err.message}`, true);
     if (config.language) {
       args.push(`--lang=${config.language}`);
     }
+    if (config.paperSize) {
+      args.push(`--papersize=${config.paperSize}`);
+    }
+    if (config.margins) {
+      args.push(`--margins=${config.margins}`);
+    }
     if (config.citationStyle) {
       args.push(`--csl=${config.citationStyle}`);
     }
@@ -469,6 +498,12 @@ Error: ${err.message}`, true);
       }
       if (config.figureBackground) {
         args.push(`--figure-bg=${config.figureBackground}`);
+      }
+      if (config.visualizeCaptions) {
+        args.push("--captions");
+      }
+      if (config.captionStyle === "html") {
+        args.push("--html-captions");
       }
     }
     return args;
@@ -516,7 +551,11 @@ var BuildModal = class extends import_obsidian.Modal {
         numberedHeadings: null,
         language: "",
         figureFormat: "png",
-        figureBackground: "white"
+        figureBackground: "white",
+        paperSize: "",
+        margins: "",
+        visualizeCaptions: false,
+        captionStyle: "plain"
       };
     }
   }
@@ -651,9 +690,24 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.figureBackgroundContainer.style.display = this.config.figureFormat !== "original" ? "block" : "none";
+    new import_obsidian.Setting(this.flattenedMdContainer).setName("Visualize Captions").setDesc("Output visible captions below images (for digital gardens)").addToggle((toggle) => {
+      this.visualizeCaptionsToggle = toggle;
+      toggle.setValue(this.config.visualizeCaptions || false);
+      toggle.onChange((value) => {
+        this.config.visualizeCaptions = value;
+      });
+    });
+    new import_obsidian.Setting(this.flattenedMdContainer).setName("HTML Figures & Captions").setDesc("Use HTML <figure> tags to retain size/alignment").addToggle((toggle) => {
+      this.captionStyleToggle = toggle;
+      toggle.setValue(this.config.captionStyle === "html");
+      toggle.onChange((value) => {
+        this.config.captionStyle = value ? "html" : "plain";
+      });
+    });
     this.updateFormatOptions(currentFormat);
-    this.createSectionHeader(contentEl, "Typography");
-    new import_obsidian.Setting(contentEl).setName("Font").setDesc("Document typeface").addDropdown((dropdown) => {
+    this.typographySection = contentEl.createDiv();
+    this.createSectionHeader(this.typographySection, "Typography");
+    new import_obsidian.Setting(this.typographySection).setName("Font").setDesc("Document typeface").addDropdown((dropdown) => {
       this.fontDropdown = dropdown;
       dropdown.addOption("", "Profile Default");
       Object.entries(FONT_PRESETS).forEach(([key, name]) => {
@@ -664,7 +718,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.font = value;
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Font Size").setDesc("Base font size").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Font Size").setDesc("Base font size").addDropdown((dropdown) => {
       this.fontSizeDropdown = dropdown;
       FONT_SIZES.forEach((size) => {
         dropdown.addOption(size, size);
@@ -674,7 +728,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.fontSize = value;
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Line Spacing").setDesc("Override line spacing (leave as Profile Default to use profile setting)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Line Spacing").setDesc("Override line spacing (leave as Profile Default to use profile setting)").addDropdown((dropdown) => {
       this.lineSpacingDropdown = dropdown;
       Object.entries(LINE_SPACING_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -684,7 +738,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.lineSpacing = value;
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Paragraph Style").setDesc("Indented, Gap, or Both").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Paragraph Style").setDesc("Indented, Gap, or Both").addDropdown((dropdown) => {
       this.paragraphStyleDropdown = dropdown;
       Object.entries(PARAGRAPH_STYLE_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -694,7 +748,27 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.paragraphStyle = value;
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Line Numbers").setDesc("Override line numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Paper Size").setDesc("Override paper size").addDropdown((dropdown) => {
+      this.paperSizeDropdown = dropdown;
+      Object.entries(PAPER_SIZE_PRESETS).forEach(([key, name]) => {
+        dropdown.addOption(key, name);
+      });
+      dropdown.setValue(this.config.paperSize);
+      dropdown.onChange((value) => {
+        this.config.paperSize = value;
+      });
+    });
+    new import_obsidian.Setting(this.typographySection).setName("Margins").setDesc("Override document margins").addDropdown((dropdown) => {
+      this.marginsDropdown = dropdown;
+      Object.entries(MARGIN_PRESETS).forEach(([key, name]) => {
+        dropdown.addOption(key, name);
+      });
+      dropdown.setValue(this.config.margins);
+      dropdown.onChange((value) => {
+        this.config.margins = value;
+      });
+    });
+    new import_obsidian.Setting(this.typographySection).setName("Line Numbers").setDesc("Override line numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
       this.lineNumbersDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
       dropdown.addOption("on", "On");
@@ -709,7 +783,7 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Page Numbers").setDesc("Override page numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Page Numbers").setDesc("Override page numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
       this.pageNumbersDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
       dropdown.addOption("on", "On");
@@ -724,7 +798,7 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Numbered Headings").setDesc("Override heading numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Numbered Headings").setDesc("Override heading numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
       this.numberedHeadingsDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
       dropdown.addOption("on", "Numbered");
@@ -739,7 +813,7 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
-    new import_obsidian.Setting(contentEl).setName("Document Language").setDesc("Set document language for hyphenation and localization").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.typographySection).setName("Document Language").setDesc("Set document language for hyphenation and localization").addDropdown((dropdown) => {
       this.languageDropdown = dropdown;
       Object.entries(LANGUAGE_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -749,9 +823,10 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.language = value;
       });
     });
-    this.createSectionHeader(contentEl, "Citations");
+    this.citationsSection = contentEl.createDiv();
+    this.createSectionHeader(this.citationsSection, "Citations");
     const citationStyles = this.plugin.getCitationStyles();
-    new import_obsidian.Setting(contentEl).setName("Citation Style").setDesc("Bibliography format").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.citationsSection).setName("Citation Style").setDesc("Bibliography format").addDropdown((dropdown) => {
       this.citationDropdown = dropdown;
       Object.entries(citationStyles).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -821,7 +896,7 @@ var BuildModal = class extends import_obsidian.Modal {
     });
   }
   restoreDefaults() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w;
     const mdFiles = this.plugin.getMarkdownFiles();
     const settings = this.plugin.settings;
     this.config.profile = settings.defaultProfile;
@@ -840,6 +915,10 @@ var BuildModal = class extends import_obsidian.Modal {
     this.config.texMode = "";
     this.config.figureFormat = "png";
     this.config.figureBackground = "white";
+    this.config.paperSize = "";
+    this.config.margins = "";
+    this.config.visualizeCaptions = false;
+    this.config.captionStyle = "plain";
     const maintext = mdFiles.find((f) => f.includes("maintext"));
     this.config.sourceFile = maintext || mdFiles[0] || "";
     const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
@@ -864,13 +943,17 @@ var BuildModal = class extends import_obsidian.Modal {
     (_j = this.pageNumbersDropdown) == null ? void 0 : _j.setValue("default");
     (_k = this.numberedHeadingsDropdown) == null ? void 0 : _k.setValue("default");
     (_l = this.languageDropdown) == null ? void 0 : _l.setValue(this.config.language);
-    (_m = this.citationDropdown) == null ? void 0 : _m.setValue(this.config.citationStyle);
-    (_n = this.pngToggle) == null ? void 0 : _n.setValue(this.config.usePng);
-    (_o = this.siRefsToggle) == null ? void 0 : _o.setValue(this.config.includeSiRefs);
-    (_p = this.siFileDropdown) == null ? void 0 : _p.setValue(this.config.siFile || "");
-    (_q = this.isSiToggle) == null ? void 0 : _q.setValue(this.config.isSi);
-    (_r = this.figureFormatDropdown) == null ? void 0 : _r.setValue(this.config.figureFormat);
-    (_s = this.figureBackgroundDropdown) == null ? void 0 : _s.setValue(this.config.figureBackground);
+    (_m = this.paperSizeDropdown) == null ? void 0 : _m.setValue(this.config.paperSize);
+    (_n = this.marginsDropdown) == null ? void 0 : _n.setValue(this.config.margins);
+    (_o = this.citationDropdown) == null ? void 0 : _o.setValue(this.config.citationStyle);
+    (_p = this.pngToggle) == null ? void 0 : _p.setValue(this.config.usePng);
+    (_q = this.siRefsToggle) == null ? void 0 : _q.setValue(this.config.includeSiRefs);
+    (_r = this.siFileDropdown) == null ? void 0 : _r.setValue(this.config.siFile || "");
+    (_s = this.isSiToggle) == null ? void 0 : _s.setValue(this.config.isSi);
+    (_t = this.figureFormatDropdown) == null ? void 0 : _t.setValue(this.config.figureFormat);
+    (_u = this.figureBackgroundDropdown) == null ? void 0 : _u.setValue(this.config.figureBackground);
+    (_v = this.visualizeCaptionsToggle) == null ? void 0 : _v.setValue(this.config.visualizeCaptions);
+    (_w = this.captionStyleToggle) == null ? void 0 : _w.setValue(this.config.captionStyle === "html");
     this.updateFormatOptions(currentFormat);
     this.siFileContainer.style.display = "none";
     if (this.figureBackgroundContainer) {
@@ -925,6 +1008,12 @@ var BuildModal = class extends import_obsidian.Modal {
       if (profileContainer) {
         profileContainer.style.display = format === "md" ? "none" : "block";
       }
+    }
+    if (this.typographySection) {
+      this.typographySection.style.display = format === "pdf" || format === "latex" ? "block" : "none";
+    }
+    if (this.citationsSection) {
+      this.citationsSection.style.display = "block";
     }
   }
 };

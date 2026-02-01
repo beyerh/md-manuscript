@@ -4,20 +4,77 @@
     "type": "split",
     "children": [
       {
-        "id": "42e8ff1e40e7393f",
-        "type": "tabs",
+        "id": "e0af7e65c3778d04",
+        "type": "split",
         "children": [
           {
-            "id": "046eae42a9931928",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
-            }
+            "id": "841ea50fdfedb0bf",
+            "type": "tabs",
+            "dimension": 66.07396870554766,
+            "children": [
+              {
+                "id": "dbeac25ac0ad6c25",
+                "type": "leaf",
+                "state": {
+                  "type": "empty",
+                  "state": {},
+                  "icon": "lucide-file",
+                  "title": "New tab"
+                }
+              }
+            ]
+          },
+          {
+            "id": "f45fbc9e34bd5881",
+            "type": "tabs",
+            "dimension": 33.92603129445234,
+            "children": [
+              {
+                "id": "578f75fdad934664",
+                "type": "leaf",
+                "pinned": true,
+                "state": {
+                  "type": "terminal:terminal",
+                  "state": {
+                    "terminal:terminal": {
+                      "cwd": "/Users/hbeyer/repos/md-manuscript",
+                      "focus": false,
+                      "profile": {
+                        "args": [
+                          "--login"
+                        ],
+                        "executable": "/bin/zsh",
+                        "followTheme": true,
+                        "name": "",
+                        "platforms": {
+                          "darwin": true
+                        },
+                        "pythonExecutable": "python3",
+                        "restoreHistory": false,
+                        "rightClickAction": "copyPaste",
+                        "successExitCodes": [
+                          "0",
+                          "SIGINT",
+                          "SIGTERM"
+                        ],
+                        "terminalOptions": {
+                          "documentOverride": null
+                        },
+                        "type": "integrated",
+                        "useWin32Conhost": true
+                      },
+                      "serial": null
+                    }
+                  },
+                  "pinned": true,
+                  "icon": "terminal",
+                  "title": "Terminal: hbeyer@localhost:~/repos/md-manuscript"
+                }
+              }
+            ]
           }
-        ]
+        ],
+        "direction": "horizontal"
       }
     ],
     "direction": "vertical"
@@ -181,35 +238,42 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "046eae42a9931928",
+  "active": "dbeac25ac0ad6c25",
   "lastOpenFiles": [
-    "export/02-md-manuscript-maintext_flat.md",
-    "export/02-md-manuscript-maintext.md",
+    "Script.md",
+    "export/Script_flat.md",
     "_temp_config.yaml",
-    "export/02-md-manuscript-maintext.pdf",
-    "README.md",
-    "02-md-manuscript-maintext.md",
-    "_si_header.tex",
-    "_defaults.yaml",
-    "_test_filter.lua",
-    "_si_meta.yaml",
-    "_si_metadata.yaml",
-    "export/figures/figure2.png",
-    "figures/figure2.png",
-    "export/figures/figure1.png",
-    "figures/figure1.png",
-    "_temp_02-md-manuscript-maintext_merged.md",
-    "export/figures/figure2.jpg",
-    "figures/figure2.jpg",
-    "export/figures/figure1.jpg",
-    "figures/figure1.jpg",
+    "export/figures/mammalian_cell_plasmid.webp",
+    "export/figures/figure2.webp",
+    "export/figures/cloning_strategies.webp",
+    "export/figures/figure1.webp",
+    "export/figures/tetracycline.webp",
+    "export/figures/inteins.webp",
+    "export/figures/inteins_plasms_membrane.webp",
+    "export/figures/photoswitches.webp",
+    "export/figures/inteins_applications.webp",
+    "export/figures/intein_mechanism.webp",
     "export/figures",
     "export",
-    "references.json",
+    "export/figures/mammalian_cell_plasmid.pdf",
+    "export/figures/figure2.pdf",
+    "export/figures/cloning_strategies.pdf",
+    "export/figures/figure1.pdf",
+    "export/figures/tetracycline.pdf",
+    "export/figures/inteins.pdf",
+    "export/figures/inteins_plasms_membrane.pdf",
+    "_temp_Script_flat_merged.md",
     "03-md-manuscript_supp_info.md",
-    "export/figures/figure2.webp",
-    "figures/figure2.webp",
+    "02-md-manuscript-maintext.md",
+    "export/md-manuscript-maintext_flat.md",
     "WRITING.md",
+    "README.md",
+    "_temp_2026_WORD_organoid_merged.md",
+    "2026_WORD_organoid.md",
+    "export/02-md-manuscript-maintext_flat.md",
+    "_temp_02-md-manuscript-maintext_flat_merged.md",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "export/02-md-manuscript-maintext.md",
     "resources/templater/insert_table.md",
     "resources/templater/insert_landscape_table.md",
     "resources/templater/insert_figure.md",
@@ -220,14 +284,6 @@
     "_temp_03-md-manuscript_supp_info_merged.md",
     "md-manuscript-frontmatter.md",
     "_temp_md-manuscript-maintext_merged.md",
-    "md-thesis.md",
-    "md-notes_technical.md",
-    "Untitled 2.md",
-    "Untitled 1.md",
-    "_debug_merged.md",
-    "md-notes_narrative.md",
-    "examples/md-thesis.md",
-    "examples/md-notes_technical.md",
-    "examples/md-notes_narrative.md"
+    "md-thesis.md"
   ]
 }

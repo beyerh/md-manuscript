@@ -16,10 +16,12 @@
                 "id": "dbeac25ac0ad6c25",
                 "type": "leaf",
                 "state": {
-                  "type": "empty",
-                  "state": {},
-                  "icon": "lucide-file",
-                  "title": "New tab"
+                  "type": "pdf",
+                  "state": {
+                    "file": "export/02-md-manuscript-maintext.pdf"
+                  },
+                  "icon": "lucide-file-text",
+                  "title": "02-md-manuscript-maintext"
                 }
               }
             ]
@@ -209,12 +211,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "export/02-md-manuscript-maintext.pdf",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of 02-md-manuscript-maintext"
             }
           }
         ],
@@ -240,9 +243,12 @@
   },
   "active": "dbeac25ac0ad6c25",
   "lastOpenFiles": [
+    "export/02-md-manuscript-maintext.pdf",
+    "_temp_config.yaml",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "export",
     "Script.md",
     "export/Script_flat.md",
-    "_temp_config.yaml",
     "export/figures/mammalian_cell_plasmid.webp",
     "export/figures/figure2.webp",
     "export/figures/cloning_strategies.webp",
@@ -254,7 +260,6 @@
     "export/figures/inteins_applications.webp",
     "export/figures/intein_mechanism.webp",
     "export/figures",
-    "export",
     "export/figures/mammalian_cell_plasmid.pdf",
     "export/figures/figure2.pdf",
     "export/figures/cloning_strategies.pdf",
@@ -272,7 +277,6 @@
     "2026_WORD_organoid.md",
     "export/02-md-manuscript-maintext_flat.md",
     "_temp_02-md-manuscript-maintext_flat_merged.md",
-    "_temp_02-md-manuscript-maintext_merged.md",
     "export/02-md-manuscript-maintext.md",
     "resources/templater/insert_table.md",
     "resources/templater/insert_landscape_table.md",

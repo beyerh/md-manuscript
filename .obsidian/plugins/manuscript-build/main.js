@@ -150,7 +150,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       callback: () => {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile && activeFile.extension === "md") {
-          this.buildWithDefaults(activeFile.name);
+          this.buildWithDefaults(activeFile.path);
         } else {
           new import_obsidian.Notice("No markdown file is currently active");
         }
@@ -175,7 +175,15 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
   }
   getMarkdownFiles() {
     const files = this.app.vault.getMarkdownFiles();
-    return files.filter((f) => !f.path.includes("/")).map((f) => f.name).filter((name) => !name.startsWith("_") && name.toLowerCase() !== "readme.md").sort();
+    return files.filter((f) => !f.name.startsWith("_") && f.name.toLowerCase() !== "readme.md").sort((a, b) => {
+      const aIsRoot = !a.path.includes("/");
+      const bIsRoot = !b.path.includes("/");
+      if (aIsRoot && !bIsRoot)
+        return -1;
+      if (!aIsRoot && bIsRoot)
+        return 1;
+      return a.path.localeCompare(b.path);
+    }).map((f) => f.path);
   }
   getCitationStyles() {
     const styles = {};
@@ -527,6 +535,8 @@ var BuildModal = class extends import_obsidian.Modal {
   constructor(app, plugin, lastConfig = null) {
     super(app);
     this.lastConfig = null;
+    this.showAllFiles = false;
+    this.allFiles = [];
     this.plugin = plugin;
     this.lastConfig = lastConfig;
     if (lastConfig) {
@@ -559,60 +569,88 @@ var BuildModal = class extends import_obsidian.Modal {
       };
     }
   }
+  updateFileDropdowns() {
+    const visibleFiles = this.showAllFiles ? this.allFiles : this.allFiles.filter((f) => !f.includes("/"));
+    const update = (dropdown, currentValue, allowNone = false) => {
+      if (!dropdown)
+        return;
+      dropdown.selectEl.innerHTML = "";
+      if (allowNone)
+        dropdown.addOption("", "None");
+      visibleFiles.forEach((f) => dropdown.addOption(f, f));
+      if (currentValue && !visibleFiles.includes(currentValue) && this.allFiles.includes(currentValue)) {
+        dropdown.addOption(currentValue, currentValue);
+      }
+      if (currentValue !== null)
+        dropdown.setValue(currentValue);
+    };
+    update(this.sourceDropdown, this.config.sourceFile);
+    update(this.frontmatterDropdown, this.config.frontmatterFile, true);
+    update(this.siFileDropdown, this.config.siFile);
+  }
   onOpen() {
+    var _a, _b;
     const { contentEl } = this;
     contentEl.empty();
     contentEl.addClass("manuscript-build-modal");
     contentEl.createEl("h2", { text: "Build Manuscript", cls: "modal-title" });
-    const mdFiles = this.plugin.getMarkdownFiles();
-    this.createSectionHeader(contentEl, "Document");
-    new import_obsidian.Setting(contentEl).setName("Source File").setDesc("The main document to build").addDropdown((dropdown) => {
-      var _a;
-      this.sourceDropdown = dropdown;
-      mdFiles.forEach((file) => {
-        dropdown.addOption(file, file);
-      });
-      if (mdFiles.length > 0) {
-        if (((_a = this.lastConfig) == null ? void 0 : _a.sourceFile) && mdFiles.includes(this.lastConfig.sourceFile)) {
-          this.config.sourceFile = this.lastConfig.sourceFile;
-        } else if (!this.config.sourceFile || !mdFiles.includes(this.config.sourceFile)) {
-          const maintext = mdFiles.find((f) => f.includes("maintext"));
-          this.config.sourceFile = maintext || mdFiles[0];
-        }
-        dropdown.setValue(this.config.sourceFile);
+    this.allFiles = this.plugin.getMarkdownFiles();
+    const mdFiles = this.allFiles;
+    if (mdFiles.length > 0) {
+      if (((_a = this.lastConfig) == null ? void 0 : _a.sourceFile) && mdFiles.includes(this.lastConfig.sourceFile)) {
+        this.config.sourceFile = this.lastConfig.sourceFile;
+      } else if (!this.config.sourceFile || !mdFiles.includes(this.config.sourceFile)) {
+        const maintext = mdFiles.find((f) => f.includes("maintext"));
+        this.config.sourceFile = maintext || mdFiles[0];
       }
+      if (this.lastConfig && this.lastConfig.frontmatterFile !== void 0) {
+        this.config.frontmatterFile = this.lastConfig.frontmatterFile;
+      } else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
+      } else {
+        const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
+        if (frontmatter) {
+          this.config.frontmatterFile = frontmatter;
+        }
+      }
+      if (((_b = this.lastConfig) == null ? void 0 : _b.siFile) && mdFiles.includes(this.lastConfig.siFile)) {
+        this.config.siFile = this.lastConfig.siFile;
+      } else if (this.config.siFile && mdFiles.includes(this.config.siFile)) {
+      } else {
+        const siFile = mdFiles.find((f) => f.includes("supp"));
+        if (siFile) {
+          this.config.siFile = siFile;
+        } else if (mdFiles.length > 0) {
+          this.config.siFile = mdFiles[0];
+        }
+      }
+    }
+    this.createSectionHeader(contentEl, "Document");
+    new import_obsidian.Setting(contentEl).setName("Show files in subfolders").setDesc("Toggle visibility of files located in subdirectories").addToggle((toggle) => {
+      toggle.setValue(this.showAllFiles);
+      toggle.onChange((value) => {
+        this.showAllFiles = value;
+        this.updateFileDropdowns();
+      });
+    });
+    new import_obsidian.Setting(contentEl).setName("Source File").setDesc("The main document to build").addDropdown((dropdown) => {
+      this.sourceDropdown = dropdown;
       dropdown.onChange((value) => {
         this.config.sourceFile = value;
       });
     });
     new import_obsidian.Setting(contentEl).setName("Frontmatter").setDesc("Optional file to prepend (title, authors, etc.)").addDropdown((dropdown) => {
       this.frontmatterDropdown = dropdown;
-      dropdown.addOption("", "None");
-      mdFiles.forEach((file) => {
-        dropdown.addOption(file, file);
-      });
-      if (this.lastConfig && this.lastConfig.frontmatterFile !== void 0) {
-        this.config.frontmatterFile = this.lastConfig.frontmatterFile;
-        dropdown.setValue(this.lastConfig.frontmatterFile || "");
-      } else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
-        dropdown.setValue(this.config.frontmatterFile);
-      } else {
-        const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
-        if (frontmatter) {
-          this.config.frontmatterFile = frontmatter;
-          dropdown.setValue(frontmatter);
-        }
-      }
       dropdown.onChange((value) => {
         this.config.frontmatterFile = value || null;
       });
     });
     this.createSectionHeader(contentEl, "Output");
+    const outputGrid = contentEl.createDiv({ cls: "manuscript-settings-grid" });
     let currentFormat = this.config.profile.startsWith("docx") ? "docx" : this.config.profile === "md-flattened" ? "md" : "pdf";
     if (currentFormat === "pdf" && this.config.texMode) {
       currentFormat = "latex";
     }
-    new import_obsidian.Setting(contentEl).setName("Format").setDesc("Output document format").addDropdown((dropdown) => {
+    new import_obsidian.Setting(outputGrid).setClass("manuscript-setting-compact").setName("Format").setDesc("Output document format").addDropdown((dropdown) => {
       this.formatDropdown = dropdown;
       dropdown.addOption("pdf", "PDF");
       dropdown.addOption("latex", "LaTeX");
@@ -637,8 +675,9 @@ var BuildModal = class extends import_obsidian.Modal {
         this.updateFormatOptions(value);
       });
     });
-    this.latexModeContainer = contentEl.createDiv();
-    new import_obsidian.Setting(this.latexModeContainer).setName("LaTeX Mode").setDesc("Choose how LaTeX is exported").addDropdown((dropdown) => {
+    this.latexModeContainer = outputGrid.createDiv();
+    this.latexModeContainer.addClass("manuscript-setting-compact");
+    new import_obsidian.Setting(this.latexModeContainer).setClass("manuscript-setting-compact").setName("LaTeX Mode").setDesc("Choose how LaTeX is exported").addDropdown((dropdown) => {
       dropdown.addOption("source", "LaTeX Source (profile exact)");
       dropdown.addOption("portable", "Portable LaTeX");
       dropdown.addOption("body", "Body-only (paste into journal templates)");
@@ -648,7 +687,7 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
-    new import_obsidian.Setting(contentEl).setName("Profile").setDesc("Document style and layout").addDropdown((dropdown) => {
+    new import_obsidian.Setting(outputGrid).setClass("manuscript-setting-compact").setName("Profile").setDesc("Document style and layout").addDropdown((dropdown) => {
       this.profileDropdown = dropdown;
       this.populateProfiles(dropdown, profileFormat);
       dropdown.setValue(this.config.profile);
@@ -656,16 +695,16 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.profile = value;
       });
     });
-    this.pngContainer = contentEl.createDiv();
-    new import_obsidian.Setting(this.pngContainer).setName("Convert Figures to PNG").setDesc("Convert PDF figures to PNG for Word compatibility").addToggle((toggle) => {
+    this.pngContainer = outputGrid.createDiv();
+    new import_obsidian.Setting(this.pngContainer).setClass("manuscript-setting-compact").setName("Convert Figures to PNG").setDesc("Convert PDF figures to PNG for Word compatibility").addToggle((toggle) => {
       this.pngToggle = toggle;
       toggle.setValue(this.config.usePng);
       toggle.onChange((value) => {
         this.config.usePng = value;
       });
     });
-    this.flattenedMdContainer = contentEl.createDiv();
-    new import_obsidian.Setting(this.flattenedMdContainer).setName("Figure Format").setDesc("Output format for figures").addDropdown((dropdown) => {
+    this.flattenedMdContainer = contentEl.createDiv({ cls: "manuscript-settings-grid" });
+    new import_obsidian.Setting(this.flattenedMdContainer).setClass("manuscript-setting-compact").setName("Figure Format").setDesc("Output format for figures").addDropdown((dropdown) => {
       this.figureFormatDropdown = dropdown;
       dropdown.addOption("png", "PNG");
       dropdown.addOption("webp", "WebP");
@@ -680,7 +719,7 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.figureBackgroundContainer = this.flattenedMdContainer.createDiv();
-    new import_obsidian.Setting(this.figureBackgroundContainer).setName("Figure Background").setDesc("Background color for converted figures").addDropdown((dropdown) => {
+    new import_obsidian.Setting(this.figureBackgroundContainer).setClass("manuscript-setting-compact").setName("Figure Background").setDesc("Background color for converted figures").addDropdown((dropdown) => {
       this.figureBackgroundDropdown = dropdown;
       dropdown.addOption("white", "White");
       dropdown.addOption("transparent", "Transparent");
@@ -690,14 +729,14 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.figureBackgroundContainer.style.display = this.config.figureFormat !== "original" ? "block" : "none";
-    new import_obsidian.Setting(this.flattenedMdContainer).setName("Visualize Captions").setDesc("Output visible captions below images (for digital gardens)").addToggle((toggle) => {
+    new import_obsidian.Setting(this.flattenedMdContainer).setClass("manuscript-setting-compact").setName("Visualize Captions").setDesc("Output visible captions below images (for digital gardens)").addToggle((toggle) => {
       this.visualizeCaptionsToggle = toggle;
       toggle.setValue(this.config.visualizeCaptions || false);
       toggle.onChange((value) => {
         this.config.visualizeCaptions = value;
       });
     });
-    new import_obsidian.Setting(this.flattenedMdContainer).setName("HTML Figures & Captions").setDesc("Use HTML <figure> tags to retain size/alignment").addToggle((toggle) => {
+    new import_obsidian.Setting(this.flattenedMdContainer).setClass("manuscript-setting-compact").setName("HTML Figures & Captions").setDesc("Use HTML <figure> tags to retain size/alignment").addToggle((toggle) => {
       this.captionStyleToggle = toggle;
       toggle.setValue(this.config.captionStyle === "html");
       toggle.onChange((value) => {
@@ -707,7 +746,8 @@ var BuildModal = class extends import_obsidian.Modal {
     this.updateFormatOptions(currentFormat);
     this.typographySection = contentEl.createDiv();
     this.createSectionHeader(this.typographySection, "Typography");
-    new import_obsidian.Setting(this.typographySection).setName("Font").setDesc("Document typeface").addDropdown((dropdown) => {
+    const typeGrid = this.typographySection.createDiv({ cls: "manuscript-settings-grid" });
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Font").setDesc("Document typeface").addDropdown((dropdown) => {
       this.fontDropdown = dropdown;
       dropdown.addOption("", "Profile Default");
       Object.entries(FONT_PRESETS).forEach(([key, name]) => {
@@ -718,7 +758,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.font = value;
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Font Size").setDesc("Base font size").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Font Size").setDesc("Base font size").addDropdown((dropdown) => {
       this.fontSizeDropdown = dropdown;
       FONT_SIZES.forEach((size) => {
         dropdown.addOption(size, size);
@@ -728,7 +768,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.fontSize = value;
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Line Spacing").setDesc("Override line spacing (leave as Profile Default to use profile setting)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Line Spacing").setDesc("Override line spacing").addDropdown((dropdown) => {
       this.lineSpacingDropdown = dropdown;
       Object.entries(LINE_SPACING_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -738,7 +778,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.lineSpacing = value;
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Paragraph Style").setDesc("Indented, Gap, or Both").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Paragraph Style").setDesc("Indented, Gap, or Both").addDropdown((dropdown) => {
       this.paragraphStyleDropdown = dropdown;
       Object.entries(PARAGRAPH_STYLE_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -748,7 +788,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.paragraphStyle = value;
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Paper Size").setDesc("Override paper size").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Paper Size").setDesc("Override paper size").addDropdown((dropdown) => {
       this.paperSizeDropdown = dropdown;
       Object.entries(PAPER_SIZE_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -758,7 +798,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.paperSize = value;
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Margins").setDesc("Override document margins").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Margins").setDesc("Override document margins").addDropdown((dropdown) => {
       this.marginsDropdown = dropdown;
       Object.entries(MARGIN_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -768,7 +808,7 @@ var BuildModal = class extends import_obsidian.Modal {
         this.config.margins = value;
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Line Numbers").setDesc("Override line numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Line Numbers").setDesc("Three-state: Default / On / Off").addDropdown((dropdown) => {
       this.lineNumbersDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
       dropdown.addOption("on", "On");
@@ -783,7 +823,7 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Page Numbers").setDesc("Override page numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Page Numbers").setDesc("Three-state: Default / On / Off").addDropdown((dropdown) => {
       this.pageNumbersDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
       dropdown.addOption("on", "On");
@@ -798,7 +838,7 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Numbered Headings").setDesc("Override heading numbering (three-state: Profile Default / On / Off)").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Numbered Headings").setDesc("Three-state: Default / On / Off").addDropdown((dropdown) => {
       this.numberedHeadingsDropdown = dropdown;
       dropdown.addOption("default", "Profile Default");
       dropdown.addOption("on", "Numbered");
@@ -813,7 +853,7 @@ var BuildModal = class extends import_obsidian.Modal {
         }
       });
     });
-    new import_obsidian.Setting(this.typographySection).setName("Document Language").setDesc("Set document language for hyphenation and localization").addDropdown((dropdown) => {
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Document Language").setDesc("Hyphenation and localization").addDropdown((dropdown) => {
       this.languageDropdown = dropdown;
       Object.entries(LANGUAGE_PRESETS).forEach(([key, name]) => {
         dropdown.addOption(key, name);
@@ -837,7 +877,8 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.createSectionHeader(contentEl, "Supporting Information");
-    new import_obsidian.Setting(contentEl).setName("Include SI References").setDesc("Add SI citations to the main bibliography").addToggle((toggle) => {
+    const siGrid = contentEl.createDiv({ cls: "manuscript-settings-grid" });
+    new import_obsidian.Setting(siGrid).setClass("manuscript-setting-compact").setName("Include SI References").setDesc("Add SI citations to main bib").addToggle((toggle) => {
       this.siRefsToggle = toggle;
       toggle.setValue(this.config.includeSiRefs);
       toggle.onChange((value) => {
@@ -845,34 +886,15 @@ var BuildModal = class extends import_obsidian.Modal {
         this.siFileContainer.style.display = value ? "block" : "none";
       });
     });
-    this.siFileContainer = contentEl.createDiv();
-    new import_obsidian.Setting(this.siFileContainer).setName("SI File").setDesc("File containing SI references").addDropdown((dropdown) => {
-      var _a;
+    this.siFileContainer = siGrid.createDiv();
+    new import_obsidian.Setting(this.siFileContainer).setClass("manuscript-setting-compact").setName("SI File").setDesc("File containing SI references").addDropdown((dropdown) => {
       this.siFileDropdown = dropdown;
-      mdFiles.forEach((file) => {
-        dropdown.addOption(file, file);
-      });
-      if (((_a = this.lastConfig) == null ? void 0 : _a.siFile) && mdFiles.includes(this.lastConfig.siFile)) {
-        this.config.siFile = this.lastConfig.siFile;
-        dropdown.setValue(this.lastConfig.siFile);
-      } else if (this.config.siFile && mdFiles.includes(this.config.siFile)) {
-        dropdown.setValue(this.config.siFile);
-      } else {
-        const siFile = mdFiles.find((f) => f.includes("supp"));
-        if (siFile) {
-          this.config.siFile = siFile;
-          dropdown.setValue(siFile);
-        } else if (mdFiles.length > 0) {
-          this.config.siFile = mdFiles[0];
-          dropdown.setValue(mdFiles[0]);
-        }
-      }
       dropdown.onChange((value) => {
         this.config.siFile = value;
       });
     });
     this.siFileContainer.style.display = this.config.includeSiRefs ? "block" : "none";
-    new import_obsidian.Setting(contentEl).setName("SI Formatting").setDesc("Apply S-prefixed figure/table numbering").addToggle((toggle) => {
+    new import_obsidian.Setting(siGrid).setClass("manuscript-setting-compact").setName("SI Formatting").setDesc("S-prefixed figures/tables").addToggle((toggle) => {
       this.isSiToggle = toggle;
       toggle.setValue(this.config.isSi);
       toggle.onChange((value) => {
@@ -894,11 +916,13 @@ var BuildModal = class extends import_obsidian.Modal {
       this.close();
       this.plugin.executeBuild(this.config);
     });
+    this.updateFileDropdowns();
   }
   restoreDefaults() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w;
-    const mdFiles = this.plugin.getMarkdownFiles();
+    const mdFiles = this.allFiles;
     const settings = this.plugin.settings;
+    this.showAllFiles = false;
     this.config.profile = settings.defaultProfile;
     this.config.font = settings.defaultFont;
     this.config.fontSize = settings.defaultFontSize;
@@ -959,6 +983,7 @@ var BuildModal = class extends import_obsidian.Modal {
     if (this.figureBackgroundContainer) {
       this.figureBackgroundContainer.style.display = "block";
     }
+    this.updateFileDropdowns();
     new import_obsidian.Notice("Settings restored to defaults");
   }
   onClose() {

@@ -202,7 +202,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			callback: () => {
 				const activeFile = this.app.workspace.getActiveFile();
 				if (activeFile && activeFile.extension === "md") {
-					this.buildWithDefaults(activeFile.name);
+					this.buildWithDefaults(activeFile.path);
 				} else {
 					new Notice("No markdown file is currently active");
 				}
@@ -235,11 +235,18 @@ export default class ManuscriptBuildPlugin extends Plugin {
 	getMarkdownFiles(): string[] {
 		const files = this.app.vault.getMarkdownFiles();
 		return files
-			// Only include files in root directory (no "/" in path means root)
-			.filter((f) => !f.path.includes("/"))
-			.map((f) => f.name)
-			.filter((name) => !name.startsWith("_") && name.toLowerCase() !== "readme.md")
-			.sort();
+			.filter((f) => !f.name.startsWith("_") && f.name.toLowerCase() !== "readme.md")
+			.sort((a, b) => {
+				// Sort root files first, then alphabetically by path
+				const aIsRoot = !a.path.includes("/");
+				const bIsRoot = !b.path.includes("/");
+				
+				if (aIsRoot && !bIsRoot) return -1;
+				if (!aIsRoot && bIsRoot) return 1;
+				
+				return a.path.localeCompare(b.path);
+			})
+			.map((f) => f.path);
 	}
 
 	getCitationStyles(): Record<string, string> {
@@ -694,6 +701,8 @@ class BuildModal extends Modal {
 	private captionStyleToggle: ToggleComponent;
 	private typographySection: HTMLElement;
 	private citationsSection: HTMLElement;
+	private showAllFiles: boolean = false;
+	private allFiles: string[] = [];
 
 	constructor(app: App, plugin: ManuscriptBuildPlugin, lastConfig: BuildConfig | null = null) {
 		super(app);
@@ -732,6 +741,35 @@ class BuildModal extends Modal {
 		}
 	}
 
+	private updateFileDropdowns() {
+		const visibleFiles = this.showAllFiles
+			? this.allFiles
+			: this.allFiles.filter(f => !f.includes("/"));
+		
+		const update = (dropdown: DropdownComponent, currentValue: string | null, allowNone: boolean = false) => {
+			if (!dropdown) return;
+			
+			// Clear existing options
+			dropdown.selectEl.innerHTML = "";
+			
+			if (allowNone) dropdown.addOption("", "None");
+			
+			visibleFiles.forEach(f => dropdown.addOption(f, f));
+			
+			// Ensure current value is present if it exists in allFiles but hidden
+			if (currentValue && !visibleFiles.includes(currentValue) && this.allFiles.includes(currentValue)) {
+				 dropdown.addOption(currentValue, currentValue);
+			}
+			
+			// Restore value
+			if (currentValue !== null) dropdown.setValue(currentValue);
+		};
+
+		update(this.sourceDropdown, this.config.sourceFile);
+		update(this.frontmatterDropdown, this.config.frontmatterFile, true);
+		update(this.siFileDropdown, this.config.siFile);
+	}
+
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
@@ -740,12 +778,62 @@ class BuildModal extends Modal {
 		// Header
 		contentEl.createEl("h2", { text: "Build Manuscript", cls: "modal-title" });
 
-		const mdFiles = this.plugin.getMarkdownFiles();
+		this.allFiles = this.plugin.getMarkdownFiles();
+		const mdFiles = this.allFiles; // Alias for convenience in initialization logic
+
+		// Initialize defaults if needed
+		if (mdFiles.length > 0) {
+			// Source File Default
+			if (this.lastConfig?.sourceFile && mdFiles.includes(this.lastConfig.sourceFile)) {
+				this.config.sourceFile = this.lastConfig.sourceFile;
+			} else if (!this.config.sourceFile || !mdFiles.includes(this.config.sourceFile)) {
+				const maintext = mdFiles.find((f) => f.includes("maintext"));
+				this.config.sourceFile = maintext || mdFiles[0];
+			}
+
+			// Frontmatter Default
+			if (this.lastConfig && this.lastConfig.frontmatterFile !== undefined) {
+				this.config.frontmatterFile = this.lastConfig.frontmatterFile;
+			} else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
+				// Keep current
+			} else {
+				const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
+				if (frontmatter) {
+					this.config.frontmatterFile = frontmatter;
+				}
+			}
+
+			// SI File Default
+			if (this.lastConfig?.siFile && mdFiles.includes(this.lastConfig.siFile)) {
+				this.config.siFile = this.lastConfig.siFile;
+			} else if (this.config.siFile && mdFiles.includes(this.config.siFile)) {
+				// Keep current
+			} else {
+				const siFile = mdFiles.find((f) => f.includes("supp"));
+				if (siFile) {
+					this.config.siFile = siFile;
+				} else if (mdFiles.length > 0) {
+					this.config.siFile = mdFiles[0];
+				}
+			}
+		}
 
 		// ─────────────────────────────────────────────────────────────────────
 		// Document Selection Section
 		// ─────────────────────────────────────────────────────────────────────
 		this.createSectionHeader(contentEl, "Document");
+
+		// Show Subfolders Toggle
+		new Setting(contentEl)
+			.setName("Show files in subfolders")
+			.setDesc("Toggle visibility of files located in subdirectories")
+			.addToggle((toggle) => {
+				toggle.setValue(this.showAllFiles);
+				toggle.onChange((value) => {
+					this.showAllFiles = value;
+					this.updateFileDropdowns();
+				});
+			});
 
 		// Source file
 		new Setting(contentEl)
@@ -753,19 +841,7 @@ class BuildModal extends Modal {
 			.setDesc("The main document to build")
 			.addDropdown((dropdown) => {
 				this.sourceDropdown = dropdown;
-				mdFiles.forEach((file) => {
-					dropdown.addOption(file, file);
-				});
-				if (mdFiles.length > 0) {
-					// Use lastConfig value if available and valid, otherwise find sensible default
-					if (this.lastConfig?.sourceFile && mdFiles.includes(this.lastConfig.sourceFile)) {
-						this.config.sourceFile = this.lastConfig.sourceFile;
-					} else if (!this.config.sourceFile || !mdFiles.includes(this.config.sourceFile)) {
-						const maintext = mdFiles.find((f) => f.includes("maintext"));
-						this.config.sourceFile = maintext || mdFiles[0];
-					}
-					dropdown.setValue(this.config.sourceFile);
-				}
+				// Initial population handled by updateFileDropdowns
 				dropdown.onChange((value) => {
 					this.config.sourceFile = value;
 				});
@@ -777,24 +853,7 @@ class BuildModal extends Modal {
 			.setDesc("Optional file to prepend (title, authors, etc.)")
 			.addDropdown((dropdown) => {
 				this.frontmatterDropdown = dropdown;
-				dropdown.addOption("", "None");
-				mdFiles.forEach((file) => {
-					dropdown.addOption(file, file);
-				});
-				// Use lastConfig value if available, otherwise find sensible default
-		if (this.lastConfig && this.lastConfig.frontmatterFile !== undefined) {
-			// Explicitly respect "None" selection (null) from last config
-			this.config.frontmatterFile = this.lastConfig.frontmatterFile;
-			dropdown.setValue(this.lastConfig.frontmatterFile || "");
-		} else if (this.config.frontmatterFile && mdFiles.includes(this.config.frontmatterFile)) {
-			dropdown.setValue(this.config.frontmatterFile);
-		} else {
-					const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
-					if (frontmatter) {
-						this.config.frontmatterFile = frontmatter;
-						dropdown.setValue(frontmatter);
-					}
-				}
+				// Initial population handled by updateFileDropdowns
 				dropdown.onChange((value) => {
 					this.config.frontmatterFile = value || null;
 				});
@@ -805,6 +864,8 @@ class BuildModal extends Modal {
 		// ─────────────────────────────────────────────────────────────────────
 		this.createSectionHeader(contentEl, "Output");
 
+		const outputGrid = contentEl.createDiv({ cls: "manuscript-settings-grid" });
+
 		// Format selection
 		// Determine current format: docx, pdf, md (flattened), or latex (pdf with texMode set)
 		let currentFormat = this.config.profile.startsWith("docx") ? "docx" :
@@ -812,7 +873,8 @@ class BuildModal extends Modal {
 		if (currentFormat === "pdf" && this.config.texMode) {
 			currentFormat = "latex";
 		}
-		new Setting(contentEl)
+		new Setting(outputGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Format")
 			.setDesc("Output document format")
 			.addDropdown((dropdown) => {
@@ -844,8 +906,22 @@ class BuildModal extends Modal {
 			});
 
 		// LaTeX mode selection (only relevant when format is LaTeX)
-		this.latexModeContainer = contentEl.createDiv();
+		this.latexModeContainer = outputGrid.createDiv();
+		this.latexModeContainer.addClass("manuscript-setting-compact");
+		// Note: The container itself becomes the grid item.
+		// The Setting inside should also be compact if we want the same styling, but if the container is the grid item, flex direction applies to container?
+		// No, CSS targets .manuscript-setting-compact which is usually the Setting element.
+		// So we apply the class to the Setting.
+		// BUT if we wrap it in a div, the DIV is the grid item.
+		// To fix layout, the DIV should just be a wrapper (display contents?) or handle the layout.
+		// Actually, if we apply "manuscript-setting-compact" to the Setting, it applies flex-direction: column.
+		// If the wrapper div is the grid item, the Setting is inside.
+		// We want the Setting to be the visual item.
+		// So we apply style to wrapper? Or make wrapper display: contents?
+		// Let's make the wrapper match the compact style.
+		
 		new Setting(this.latexModeContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("LaTeX Mode")
 			.setDesc("Choose how LaTeX is exported")
 			.addDropdown((dropdown) => {
@@ -860,7 +936,8 @@ class BuildModal extends Modal {
 
 		// Profile selection
 		const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
-		new Setting(contentEl)
+		new Setting(outputGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Profile")
 			.setDesc("Document style and layout")
 			.addDropdown((dropdown) => {
@@ -873,8 +950,9 @@ class BuildModal extends Modal {
 			});
 
 		// PNG conversion (DOCX only)
-		this.pngContainer = contentEl.createDiv();
+		this.pngContainer = outputGrid.createDiv();
 		new Setting(this.pngContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("Convert Figures to PNG")
 			.setDesc("Convert PDF figures to PNG for Word compatibility")
 			.addToggle((toggle) => {
@@ -886,10 +964,12 @@ class BuildModal extends Modal {
 			});
 
 		// Flattened Markdown options container
-		this.flattenedMdContainer = contentEl.createDiv();
+		// We make this a grid too, separate from outputGrid to ensure it takes full width below
+		this.flattenedMdContainer = contentEl.createDiv({ cls: "manuscript-settings-grid" });
 		
 		// Figure format (Flattened Markdown only)
 		new Setting(this.flattenedMdContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("Figure Format")
 			.setDesc("Output format for figures")
 			.addDropdown((dropdown) => {
@@ -911,6 +991,7 @@ class BuildModal extends Modal {
 		// Figure background (Flattened Markdown only, not for original format)
 		this.figureBackgroundContainer = this.flattenedMdContainer.createDiv();
 		new Setting(this.figureBackgroundContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("Figure Background")
 			.setDesc("Background color for converted figures")
 			.addDropdown((dropdown) => {
@@ -927,6 +1008,7 @@ class BuildModal extends Modal {
 
 		// Visualize Captions (Flattened Markdown only)
 		new Setting(this.flattenedMdContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("Visualize Captions")
 			.setDesc("Output visible captions below images (for digital gardens)")
 			.addToggle((toggle) => {
@@ -939,6 +1021,7 @@ class BuildModal extends Modal {
 
 		// HTML Captions (Flattened Markdown only)
 		new Setting(this.flattenedMdContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("HTML Figures & Captions")
 			.setDesc("Use HTML <figure> tags to retain size/alignment")
 			.addToggle((toggle) => {
@@ -958,8 +1041,11 @@ class BuildModal extends Modal {
 		this.typographySection = contentEl.createDiv();
 		this.createSectionHeader(this.typographySection, "Typography");
 
+		const typeGrid = this.typographySection.createDiv({ cls: "manuscript-settings-grid" });
+
 		// Font
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Font")
 			.setDesc("Document typeface")
 			.addDropdown((dropdown) => {
@@ -975,7 +1061,8 @@ class BuildModal extends Modal {
 			});
 
 		// Font size
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Font Size")
 			.setDesc("Base font size")
 			.addDropdown((dropdown) => {
@@ -990,9 +1077,10 @@ class BuildModal extends Modal {
 			});
 
 		// Line spacing
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Line Spacing")
-			.setDesc("Override line spacing (leave as Profile Default to use profile setting)")
+			.setDesc("Override line spacing")
 			.addDropdown((dropdown) => {
 				this.lineSpacingDropdown = dropdown;
 				Object.entries(LINE_SPACING_PRESETS).forEach(([key, name]) => {
@@ -1005,7 +1093,8 @@ class BuildModal extends Modal {
 			});
 
 		// Paragraph style
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Paragraph Style")
 			.setDesc("Indented, Gap, or Both")
 			.addDropdown((dropdown) => {
@@ -1020,7 +1109,8 @@ class BuildModal extends Modal {
 			});
 
 		// Paper size
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Paper Size")
 			.setDesc("Override paper size")
 			.addDropdown((dropdown) => {
@@ -1035,7 +1125,8 @@ class BuildModal extends Modal {
 			});
 
 		// Margins
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Margins")
 			.setDesc("Override document margins")
 			.addDropdown((dropdown) => {
@@ -1050,9 +1141,10 @@ class BuildModal extends Modal {
 			});
 
 		// Line numbers
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Line Numbers")
-			.setDesc("Override line numbering (three-state: Profile Default / On / Off)")
+			.setDesc("Three-state: Default / On / Off")
 			.addDropdown((dropdown) => {
 				this.lineNumbersDropdown = dropdown;
 				dropdown.addOption("default", "Profile Default");
@@ -1070,9 +1162,10 @@ class BuildModal extends Modal {
 			});
 
 		// Page numbers
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Page Numbers")
-			.setDesc("Override page numbering (three-state: Profile Default / On / Off)")
+			.setDesc("Three-state: Default / On / Off")
 			.addDropdown((dropdown) => {
 				this.pageNumbersDropdown = dropdown;
 				dropdown.addOption("default", "Profile Default");
@@ -1090,9 +1183,10 @@ class BuildModal extends Modal {
 			});
 
 		// Numbered headings
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Numbered Headings")
-			.setDesc("Override heading numbering (three-state: Profile Default / On / Off)")
+			.setDesc("Three-state: Default / On / Off")
 			.addDropdown((dropdown) => {
 				this.numberedHeadingsDropdown = dropdown;
 				dropdown.addOption("default", "Profile Default");
@@ -1110,9 +1204,10 @@ class BuildModal extends Modal {
 			});
 
 		// Language
-		new Setting(this.typographySection)
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Document Language")
-			.setDesc("Set document language for hyphenation and localization")
+			.setDesc("Hyphenation and localization")
 			.addDropdown((dropdown) => {
 				this.languageDropdown = dropdown;
 				Object.entries(LANGUAGE_PRESETS).forEach(([key, name]) => {
@@ -1151,10 +1246,13 @@ class BuildModal extends Modal {
 		// ─────────────────────────────────────────────────────────────────────
 		this.createSectionHeader(contentEl, "Supporting Information");
 
+		const siGrid = contentEl.createDiv({ cls: "manuscript-settings-grid" });
+
 		// Include SI refs
-		new Setting(contentEl)
+		new Setting(siGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("Include SI References")
-			.setDesc("Add SI citations to the main bibliography")
+			.setDesc("Add SI citations to main bib")
 			.addToggle((toggle) => {
 				this.siRefsToggle = toggle;
 				toggle.setValue(this.config.includeSiRefs);
@@ -1165,31 +1263,14 @@ class BuildModal extends Modal {
 			});
 
 		// SI file selection
-		this.siFileContainer = contentEl.createDiv();
+		this.siFileContainer = siGrid.createDiv();
 		new Setting(this.siFileContainer)
+			.setClass("manuscript-setting-compact")
 			.setName("SI File")
 			.setDesc("File containing SI references")
 			.addDropdown((dropdown) => {
 				this.siFileDropdown = dropdown;
-				mdFiles.forEach((file) => {
-					dropdown.addOption(file, file);
-				});
-				// Use lastConfig value if available, otherwise find sensible default
-				if (this.lastConfig?.siFile && mdFiles.includes(this.lastConfig.siFile)) {
-					this.config.siFile = this.lastConfig.siFile;
-					dropdown.setValue(this.lastConfig.siFile);
-				} else if (this.config.siFile && mdFiles.includes(this.config.siFile)) {
-					dropdown.setValue(this.config.siFile);
-				} else {
-					const siFile = mdFiles.find((f) => f.includes("supp"));
-					if (siFile) {
-						this.config.siFile = siFile;
-						dropdown.setValue(siFile);
-					} else if (mdFiles.length > 0) {
-						this.config.siFile = mdFiles[0];
-						dropdown.setValue(mdFiles[0]);
-					}
-				}
+				// Initial population handled by updateFileDropdowns
 				dropdown.onChange((value) => {
 					this.config.siFile = value;
 				});
@@ -1198,9 +1279,10 @@ class BuildModal extends Modal {
 		this.siFileContainer.style.display = this.config.includeSiRefs ? "block" : "none";
 
 		// SI formatting toggle
-		new Setting(contentEl)
+		new Setting(siGrid)
+			.setClass("manuscript-setting-compact")
 			.setName("SI Formatting")
-			.setDesc("Apply S-prefixed figure/table numbering")
+			.setDesc("S-prefixed figures/tables")
 			.addToggle((toggle) => {
 				this.isSiToggle = toggle;
 				toggle.setValue(this.config.isSi);
@@ -1237,11 +1319,16 @@ class BuildModal extends Modal {
 				this.close();
 				this.plugin.executeBuild(this.config);
 			});
+
+		// Initialize file dropdowns
+		this.updateFileDropdowns();
 	}
 
 	private restoreDefaults() {
-		const mdFiles = this.plugin.getMarkdownFiles();
+		const mdFiles = this.allFiles;
 		const settings = this.plugin.settings;
+		
+		this.showAllFiles = false;
 
 		// Reset config to plugin defaults
 		this.config.profile = settings.defaultProfile;
@@ -1315,6 +1402,8 @@ class BuildModal extends Modal {
 		if (this.figureBackgroundContainer) {
 			this.figureBackgroundContainer.style.display = "block";
 		}
+		
+		this.updateFileDropdowns();
 
 		new Notice("Settings restored to defaults");
 	}

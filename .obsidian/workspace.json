@@ -4,79 +4,26 @@
     "type": "split",
     "children": [
       {
-        "id": "e0af7e65c3778d04",
-        "type": "split",
+        "id": "43d8c73f2c771be1",
+        "type": "tabs",
         "children": [
           {
-            "id": "841ea50fdfedb0bf",
-            "type": "tabs",
-            "dimension": 66.07396870554766,
-            "children": [
-              {
-                "id": "dbeac25ac0ad6c25",
-                "type": "leaf",
-                "state": {
-                  "type": "pdf",
-                  "state": {
-                    "file": "export/02-md-manuscript-maintext.pdf"
-                  },
-                  "icon": "lucide-file-text",
-                  "title": "02-md-manuscript-maintext"
-                }
-              }
-            ]
-          },
-          {
-            "id": "f45fbc9e34bd5881",
-            "type": "tabs",
-            "dimension": 33.92603129445234,
-            "children": [
-              {
-                "id": "578f75fdad934664",
-                "type": "leaf",
-                "pinned": true,
-                "state": {
-                  "type": "terminal:terminal",
-                  "state": {
-                    "terminal:terminal": {
-                      "cwd": "/Users/hbeyer/repos/md-manuscript",
-                      "focus": false,
-                      "profile": {
-                        "args": [
-                          "--login"
-                        ],
-                        "executable": "/bin/zsh",
-                        "followTheme": true,
-                        "name": "",
-                        "platforms": {
-                          "darwin": true
-                        },
-                        "pythonExecutable": "python3",
-                        "restoreHistory": false,
-                        "rightClickAction": "copyPaste",
-                        "successExitCodes": [
-                          "0",
-                          "SIGINT",
-                          "SIGTERM"
-                        ],
-                        "terminalOptions": {
-                          "documentOverride": null
-                        },
-                        "type": "integrated",
-                        "useWin32Conhost": true
-                      },
-                      "serial": null
-                    }
-                  },
-                  "pinned": true,
-                  "icon": "terminal",
-                  "title": "Terminal: hbeyer@localhost:~/repos/md-manuscript"
-                }
-              }
-            ]
+            "id": "8921bdd4533e8147",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "README.md",
+                "mode": "source",
+                "source": false,
+                "annotationGutterFolded": false,
+                "annotationGutterWidth": 300
+              },
+              "icon": "lucide-file",
+              "title": "README"
+            }
           }
-        ],
-        "direction": "horizontal"
+        ]
       }
     ],
     "direction": "vertical"
@@ -211,13 +158,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "export/02-md-manuscript-maintext.pdf",
+                "file": "README.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 02-md-manuscript-maintext"
+              "title": "Outline of README"
             }
           }
         ],
@@ -237,14 +184,19 @@
       "command-palette:Open command palette": false,
       "bases:Create new base": false,
       "terminal:Open terminal": false,
-      "manuscript-build:Build Manuscript": false,
-      "templater-obsidian:Templater": false
+      "templater-obsidian:Templater": false,
+      "obsidian-md-manuscript:Build Manuscript": false
     }
   },
-  "active": "dbeac25ac0ad6c25",
+  "active": "8921bdd4533e8147",
   "lastOpenFiles": [
+    "03-md-manuscript_supp_info.md",
+    "export/03-md-manuscript_supp_info.pdf",
     "export/02-md-manuscript-maintext.pdf",
     "_temp_config.yaml",
+    "_temp_03-md-manuscript_supp_info_merged.md",
+    "resources/citation_styles",
+    "resources",
     "_temp_02-md-manuscript-maintext_merged.md",
     "export",
     "Script.md",
@@ -263,12 +215,7 @@
     "export/figures/mammalian_cell_plasmid.pdf",
     "export/figures/figure2.pdf",
     "export/figures/cloning_strategies.pdf",
-    "export/figures/figure1.pdf",
-    "export/figures/tetracycline.pdf",
-    "export/figures/inteins.pdf",
-    "export/figures/inteins_plasms_membrane.pdf",
     "_temp_Script_flat_merged.md",
-    "03-md-manuscript_supp_info.md",
     "02-md-manuscript-maintext.md",
     "export/md-manuscript-maintext_flat.md",
     "WRITING.md",
@@ -285,7 +232,6 @@
     "md-manuscript_supp_info.md",
     "md-manuscript-maintext.md",
     "01-md-manuscript-frontmatter.md",
-    "_temp_03-md-manuscript_supp_info_merged.md",
     "md-manuscript-frontmatter.md",
     "_temp_md-manuscript-maintext_merged.md",
     "md-thesis.md"

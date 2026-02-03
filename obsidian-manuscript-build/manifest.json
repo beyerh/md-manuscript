@@ -1,6 +1,6 @@
 {
-	"id": "manuscript-build",
-	"name": "Manuscript Build",
+	"id": "obsidian-md-manuscript",
+	"name": "md-manuscript",
 	"version": "1.0.0",
 	"minAppVersion": "1.0.0",
 	"description": "Build academic manuscripts to PDF/DOCX using Pandoc with customizable profiles, citation styles, and formatting options.",

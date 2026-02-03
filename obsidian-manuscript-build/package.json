@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-manuscript-build",
+	"name": "obsidian-md-manuscript",
 	"version": "1.0.0",
 	"description": "Build academic manuscripts to PDF/DOCX using Pandoc from within Obsidian",
 	"main": "main.js",

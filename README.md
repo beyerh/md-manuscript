@@ -15,7 +15,7 @@ Write scientific manuscripts and theses in Markdown and export to PDF, Word, LaT
 
 **Option 2: Terminal**
 ```bash
-python build.py
+python .obsidian/plugins/obsidian-md-manuscript/resources/build.py
 ```
 
 Both methods support:
@@ -124,10 +124,7 @@ scoop install pandoc tectonic git python obsidian pandoc-crossref
 
 **Automated Installation (Recommended):**
 
-The script provides an interactive wizard for easy font management on **Windows, macOS, and Linux**:
-```bash
-python resources/install-fonts.py
-```
+The plugin provides an interactive wizard for easy font management on **Windows, macOS, and Linux**. In the plugin settings, click "Copy Command" next to "Install Fonts" and paste it in your terminal.
 
 **Manual Installation:**
 
@@ -218,19 +215,20 @@ Alternatively, install fonts manually:
 
 ## Obsidian Setup
 
-The folder `obsidian-manuscript-build` is for development and can be deleted. The included hidden `.obsidian` folder contains all plugins and settings, and a custom AnuPpuccin theme. The **Manuscript Build Plugin** should work out of the box. You might want to update the path to `references.json` in the plugin settings (now in root directory instead of `resources/`).
+The folder `obsidian-manuscript-build` is for development and can be deleted. The included hidden `.obsidian` folder contains all plugins and settings, including the **md-markdown** plugin, and a custom AnuPpuccin theme. The plugin should work out of the box. The internal build scripts automatically adjust paths, assuming the repository root is the vault root.
 
 ### Using the Build Plugin
 
-The **Build Manuscript** button is available in the left ribbon as a button in Obsidian. You can also access it via `Cmd/Ctrl + P`. Alternatively, use `python build.py` in a terminal from the plugin folder.
+The **Build Manuscript** button is available in the left ribbon as a button in Obsidian. You can also access it via `Cmd/Ctrl + P`.
 
 ### Adding Citation Styles
 
-Citation styles are stored in `resources/citation_styles/`. Add new styles in the plugin settings:
-1. Visit [zotero.org/styles](https://www.zotero.org/styles) (or use the button in Settings)
-2. Download the `.csl` file
-3. Place it in `resources/citation_styles/` (you can use "Open Folder" in the plugin settings)
-4. Reopen the build dialog - the new style appears automatically
+Citation styles are handled automatically by the plugin. Use the "Open Styles Folder" button in the plugin settings to manually add `.csl` files to the plugin's `.obsidian/plugins/obsidian-md-manuscript/resources/citation_styles/` folder.
+### Installation Actions
+
+The plugin settings now include two buttons under "Actions" to help with external dependencies:
+1. **Install CSS Snippets**: Copies the necessary figure/table CSS files to `.obsidian/snippets/`. Remember to enable them in `Settings -> Appearance -> CSS Snippets`.
+2. **Install Fonts**: Copies the necessary terminal command to run `python resources/install-fonts.py` to your clipboard, as this interactive script must be run outside of Obsidian.
 
 ## Configuration
 ***
@@ -238,7 +236,7 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
 
 **Selected included plugins in this vault:**
 
-- **ManuscriptBuild** - md-manuscript custom plugin (included)
+- **Scientific Manuscript** - md-manuscript custom plugin (included)
 - **Zotero Integration** - Insert citations from Zotero
 - **Pandoc Reference List** - View formatted references
 - **Editing Toolbar** - Text formatting
@@ -272,7 +270,7 @@ Citation styles are stored in `resources/citation_styles/`. Add new styles in th
 ### Word Customization
 
 **Using the included template:**
-1. Open `resources/reference_doc.docx` in Word
+1. Open `.obsidian/plugins/obsidian-md-manuscript/resources/reference_doc.docx` in Word
 2. Modify styles (Normal, Heading 1-3, Figure Caption, Table Caption)
 3. Save changes
 
@@ -286,22 +284,22 @@ Then:
 1. Open `custom-reference.docx` in Word
 2. **Important:** Create a `FrontMatter` style for author information
 3. Adjust other styles as needed (Normal, Heading 1-3, Figure Caption, Table Caption)
-4. Save as `resources/reference_doc.docx`
+4. Save as `.obsidian/plugins/obsidian-md-manuscript/resources/reference_doc.docx`
 
 **Option 2: From existing output**
 1. Build a document once with the provided `reference_doc.docx`
 2. Format all styles as desired (Normal, Heading 1-3, Figure Caption, Table Caption)
-3. Save as `resources/reference_doc.docx`
+3. Save as `.obsidian/plugins/obsidian-md-manuscript/resources/reference_doc.docx`
 
 ### PDF Customization
 
-The template uses **profiles** (YAML files in `resources/profiles/`) to define output formats:
+The template uses **profiles** (YAML files in `.obsidian/plugins/obsidian-md-manuscript/resources/profiles/`) to define output formats:
 - `_base.yaml` - Shared defaults inherited by all profiles
 - `pdf-*.yaml` - PDF-specific profiles
 - `docx-manuscript.yaml` - Word document profile
 
 **Create custom PDF profiles:**
-1. Copy `pdf-default.yaml` to `pdf-my-journal.yaml`
+1. Copy `.obsidian/plugins/obsidian-md-manuscript/resources/profiles/pdf-default.yaml` to a new file in the same directory, e.g., `pdf-my-journal.yaml`
 2. Edit settings (fonts, margins, spacing)
 3. The build script will automatically show it in the profile list
 
@@ -312,10 +310,6 @@ You can export LaTeX (`.tex`) from any PDF profile in three modes.
 **1) LaTeX Source (profile exact)**
 
 Exports a `.tex` file that aims to reproduce the PDF output of the selected profile as closely as possible (including profile fonts and other LaTeX variables).
-
-```bash
-python build.py --source=01_maintext.md --profile=pdf-nature --tex-source
-```
 
 **2) Portable LaTeX**
 

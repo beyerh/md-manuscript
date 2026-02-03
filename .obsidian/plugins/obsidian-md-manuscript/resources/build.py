@@ -21,17 +21,20 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
 # --- Configuration ---
+# Determine script location for relative resource loading
+SCRIPT_DIR = Path(__file__).parent.resolve()
+
 FRONTMATTER = "00_frontmatter.md"
 MAINTEXT = "01_maintext.md"
 SUPPINFO = "02_supp_info.md"
-PROFILES_DIR = "resources/profiles"
-BASE_PROFILE = "resources/profiles/_base.yaml"
-LUA_FILTER = "resources/pdf2png.lua"
+PROFILES_DIR = SCRIPT_DIR / "profiles"
+BASE_PROFILE = SCRIPT_DIR / "profiles" / "_base.yaml"
+LUA_FILTER = SCRIPT_DIR / "pdf2png.lua"
 SI_HEADER = "_si_header.tex"
 EXPORT_DIR = "export"
 BUILD_CONFIG = ".build_config.json"
 DEFAULTS_CONFIG = ".defaults_config.json"
-CITATION_STYLES_DIR = "resources/citation_styles"
+CITATION_STYLES_DIR = SCRIPT_DIR / "citation_styles"
 
 # Default settings when nothing is configured
 DEFAULT_SETTINGS = {
@@ -416,13 +419,17 @@ def merge_configs(base_path: str, profile_path: str) -> str:
     base_content = ""
     profile_content = ""
     
+    # Rewrite "resources/" paths to absolute SCRIPT_DIR paths
+    # This ensures resources are found even if the script/resources are moved (e.g. to a plugin folder)
+    resource_replacement = str(SCRIPT_DIR).replace("\\", "/") + "/"
+    
     if Path(base_path).exists():
         with open(base_path, 'r') as f:
-            base_content = f.read()
+            base_content = f.read().replace("resources/", resource_replacement)
     
     if Path(profile_path).exists():
         with open(profile_path, 'r') as f:
-            profile_content = f.read()
+            profile_content = f.read().replace("resources/", resource_replacement)
     
     # Filter out profile metadata from profile content
     filtered_lines = []
@@ -2077,8 +2084,38 @@ Examples:
 """)
 
 
+def setup_working_directory():
+    """Ensure we are running from the project root."""
+    current = Path.cwd()
+    
+    # Check if we are already in root (has .obsidian folder)
+    if (current / ".obsidian").exists():
+        return
+
+    # Check if we are in resources dir or subdirectory
+    # Walk up to find .obsidian
+    p = current
+    while p != p.parent:
+        if (p / ".obsidian").exists():
+            os.chdir(p)
+            return
+        p = p.parent
+    
+    # Fallback: Infer from script location
+    # Script is expected to be at root/resources/build.py
+    script_path = Path(__file__).resolve()
+    project_root = script_path.parent.parent
+    if (project_root / ".obsidian").exists():
+        os.chdir(project_root)
+        return
+
+    # If we still can't find it, do nothing and hope for the best (or print warning)
+    # print("Warning: Could not determine project root. Running from current directory.")
+
+
 def main():
     """Main entry point."""
+    setup_working_directory()
     create_export_dir()
     
     # Parse arguments

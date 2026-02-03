@@ -42,7 +42,8 @@ var import_child_process = require("child_process");
 var path = __toESM(require("path"));
 var DEFAULT_SETTINGS = {
   pythonPath: "python3",
-  buildScriptPath: "build.py",
+  buildScriptPath: "",
+  // Empty defaults to internal script
   bibliographyPath: "references.json",
   defaultProfile: "pdf-default",
   defaultFont: "",
@@ -173,6 +174,70 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
     const adapter = this.app.vault.adapter;
     return adapter.basePath || "";
   }
+  getBuildScriptPath() {
+    if (this.settings.buildScriptPath && this.settings.buildScriptPath.trim() !== "") {
+      return this.settings.buildScriptPath;
+    }
+    return path.join(this.manifest.dir || "", "resources", "build.py");
+  }
+  getInstallFontsScriptPath() {
+    return path.join(this.manifest.dir || "", "resources", "install-fonts.py");
+  }
+  async installCssSnippets() {
+    const fs = require("fs");
+    const vaultPath = this.getVaultPath();
+    const snippetsDir = path.join(vaultPath, ".obsidian", "snippets");
+    const resourcesDir = path.join(vaultPath, this.manifest.dir || "", "resources");
+    if (!fs.existsSync(resourcesDir)) {
+      new import_obsidian.Notice("\u274C Resources directory not found!");
+      return;
+    }
+    if (!fs.existsSync(snippetsDir)) {
+      fs.mkdirSync(snippetsDir, { recursive: true });
+    }
+    let count = 0;
+    try {
+      const files = fs.readdirSync(resourcesDir);
+      for (const file of files) {
+        if (file.endsWith(".css")) {
+          const src = path.join(resourcesDir, file);
+          const dest = path.join(snippetsDir, file);
+          fs.copyFileSync(src, dest);
+          count++;
+        }
+      }
+      new import_obsidian.Notice(`\u2713 Installed ${count} CSS snippets to .obsidian/snippets/`);
+      new import_obsidian.Notice("Please enable them in Settings > Appearance > CSS Snippets");
+    } catch (e) {
+      console.error("Failed to install snippets:", e);
+      new import_obsidian.Notice("\u274C Failed to install snippets");
+    }
+  }
+  installFonts() {
+    const scriptPath = this.getInstallFontsScriptPath();
+    const vaultPath = this.getVaultPath();
+    new import_obsidian.Notice("Launching font installer...");
+    let cmd = "";
+    let args = [];
+    if (process.platform === "darwin") {
+      cmd = "open";
+      args = ["-a", "Terminal", scriptPath];
+      const command = `python "${scriptPath}"`;
+      navigator.clipboard.writeText(command);
+      new import_obsidian.Notice("Command copied to clipboard! Paste in terminal.");
+      return;
+    } else if (process.platform === "win32") {
+      const command = `python "${scriptPath}"`;
+      navigator.clipboard.writeText(command);
+      new import_obsidian.Notice("Command copied to clipboard! Paste in PowerShell.");
+      return;
+    } else {
+      const command = `python3 "${scriptPath}"`;
+      navigator.clipboard.writeText(command);
+      new import_obsidian.Notice("Command copied to clipboard! Paste in terminal.");
+      return;
+    }
+  }
   getMarkdownFiles() {
     const files = this.app.vault.getMarkdownFiles();
     return files.filter((f) => !f.name.startsWith("_") && f.name.toLowerCase() !== "readme.md").sort((a, b) => {
@@ -188,7 +253,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
   getCitationStyles() {
     const styles = {};
     const vaultPath = this.getVaultPath();
-    const stylesDir = path.join(vaultPath, "resources", "citation_styles");
+    const stylesDir = path.join(vaultPath, this.manifest.dir || "", "resources", "citation_styles");
     try {
       const fs = require("fs");
       if (fs.existsSync(stylesDir)) {
@@ -222,7 +287,7 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
   getProfiles() {
     const profiles = [];
     const vaultPath = this.getVaultPath();
-    const profilesDir = path.join(vaultPath, "resources", "profiles");
+    const profilesDir = path.join(vaultPath, this.manifest.dir || "", "resources", "profiles");
     try {
       const fs = require("fs");
       if (fs.existsSync(profilesDir)) {
@@ -436,7 +501,8 @@ Error: ${err.message}`, true);
     });
   }
   buildCommandArgs(config) {
-    const args = [this.settings.buildScriptPath];
+    const scriptPath = this.getBuildScriptPath();
+    const args = [scriptPath];
     args.push(`--source=${config.sourceFile}`);
     if (config.frontmatterFile) {
       args.push(`--frontmatter=${config.frontmatterFile}`);
@@ -522,13 +588,19 @@ Error: ${err.message}`, true);
     shell.openPath(exportPath);
   }
   openCitationStylesFolder() {
-    const stylesPath = path.join(this.getVaultPath(), "resources", "citation_styles");
+    const stylesPath = path.join(this.getVaultPath(), this.manifest.dir || "", "resources", "citation_styles");
     const fs = require("fs");
     if (!fs.existsSync(stylesPath)) {
       fs.mkdirSync(stylesPath, { recursive: true });
     }
     const { shell } = require("electron");
     shell.openPath(stylesPath);
+  }
+  getBuildCommand() {
+    const scriptPath = this.getBuildScriptPath();
+    const command = `python "${scriptPath}"`;
+    navigator.clipboard.writeText(command);
+    new import_obsidian.Notice("Command copied to clipboard!");
   }
 };
 var BuildModal = class extends import_obsidian.Modal {
@@ -1099,9 +1171,9 @@ var ManuscriptBuildSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    new import_obsidian.Setting(containerEl).setName("Build Script Path").setDesc("Path to build.py relative to vault root").addText(
-      (text) => text.setPlaceholder("build.py").setValue(this.plugin.settings.buildScriptPath).onChange(async (value) => {
-        this.plugin.settings.buildScriptPath = value || "build.py";
+    new import_obsidian.Setting(containerEl).setName("Build Script Path").setDesc("Path to build.py (leave empty to use internal script)").addText(
+      (text) => text.setPlaceholder("Internal Default").setValue(this.plugin.settings.buildScriptPath).onChange(async (value) => {
+        this.plugin.settings.buildScriptPath = value;
         await this.plugin.saveSettings();
       })
     );
@@ -1161,7 +1233,7 @@ var ManuscriptBuildSettingTab = class extends import_obsidian.PluginSettingTab {
 			<ol>
 				<li>Find your style at <strong>zotero.org/styles</strong></li>
 				<li>Download the <code>.csl</code> file</li>
-				<li>Place it in <code>resources/citation_styles/</code></li>
+				<li>Place it in the <code>resources/citation_styles</code> folder inside the plugin directory.</li>
 				<li>Reopen this dialog to see the new style</li>
 			</ol>
 		`;
@@ -1194,9 +1266,24 @@ var ManuscriptBuildSettingTab = class extends import_obsidian.PluginSettingTab {
         this.plugin.openExportFolder();
       })
     );
+    new import_obsidian.Setting(containerEl).setName("Install CSS Snippets").setDesc("Copy figure/table callout styles to Obsidian snippets").addButton(
+      (button) => button.setButtonText("Install").onClick(() => {
+        this.plugin.installCssSnippets();
+      })
+    );
+    new import_obsidian.Setting(containerEl).setName("Install Fonts").setDesc("Copy installation command to clipboard").addButton(
+      (button) => button.setButtonText("Copy Command").onClick(() => {
+        this.plugin.installFonts();
+      })
+    );
     new import_obsidian.Setting(containerEl).setName("Test Python").setDesc("Verify Python is accessible").addButton(
       (button) => button.setButtonText("Test").onClick(() => {
         this.testPython();
+      })
+    );
+    new import_obsidian.Setting(containerEl).setName("Copy Build Command").setDesc("Copy the command to run build.py manually").addButton(
+      (button) => button.setButtonText("Copy Command").onClick(() => {
+        this.plugin.getBuildCommand();
       })
     );
   }

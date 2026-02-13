@@ -4,23 +4,23 @@
     "type": "split",
     "children": [
       {
-        "id": "43d8c73f2c771be1",
+        "id": "c63af9bce93960ae",
         "type": "tabs",
         "children": [
           {
-            "id": "8921bdd4533e8147",
+            "id": "65947cf27ad2fe58",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "README.md",
+                "file": "02-md-manuscript-maintext.md",
                 "mode": "source",
                 "source": false,
                 "annotationGutterFolded": false,
                 "annotationGutterWidth": 300
               },
               "icon": "lucide-file",
-              "title": "README"
+              "title": "02-md-manuscript-maintext"
             }
           }
         ]
@@ -158,13 +158,23 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "README.md",
+                "file": "02-md-manuscript-maintext.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of README"
+              "title": "Outline of 02-md-manuscript-maintext"
+            }
+          },
+          {
+            "id": "f3b8a808aec6db90",
+            "type": "leaf",
+            "state": {
+              "type": "version-control-view",
+              "state": {},
+              "icon": "history",
+              "title": "Version control"
             }
           }
         ],
@@ -185,12 +195,19 @@
       "bases:Create new base": false,
       "terminal:Open terminal": false,
       "templater-obsidian:Templater": false,
-      "obsidian-md-manuscript:Build Manuscript": false
+      "obsidian-md-manuscript:Build Manuscript": false,
+      "version-control:Open version control": false
     }
   },
-  "active": "8921bdd4533e8147",
+  "active": "67d1eb6fe66aaf95",
   "lastOpenFiles": [
+    "README.md",
+    "Untitled.canvas",
     "03-md-manuscript_supp_info.md",
+    "templater/insert_table.md",
+    "templater/insert_landscape_table.md",
+    "templater/insert_figure.md",
+    "templater",
     "export/03-md-manuscript_supp_info.pdf",
     "export/02-md-manuscript-maintext.pdf",
     "_temp_config.yaml",
@@ -214,12 +231,10 @@
     "export/figures",
     "export/figures/mammalian_cell_plasmid.pdf",
     "export/figures/figure2.pdf",
-    "export/figures/cloning_strategies.pdf",
     "_temp_Script_flat_merged.md",
     "02-md-manuscript-maintext.md",
     "export/md-manuscript-maintext_flat.md",
     "WRITING.md",
-    "README.md",
     "_temp_2026_WORD_organoid_merged.md",
     "2026_WORD_organoid.md",
     "export/02-md-manuscript-maintext_flat.md",
@@ -231,9 +246,6 @@
     "examples/md-manuscript-maintext.md",
     "md-manuscript_supp_info.md",
     "md-manuscript-maintext.md",
-    "01-md-manuscript-frontmatter.md",
-    "md-manuscript-frontmatter.md",
-    "_temp_md-manuscript-maintext_merged.md",
-    "md-thesis.md"
+    "01-md-manuscript-frontmatter.md"
   ]
 }

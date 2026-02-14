@@ -261,7 +261,7 @@ The plugin settings now include two buttons under "Actions" to help with externa
 1. Install **Zotero** and then the **Better BibTeX** plugin from [GitHub](https://github.com/retorquere/zotero-better-bibtex/releases)
 2. Set up auto-export:
    - Right-click collection → Export Collection
-   - Format: **BetterBibTeX JSON**
+   - Format: **Better CSL JSON**
    - ✓ **Keep updated**
    - Save as `references.json` in the vault root directory
 

@@ -53,6 +53,7 @@ interface BuildConfig {
 	margins: string;
 	visualizeCaptions: boolean;
 	captionStyle: string;
+	digitalGarden: boolean;
 }
 
 interface ProfileInfo {
@@ -494,6 +495,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			margins: "",
 			visualizeCaptions: false,
 			captionStyle: "plain",
+			digitalGarden: false,
 		};
 		this.executeBuild(config);
 	}
@@ -529,6 +531,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					margins: data.margins || "",
 					visualizeCaptions: data.visualize_captions || false,
 					captionStyle: data.caption_style || "plain",
+					digitalGarden: data.digital_garden || false,
 				};
 			}
 		} catch (e) {
@@ -564,6 +567,7 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			margins: config.margins || null,
 			visualize_captions: config.visualizeCaptions || false,
 			caption_style: config.captionStyle || "plain",
+			digital_garden: config.digitalGarden || false,
 		};
 		try {
 			fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
@@ -719,6 +723,9 @@ export default class ManuscriptBuildPlugin extends Plugin {
 
 		// Flattened markdown options
 		if (config.profile === "md-flattened") {
+			if (config.digitalGarden) {
+				args.push("--digital-garden");
+			}
 			if (config.figureFormat) {
 				args.push(`--figure-format=${config.figureFormat}`);
 			}
@@ -796,6 +803,7 @@ class BuildModal extends Modal {
 	private figureFormatDropdown: DropdownComponent;
 	private figureBackgroundDropdown: DropdownComponent;
 	private figureBackgroundContainer: HTMLElement;
+	private digitalGardenToggle: ToggleComponent;
 	private visualizeCaptionsToggle: ToggleComponent;
 	private captionStyleToggle: ToggleComponent;
 	private typographySection: HTMLElement;
@@ -836,6 +844,7 @@ class BuildModal extends Modal {
 				margins: "",
 				visualizeCaptions: false,
 				captionStyle: "plain",
+				digitalGarden: false,
 			};
 		}
 	}
@@ -1066,6 +1075,19 @@ class BuildModal extends Modal {
 		// We make this a grid too, separate from outputGrid to ensure it takes full width below
 		this.flattenedMdContainer = contentEl.createDiv({ cls: "manuscript-settings-grid" });
 		
+		// Digital Garden Mode (Flattened Markdown only)
+		new Setting(this.flattenedMdContainer)
+			.setClass("manuscript-setting-compact")
+			.setName("Digital Garden Mode")
+			.setDesc("Build separate linked pages")
+			.addToggle((toggle) => {
+				this.digitalGardenToggle = toggle;
+				toggle.setValue(this.config.digitalGarden || false);
+				toggle.onChange((value) => {
+					this.config.digitalGarden = value;
+				});
+			});
+
 		// Figure format (Flattened Markdown only)
 		new Setting(this.flattenedMdContainer)
 			.setClass("manuscript-setting-compact")
@@ -1450,6 +1472,7 @@ class BuildModal extends Modal {
 		this.config.margins = "";
 		this.config.visualizeCaptions = false;
 		this.config.captionStyle = "plain";
+		this.config.digitalGarden = false;
 
 		// Reset source file to sensible default
 		const maintext = mdFiles.find((f) => f.includes("maintext"));
@@ -1494,6 +1517,7 @@ class BuildModal extends Modal {
 		this.figureBackgroundDropdown?.setValue(this.config.figureBackground);
 		this.visualizeCaptionsToggle?.setValue(this.config.visualizeCaptions);
 		this.captionStyleToggle?.setValue(this.config.captionStyle === "html");
+		this.digitalGardenToggle?.setValue(this.config.digitalGarden);
 
 		// Update visibility
 		this.updateFormatOptions(currentFormat);
@@ -1614,6 +1638,14 @@ class BuildOutputModal extends Modal {
 
 		// Close button
 		const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });
+
+		new ButtonComponent(buttonContainer)
+			.setButtonText("Copy Log")
+			.onClick(() => {
+				navigator.clipboard.writeText(this.outputEl.innerText);
+				new Notice("Log copied to clipboard");
+			});
+
 		new ButtonComponent(buttonContainer)
 			.setButtonText("Close")
 			.onClick(() => {

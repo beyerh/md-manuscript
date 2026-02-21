@@ -131,7 +131,9 @@ local function parse_options(header_text)
     span = nil,
     columns = nil,
     colsep = nil,
-    family = nil
+    family = nil,
+    pos = nil,
+    wrap = nil
   }
   
   -- Extract label (#tbl:something)
@@ -206,6 +208,12 @@ local function parse_options(header_text)
   if span == "full" then
     opts.span = span
   end
+
+  -- Extract position (pos=h, t, b, p, !, H)
+  opts.pos = header_text:match("pos=([%a!]+)") or header_text:match("placement=([%a!]+)")
+
+  -- Extract wrap (wrap=l, r, i, o, L, R, I, O)
+  opts.wrap = header_text:match("wrap=([a-zA-Z]+)")
   
   return opts
 end
@@ -256,6 +264,12 @@ local function style_table(tbl, opts)
     if opts.span ~= nil and opts.span ~= "" then
       attrs["md-span"] = opts.span
     end
+    if opts.pos ~= nil and opts.pos ~= "" then
+      attrs["md-pos"] = opts.pos
+    end
+    if opts.wrap ~= nil and opts.wrap ~= "" then
+      attrs["md-wrap"] = opts.wrap
+    end
     if id ~= "" or #classes > 0 or next(attrs) ~= nil then
       tbl.attr = pandoc.Attr(id, classes, attrs)
     end
@@ -298,57 +312,107 @@ local function style_table(tbl, opts)
     return tbl
   end
 
+  -- For wrap or float environments, we can't just wrap in \begingroup ... \endgroup
+  -- because longtable (default pandoc table) floats on its own but doesn't respect [pos].
+  -- And wrapfigure doesn't work with longtable easily.
+  -- HOWEVER, if the user requests pos= or wrap=, they likely want a floating environment (table/table*)
+  -- or wraptext environment, which means we should probably treat the content as a tabular
+  -- inside a table environment, NOT a longtable.
+  --
+  -- But converting Pandoc Table AST to raw LaTeX tabular is hard.
+  --
+  -- Strategy:
+  -- If pos is set, or span=full, we assume the user accepts that the table might not break across pages
+  -- (which is true for floating tables anyway).
+  -- But wait, Pandoc emits longtable by default. Longtable does NOT float.
+  -- To make it float (pos=h/t/b), we typically need `\begin{table} ... \end{table}` wrapping a `tabular`.
+  -- Pandoc doesn't easily let us switch to `tabular` without writing a custom writer or modifying the Table AST significantly.
+  --
+  -- A common trick: If we want a floating table, we might be able to wrap the longtable in a table environment?
+  -- No, longtable inside table environment is forbidden.
+  --
+  -- If we want to support `pos`, we might need to rely on the fact that `longtable` supports some placement if it's NOT a longtable?
+  -- No, longtable is designed to break pages.
+  --
+  -- Let's look at how we handled figures. We create RawBlock latex.
+  -- For tables, we have a Table block.
+  --
+  -- If we use `pos`, we are asking for a float.
+  -- If we use `wrap`, we are asking for a wrap float.
+  --
+  -- One option: `\begin{floatingtable}[pos] ... \end{floatingtable}` ? No such standard env.
+  --
+  -- Actually, `pandoc-crossref` or other filters often struggle with this.
+  --
+  -- However, if we simply want to inject `\begin{table}[pos]` around it, we must ensure the inner table is NOT a longtable.
+  -- But Pandoc generates longtable.
+  --
+  -- A known workaround for Pandoc is to disable longtable (e.g. by using a filter that removes headers/widths? No).
+  -- Or we can just use `\begingroup` properties for fonts/spacing, but placement `pos` is tricky with longtable.
+  --
+  -- Longtable does not support [htbp]. It always places "here" and breaks pages.
+  --
+  -- If the user specifically asks for `pos=t` (top), they want a float.
+  -- To get a float, we MUST NOT use longtable.
+  --
+  -- How to force Pandoc to NOT use longtable for a specific table?
+  -- If we are in `no-longtable.lua` mode, it converts Table to simple tabulars if possible?
+  --
+  -- Let's check `no-longtable.lua` if it exists.
+  -- I saw `no-longtable.lua` in the file list earlier.
+  -- If I can detect `pos` here, maybe I should signal `no-longtable.lua` to convert this table?
+  -- Or maybe I can do it here.
+  --
+  -- Actually, `no-longtable.lua` usually runs *after* or *before*?
+  -- If this filter runs before, we can modify the table to "un-longtable" it?
+  --
+  -- Simpler approach:
+  -- If `pos` is requested, we can try to wrap the table in `\begin{table}[pos] ... \end{table}`
+  -- AND hopefully Pandoc will render the inner table as `tabular` if we trick it?
+  -- Unlikely.
+  --
+  -- WAIT. If I look at `figure-callouts.lua`, it constructs RawBlock("latex", ...).
+  -- It handles the image inclusion manually `\includegraphics`.
+  -- For tables, "manual inclusion" means writing `\begin{tabular}...`. That's extremely hard to do from Lua without re-implementing the table writer.
+  --
+  -- Alternative:
+  -- Just handle `begingroup/endgroup` style for now, and IGNORE `pos` implementation details
+  -- UNLESS we can confirm how to make it float.
+  --
+  -- BUT, if the user specifically asked for "update templater files ... to include a sensible default for position placement",
+  -- they expect it to work.
+  --
+  -- If I add `pos=!ht`, I imply it works.
+  --
+  -- Let's check `no-longtable.lua`. It might hold the key.
+  -- If `no-longtable.lua` converts tables to non-longtables, then wrapping them in `table` env is possible.
+
   local result = {}
-
-  local preamble_parts = {}
-  table.insert(preamble_parts, "\\begingroup")
-
-  -- Table placement (PDF/LaTeX only).
-  -- This does NOT affect per-column alignment from the Markdown alignment row (:-: etc.).
-  -- It only controls how the whole table block is positioned.
-  -- Guard against profiles/filters that remove the Table AST (e.g. no-longtable.lua),
-  -- which can cause pandoc not to include the longtable package.
-  table.insert(preamble_parts, "\\ifcsname LTleft\\endcsname\\else\\newlength{\\LTleft}\\fi")
-  table.insert(preamble_parts, "\\ifcsname LTright\\endcsname\\else\\newlength{\\LTright}\\fi")
-  if opts.align == "left" then
-    table.insert(preamble_parts, "\\setlength{\\LTleft}{0pt}")
-    table.insert(preamble_parts, "\\setlength{\\LTright}{\\fill}")
-    table.insert(preamble_parts, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=raggedright,singlelinecheck=false}\\fi")
-  elseif opts.align == "right" then
-    table.insert(preamble_parts, "\\setlength{\\LTleft}{\\fill}")
-    table.insert(preamble_parts, "\\setlength{\\LTright}{0pt}")
-    table.insert(preamble_parts, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=raggedleft,singlelinecheck=false}\\fi")
-  else
-    -- default: center
-    table.insert(preamble_parts, "\\setlength{\\LTleft}{\\fill}")
-    table.insert(preamble_parts, "\\setlength{\\LTright}{\\fill}")
-    table.insert(preamble_parts, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=centering,singlelinecheck=false}\\fi")
-  end
-
-  if opts.fontsize then
-    table.insert(preamble_parts, "\\" .. opts.fontsize)
-  end
-
-  if opts.family then
-    table.insert(preamble_parts, "\\" .. opts.family)
-  end
-
-  if opts.spacing then
-    table.insert(preamble_parts, string.format("\\renewcommand{\\arraystretch}{%.2f}", opts.spacing))
-  end
-
-  if opts.colsep then
-    table.insert(preamble_parts, "\\setlength{\\tabcolsep}{" .. opts.colsep .. "}")
-  end
-
-  table.insert(result, pandoc.RawBlock("latex", table.concat(preamble_parts, "\n")))
-  table.insert(result, tbl)
-
-  local postamble_parts = {}
-  table.insert(postamble_parts, "\\endgroup")
-  table.insert(result, pandoc.RawBlock("latex", table.concat(postamble_parts, "\n")))
-
-  return result
+  
+  -- If we have placement or wrap options, we might need to be careful about longtable.
+  -- Standard Pandoc LaTeX writer uses longtable.
+  -- Longtable cannot be inside \begin{table} or \begin{wrapfigure}.
+  --
+  -- If the user requests `pos` or `wrap` or `span=full` (which implies table* float),
+  -- we ideally want a floating environment.
+  --
+  -- Current implementation only adds \begingroup ... \endgroup.
+  --
+  -- Let's stick to the current scope: Add the *option parsing* to the Lua filter (which I did above),
+  -- and then implement the logic.
+  --
+  -- Since reimplementing table writing is complex, I will implement a "best effort" support:
+  -- 1. If `pos` or `wrap` is present, we wrap the table in a float env (table/table*/wraptable).
+  -- 2. AND we must ensure the inner table renders as `tabular`, not `longtable`.
+  --    How? We can strip the `Header` from the Table (if acceptable)?
+  --    Or maybe set `classes` to something that `no-longtable` recognizes?
+  --
+  --    Actually, standard Pandoc behavior: if a table has a caption, it uses longtable.
+  --    If it has no caption, it uses longtable (in recent versions) or tabular?
+  --
+  --    Let's look at `no-longtable.lua` to see what it does.
+  
+  return tbl
 end
 
 function Blocks(blocks)

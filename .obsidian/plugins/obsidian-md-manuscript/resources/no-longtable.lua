@@ -48,9 +48,13 @@ function Table(tbl)
 
   local md_align = nil
   local md_span = nil
+  local md_pos = nil
+  local md_wrap = nil
   if tbl.attr and tbl.attr.attributes then
     md_align = tbl.attr.attributes["md-align"]
     md_span = tbl.attr.attributes["md-span"]
+    md_pos = tbl.attr.attributes["md-pos"]
+    md_wrap = tbl.attr.attributes["md-wrap"]
   end
   
   -- Build column alignment string
@@ -76,11 +80,47 @@ function Table(tbl)
   local latex = {}
   
   -- Start table environment
-  local env = 'table'
-  if md_span == 'full' then
-    env = 'table*'
+  local env = 'table' -- Default env, scoped outside
+  if md_wrap then
+     -- Wrap table environment
+     local pos_char = "R" -- Default right
+     if md_wrap == "left" or md_wrap == "l" then pos_char = "l"
+     elseif md_wrap == "Left" or md_wrap == "L" then pos_char = "L"
+     elseif md_wrap == "right" or md_wrap == "r" then pos_char = "r"
+     elseif md_wrap == "Right" or md_wrap == "R" then pos_char = "R"
+     elseif md_wrap == "inner" or md_wrap == "i" then pos_char = "i"
+     elseif md_wrap == "Inner" or md_wrap == "I" then pos_char = "I"
+     elseif md_wrap == "outer" or md_wrap == "o" then pos_char = "o"
+     elseif md_wrap == "Outer" or md_wrap == "O" then pos_char = "O"
+     end
+
+     -- Calculate width (sum of columns or default)
+     -- We don't have easy access to total width here unless we sum colspecs
+     local total_width = 0
+     for _, col in ipairs(tbl.colspecs) do
+        if col[2] then total_width = total_width + col[2] end
+     end
+     if total_width == 0 then total_width = 0.5 end -- Default to half width if unknown
+
+     table.insert(latex, '\\begin{wraptable}{' .. pos_char .. '}{' .. string.format('%.4f\\textwidth', total_width) .. '}')
+     table.insert(latex, '\\centering')
+  else
+     -- Standard float
+     if md_span == 'full' then
+       env = 'table*'
+     end
+     
+     local placement = ""
+     if md_pos then
+       placement = "[" .. md_pos .. "]"
+     elseif md_span == 'full' then
+       placement = "[t]"
+     else
+       placement = "[t]"
+     end
+     
+     table.insert(latex, '\\begin{' .. env .. '}' .. placement)
   end
-  table.insert(latex, '\\begin{' .. env .. '}[t]')
 
   if md_align == 'left' then
     table.insert(latex, '\\raggedright')
@@ -137,7 +177,12 @@ function Table(tbl)
   
   table.insert(latex, '\\hline')
   table.insert(latex, '\\end{tabular}')
-  table.insert(latex, '\\end{' .. env .. '}')
+  
+  if md_wrap then
+    table.insert(latex, '\\end{wraptable}')
+  else
+    table.insert(latex, '\\end{' .. env .. '}')
+  end
   
   return pandoc.RawBlock('latex', table.concat(latex, '\n'))
 end

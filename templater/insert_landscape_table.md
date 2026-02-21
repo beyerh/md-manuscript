@@ -1,4 +1,4 @@
-> [!table] #tbl:yourtablelabel width=\textwidth align=center fontsize=small spacing=1.1
+> [!table] #tbl:yourtablelabel width=\textwidth align=center pos=p fontsize=small spacing=1.1
 >
 > **This is the table caption...**
 

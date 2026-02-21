@@ -373,7 +373,8 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       paperSize: "",
       margins: "",
       visualizeCaptions: false,
-      captionStyle: "plain"
+      captionStyle: "plain",
+      digitalGarden: false
     };
     this.executeBuild(config);
   }
@@ -407,7 +408,8 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           paperSize: data.papersize || "",
           margins: data.margins || "",
           visualizeCaptions: data.visualize_captions || false,
-          captionStyle: data.caption_style || "plain"
+          captionStyle: data.caption_style || "plain",
+          digitalGarden: data.digital_garden || false
         };
       }
     } catch (e) {
@@ -441,7 +443,8 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       papersize: config.paperSize || null,
       margins: config.margins || null,
       visualize_captions: config.visualizeCaptions || false,
-      caption_style: config.captionStyle || "plain"
+      caption_style: config.captionStyle || "plain",
+      digital_garden: config.digitalGarden || false
     };
     try {
       fs.writeFileSync(configPath, JSON.stringify(data, null, 2));
@@ -567,6 +570,9 @@ Error: ${err.message}`, true);
       args.push(`--csl=${config.citationStyle}`);
     }
     if (config.profile === "md-flattened") {
+      if (config.digitalGarden) {
+        args.push("--digital-garden");
+      }
       if (config.figureFormat) {
         args.push(`--figure-format=${config.figureFormat}`);
       }
@@ -637,7 +643,8 @@ var BuildModal = class extends import_obsidian.Modal {
         paperSize: "",
         margins: "",
         visualizeCaptions: false,
-        captionStyle: "plain"
+        captionStyle: "plain",
+        digitalGarden: false
       };
     }
   }
@@ -776,6 +783,13 @@ var BuildModal = class extends import_obsidian.Modal {
       });
     });
     this.flattenedMdContainer = contentEl.createDiv({ cls: "manuscript-settings-grid" });
+    new import_obsidian.Setting(this.flattenedMdContainer).setClass("manuscript-setting-compact").setName("Digital Garden Mode").setDesc("Build separate linked pages").addToggle((toggle) => {
+      this.digitalGardenToggle = toggle;
+      toggle.setValue(this.config.digitalGarden || false);
+      toggle.onChange((value) => {
+        this.config.digitalGarden = value;
+      });
+    });
     new import_obsidian.Setting(this.flattenedMdContainer).setClass("manuscript-setting-compact").setName("Figure Format").setDesc("Output format for figures").addDropdown((dropdown) => {
       this.figureFormatDropdown = dropdown;
       dropdown.addOption("png", "PNG");
@@ -991,7 +1005,7 @@ var BuildModal = class extends import_obsidian.Modal {
     this.updateFileDropdowns();
   }
   restoreDefaults() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x;
     const mdFiles = this.allFiles;
     const settings = this.plugin.settings;
     this.showAllFiles = false;
@@ -1015,6 +1029,7 @@ var BuildModal = class extends import_obsidian.Modal {
     this.config.margins = "";
     this.config.visualizeCaptions = false;
     this.config.captionStyle = "plain";
+    this.config.digitalGarden = false;
     const maintext = mdFiles.find((f) => f.includes("maintext"));
     this.config.sourceFile = maintext || mdFiles[0] || "";
     const frontmatter = mdFiles.find((f) => f.includes("frontmatter"));
@@ -1050,6 +1065,7 @@ var BuildModal = class extends import_obsidian.Modal {
     (_u = this.figureBackgroundDropdown) == null ? void 0 : _u.setValue(this.config.figureBackground);
     (_v = this.visualizeCaptionsToggle) == null ? void 0 : _v.setValue(this.config.visualizeCaptions);
     (_w = this.captionStyleToggle) == null ? void 0 : _w.setValue(this.config.captionStyle === "html");
+    (_x = this.digitalGardenToggle) == null ? void 0 : _x.setValue(this.config.digitalGarden);
     this.updateFormatOptions(currentFormat);
     this.siFileContainer.style.display = "none";
     if (this.figureBackgroundContainer) {
@@ -1129,6 +1145,10 @@ var BuildOutputModal = class extends import_obsidian.Modal {
     contentEl.createEl("p", { text: `Source: ${this.fileName}`, cls: "output-file-info" });
     this.outputEl = contentEl.createEl("pre", { cls: "build-output" });
     const buttonContainer = contentEl.createDiv({ cls: "modal-button-container" });
+    new import_obsidian.ButtonComponent(buttonContainer).setButtonText("Copy Log").onClick(() => {
+      navigator.clipboard.writeText(this.outputEl.innerText);
+      new import_obsidian.Notice("Log copied to clipboard");
+    });
     new import_obsidian.ButtonComponent(buttonContainer).setButtonText("Close").onClick(() => {
       this.close();
     });

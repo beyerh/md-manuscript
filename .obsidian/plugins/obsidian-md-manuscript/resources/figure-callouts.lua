@@ -205,6 +205,8 @@ function BlockQuote(block)
   local width_value = nil
   local align_value = nil
   local span_value = nil
+  local pos_value = nil
+  local wrap_value = nil
   local image = nil
   local caption_inlines = {}
   local found_image = false
@@ -240,6 +242,14 @@ function BlockQuote(block)
           if s == "full" then
             span_value = s
           end
+        end
+
+        if pos_value == nil then
+          pos_value = text:match("pos=([%a!]+)") or text:match("placement=([%a!]+)")
+        end
+
+        if wrap_value == nil then
+          wrap_value = text:match("wrap=([a-zA-Z]+)")
         end
       end
 
@@ -334,49 +344,97 @@ function BlockQuote(block)
   local fig = doc.blocks[1]
 
   if fig and fig.t == "Figure" then
-    fig.caption.long = { pandoc.Plain(caption_inlines) }
+  fig.caption.long = { pandoc.Plain(caption_inlines) }
+  if fig_id ~= "" then
+    local attrs = {}
+    if span_value == "full" then
+      attrs["md-span"] = "full"
+    end
+    fig.attr = pandoc.Attr(fig_id, {}, attrs)
+  end
+
+  -- Replace the placeholder image with our real image (attrs/title/alt)
+  if fig.content then
+    replace_first_image_in_blocks(fig.content, new_image)
+  end
+
+  -- Handle wrapfigure (LaTeX only)
+  if is_latex and wrap_value then
+    local latex = {}
+    -- Default to uppercase 'R' (floating right) if value is unrecognized,
+    -- but usually user specifies l/L/r/R/i/I/o/O.
+    -- Lowercase = force exact position (no float).
+    -- Uppercase = allow floating.
+    local pos_char = "R"
+
+    if wrap_value == "left" or wrap_value == "l" then pos_char = "l"
+    elseif wrap_value == "Left" or wrap_value == "L" then pos_char = "L"
+    elseif wrap_value == "right" or wrap_value == "r" then pos_char = "r"
+    elseif wrap_value == "Right" or wrap_value == "R" then pos_char = "R"
+    elseif wrap_value == "inner" or wrap_value == "i" then pos_char = "i"
+    elseif wrap_value == "Inner" or wrap_value == "I" then pos_char = "I"
+    elseif wrap_value == "outer" or wrap_value == "o" then pos_char = "o"
+    elseif wrap_value == "Outer" or wrap_value == "O" then pos_char = "O"
+    end
+    
+    local w = img_attrs["width"]
+    local wdim = width_to_latex_dimension(w)
+    if wdim == "\\textwidth" then wdim = "0.5\\textwidth" end -- Default to half if full width specified for wrap
+    
+    table.insert(latex, "\\begin{wrapfigure}{" .. pos_char .. "}{" .. wdim .. "}")
+    table.insert(latex, "\\centering")
+    table.insert(latex, "\\includegraphics[width=\\linewidth]{" .. image.src .. "}") -- Use linewidth inside wrapfig
+    
+    if #caption_inlines > 0 then
+      table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}")
+    end
     if fig_id ~= "" then
-      local attrs = {}
-      if span_value == "full" then
-        attrs["md-span"] = "full"
-      end
-      fig.attr = pandoc.Attr(fig_id, {}, attrs)
+      table.insert(latex, "\\label{" .. fig_id .. "}")
+    end
+    table.insert(latex, "\\end{wrapfigure}")
+    return pandoc.RawBlock("latex", table.concat(latex, "\n"))
+  end
+
+  -- Handle standard figure placement (LaTeX only)
+  if is_latex and (span_value == "full" or pos_value) then
+    local latex = {}
+    local env = "figure"
+    if span_value == "full" then env = "figure*" end
+    
+    local placement = ""
+    if pos_value then
+      placement = "[" .. pos_value .. "]"
+    elseif span_value == "full" then
+      placement = "[t]" -- Default for figure*
     end
 
-    -- Replace the placeholder image with our real image (attrs/title/alt)
-    if fig.content then
-      replace_first_image_in_blocks(fig.content, new_image)
+    table.insert(latex, "\\begin{" .. env .. "}" .. placement)
+
+    local align_cmd = "\\centering"
+    local cap_just = "centering"
+    if align_value == "left" then
+      align_cmd = "\\raggedright"
+      cap_just = "raggedright"
+    elseif align_value == "right" then
+      align_cmd = "\\raggedleft"
+      cap_just = "raggedleft"
     end
+    table.insert(latex, align_cmd)
+    table.insert(latex, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=false}\\fi")
 
-    if is_latex and span_value == "full" then
-      local latex = {}
-      table.insert(latex, "\\begin{figure*}[t]")
+    local w = img_attrs["width"]
+    local wdim = width_to_latex_dimension(w)
+    table.insert(latex, "\\includegraphics[width=" .. wdim .. "]{" .. image.src .. "}")
 
-      local align_cmd = "\\centering"
-      local cap_just = "centering"
-      if align_value == "left" then
-        align_cmd = "\\raggedright"
-        cap_just = "raggedright"
-      elseif align_value == "right" then
-        align_cmd = "\\raggedleft"
-        cap_just = "raggedleft"
-      end
-      table.insert(latex, align_cmd)
-      table.insert(latex, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=false}\\fi")
-
-      local w = img_attrs["width"]
-      local wdim = width_to_latex_dimension(w)
-      table.insert(latex, "\\includegraphics[width=" .. wdim .. "]{" .. image.src .. "}")
-
-      if #caption_inlines > 0 then
-        table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}")
-      end
-      if fig_id ~= "" then
-        table.insert(latex, "\\label{" .. fig_id .. "}")
-      end
-      table.insert(latex, "\\end{figure*}")
-      return pandoc.RawBlock("latex", table.concat(latex, "\n"))
+    if #caption_inlines > 0 then
+      table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}")
     end
+    if fig_id ~= "" then
+      table.insert(latex, "\\label{" .. fig_id .. "}")
+    end
+    table.insert(latex, "\\end{" .. env .. "}")
+    return pandoc.RawBlock("latex", table.concat(latex, "\n"))
+  end
 
     if is_latex and align_value ~= nil and fig.content ~= nil then
       local align_cmd = nil

@@ -48,6 +48,8 @@ variables:
     - \usepackage{xcolor}
     - \usepackage{pdflscape}
     - \usepackage{adjustbox}
+    - \usepackage{wrapfig}
+    - \usepackage{float}
     - \definecolor{CTsemi}{RGB}{128,0,0}
     - \definecolor{CTnumber}{RGB}{180,180,180}
     - \providecommand{\mdtwocolumnstart}{}

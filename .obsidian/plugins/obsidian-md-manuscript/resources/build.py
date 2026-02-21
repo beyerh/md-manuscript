@@ -1106,6 +1106,192 @@ def extract_si_citations(si_file: Optional[str] = None) -> str:
     return "; ".join(sorted(filtered))
 
 
+def resolve_transclusions(content: str, base_dir: Path) -> str:
+    """Recursively resolve Obsidian transclusions ![[filename]]."""
+    
+    def _replace_transclusion(match):
+        filename = match.group(1).strip()
+        
+        # Handle cases like ![[filename|alias]] - take only filename
+        if "|" in filename:
+            filename = filename.split("|", 1)[0]
+            
+        file_path = base_dir / filename
+        
+        # Try appending .md if missing
+        if not file_path.exists() and not file_path.suffix:
+            file_path = file_path.with_suffix(".md")
+            
+        if not file_path.exists():
+            print(f"   Warning: Transcluded file not found: {filename}")
+            return match.group(0)  # Return original string if not found
+            
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                transcluded_content = f.read()
+                
+            # Strip YAML frontmatter from transcluded file
+            if transcluded_content.startswith("---"):
+                try:
+                    _, frontmatter, body = transcluded_content.split("---", 2)
+                    transcluded_content = body
+                except ValueError:
+                    pass # Not valid frontmatter format
+            
+            # Recursively resolve transclusions in the included content
+            return resolve_transclusions(transcluded_content, base_dir)
+            
+        except Exception as e:
+            print(f"   Warning: Error reading transcluded file {filename}: {e}")
+            return match.group(0)
+
+    # Regex for ![[filename]]
+    pattern = r"!\[\[(.*?)\]\]"
+    return re.sub(pattern, _replace_transclusion, content)
+
+
+def build_digital_garden(source_file: str, config: Dict[str, Any]):
+    """Build a Digital Garden (collection of interlinked files)."""
+    print_header()
+    print(box_top("Digital Garden Build"))
+    
+    garden_dir = Path("export/garden")
+    if garden_dir.exists():
+        shutil.rmtree(garden_dir)
+    garden_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(box_row(f"Source: {source_file}"))
+    print(box_row(f"Output: {garden_dir}"))
+    print(box_bottom())
+    print()
+    
+    # 1. Parse Master file to find list of files
+    if not Path(source_file).exists():
+        print(f"Error: Source file {source_file} not found.")
+        return
+
+    with open(source_file, "r") as f:
+        master_content = f.read()
+    
+    # Find all ![[filename]] transclusions in Master file
+    # We assume these are the files we want to include in the garden
+    transclusions = re.findall(r"!\[\[(.*?)\]\]", master_content)
+    
+    files_to_build = []
+    base_dir = Path(source_file).parent
+    
+    for link in transclusions:
+        filename = link.split("|")[0].strip()
+        file_path = base_dir / filename
+        if not file_path.suffix:
+            file_path = file_path.with_suffix(".md")
+            
+        if file_path.exists():
+            files_to_build.append(file_path)
+    
+    if not files_to_build:
+        print("No files found in Master file transclusions.")
+        return
+
+    print(f"Found {len(files_to_build)} files to build.")
+    
+    master_stem = Path(source_file).stem
+
+    # 2. Build each file individually
+    for i, file_path in enumerate(files_to_build):
+        print(f"[{i+1}/{len(files_to_build)}] Building {file_path.name}...")
+        
+        new_stem = f"garden_{file_path.stem}"
+        
+        # Calculate navigation links (Prev / Next)
+        prev_file = files_to_build[i-1] if i > 0 else None
+        next_file = files_to_build[i+1] if i < len(files_to_build) - 1 else None
+        
+        # Create a temp file with nav links injected
+        temp_file = f"_temp_garden_{file_path.name}"
+        
+        with open(file_path, "r") as f:
+            content = f.read()
+            
+        # Add Nav Links
+        nav_links = "\n\n---\n\n"
+        if prev_file:
+            prev_stem = f"garden_{prev_file.stem}"
+            nav_links += f"[[{prev_stem}|← Previous]] "
+        if prev_file and next_file:
+            nav_links += " | "
+        if next_file:
+            next_stem = f"garden_{next_file.stem}"
+            nav_links += f"[[{next_stem}|Next →]]"
+        
+        if prev_file or next_file:
+            content += nav_links
+            
+        with open(temp_file, "w") as f:
+            f.write(content)
+            
+        # Build it
+        # We reuse build_document but target the garden directory
+        # We pass the new prefixed filename as output_filename
+        build_document(
+            temp_file,
+            "md-flattened", # Force flat markdown profile
+            use_png=False,
+            include_si_refs=False,
+            frontmatter_file=None, # No frontmatter for individual garden pages usually
+            figure_format=config.get("figure_format", "png"),
+            figure_background=config.get("figure_background", "white"),
+            visualize_captions=config.get("visualize_captions", False),
+            caption_style=config.get("caption_style", "plain"),
+            output_dir=str(garden_dir),
+            output_filename=new_stem
+        )
+        
+        # Cleanup temp
+        if Path(temp_file).exists():
+            os.remove(temp_file)
+            
+        # Inject frontmatter to the output file
+        out_filepath = garden_dir / f"{new_stem}.md"
+        if out_filepath.exists():
+            with open(out_filepath, "r") as f:
+                built_content = f.read()
+            frontmatter = f"---\ntitle: \"{file_path.stem}\"\n---\n\n"
+            with open(out_filepath, "w") as f:
+                f.write(frontmatter + built_content)
+
+    # 3. Create Master file (with links instead of transclusions)
+    print("Building Master file...")
+    index_content = master_content
+    
+    # Replace ![[filename]] with - [[new_filename|filename]]
+    index_content = re.sub(r"!\[\[(.*?)\]\]", r"- [[\1]]", index_content)
+    
+    def _fix_links(match):
+        inner = match.group(1)
+        # remove path components, keep just filename/stem
+        parts = inner.split("|")
+        path_part = parts[0]
+        alias_part = parts[1] if len(parts) > 1 else None
+        
+        stem = Path(path_part).stem
+        new_stem = f"garden_{stem}"
+        
+        if alias_part:
+            return f"[[{new_stem}|{alias_part}]]"
+        else:
+            return f"[[{new_stem}|{stem}]]"
+
+    index_content = re.sub(r"\[\[(.*?)\]\]", _fix_links, index_content)
+    
+    # Write Master file
+    master_output_filename = f"garden_{master_stem}.md"
+    with open(garden_dir / master_output_filename, "w") as f:
+        f.write(index_content)
+        
+    print(f"✓ Digital Garden built in {garden_dir}")
+
+
 def build_document(source_file: str, profile: str, use_png: bool, include_si_refs: bool,
                    frontmatter_file: Optional[str] = None, font: Optional[str] = None,
                    fontsize: Optional[str] = None, citation_style: Optional[str] = None,
@@ -1116,7 +1302,8 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
                    language: Optional[str] = None, tex_mode: Optional[str] = None,
                    figure_format: Optional[str] = None, figure_background: Optional[str] = None,
                    papersize: Optional[str] = None, margins: Optional[str] = None,
-                   visualize_captions: bool = False, caption_style: str = "plain"):
+                   visualize_captions: bool = False, caption_style: str = "plain",
+                   output_dir: Optional[str] = None, output_filename: Optional[str] = None):
     """Build the document with specified profile."""
     # Get profile info
     _, _, fmt = get_profile_info(profile)
@@ -1127,15 +1314,24 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     
     # Determine output file name from source file
     source_path = Path(source_file)
-    output_name = source_path.stem
     
-    # Add suffix for flattened markdown
-    if fmt == "md":
-        output_name += "_flat"
+    if output_filename:
+        output_name = output_filename
+    else:
+        output_name = source_path.stem
+        # Add suffix for flattened markdown (unless overridden)
+        if fmt == "md":
+            output_name += "_flat"
     
     # Map format to file extension (latex -> .tex for standard naming)
     ext = "tex" if fmt == "latex" else fmt
-    output_file = f"{EXPORT_DIR}/{output_name}.{ext}"
+    
+    if output_dir:
+        target_dir = Path(output_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        output_file = str(target_dir / f"{output_name}.{ext}")
+    else:
+        output_file = f"{EXPORT_DIR}/{output_name}.{ext}"
     temp_merged = f"_temp_{output_name}_merged.md"
     
     if fmt == "latex" and tex_mode:
@@ -1145,17 +1341,44 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     else:
         print(f">> Building {source_file} ({fmt.upper()})...")
     
-    # Merge frontmatter if requested
-    input_file = source_file
-    if frontmatter_file and Path(frontmatter_file).exists():
-        print(f"   Merging frontmatter from {frontmatter_file}...")
-        with open(temp_merged, "w") as out:
-            with open(frontmatter_file, "r") as f:
-                out.write(f.read())
-            out.write("\n")
-            with open(source_file, "r") as f:
-                out.write(f.read())
+    # Resolve transclusions and merge frontmatter
+    # We always read source file and resolve transclusions now
+    print(f"   Resolving transclusions in {source_file}...")
+    try:
+        with open(source_file, "r", encoding="utf-8") as f:
+            source_content = f.read()
+            
+        # Resolve transclusions relative to source file directory
+        # If source_file is "src/Master.md", base_dir is "src"
+        source_dir = Path(source_file).parent
+        resolved_content = resolve_transclusions(source_content, source_dir)
+        
+        # Write to temp merged file
+        with open(temp_merged, "w", encoding="utf-8") as out:
+            # Prepend frontmatter if requested
+            if frontmatter_file and Path(frontmatter_file).exists():
+                print(f"   Merging frontmatter from {frontmatter_file}...")
+                with open(frontmatter_file, "r", encoding="utf-8") as f:
+                    out.write(f.read())
+                out.write("\n")
+                
+                # If source had frontmatter, strip it to avoid duplication when merging
+                if resolved_content.startswith("---"):
+                    try:
+                        _, fm, body = resolved_content.split("---", 2)
+                        out.write(body)
+                    except ValueError:
+                        out.write(resolved_content)
+                else:
+                    out.write(resolved_content)
+            else:
+                out.write(resolved_content)
+                
         input_file = temp_merged
+        
+    except Exception as e:
+        print(f"   Error processing file: {e}")
+        sys.exit(1)
     
     # Include SI refs for main document
     if include_si_refs and not is_si:
@@ -1178,11 +1401,26 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     
     # Convert figures for flattened markdown (always copy to export for md format)
     if fmt == "md":
+        # If output_dir is specified (e.g. garden), copy figures there too
+        copy_to_custom = False
+        custom_figures_dir = None
+        if output_dir:
+            custom_figures_dir = Path(output_dir) / "figures"
+            custom_figures_dir.mkdir(parents=True, exist_ok=True)
+            copy_to_custom = True
+
         convert_figures_for_web(
             figure_format=figure_format or "png",
             figure_background=figure_background or "white",
             copy_to_export=True
         )
+        
+        # Also copy to custom output directory if needed
+        if copy_to_custom and custom_figures_dir:
+            figures_dir = Path("export/figures")
+            if figures_dir.exists():
+                for fig in figures_dir.glob("*"):
+                    shutil.copy2(fig, custom_figures_dir / fig.name)
     
     # Merge configs
     profile_path = f"{PROFILES_DIR}/{profile}.yaml"
@@ -1987,6 +2225,9 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         # Flattened markdown options
         elif arg == "--flatten":
             config["profile"] = "md-flattened"
+        elif arg == "--digital-garden":
+            config["digital_garden"] = True
+            config["profile"] = "md-flattened" # Garden uses flattened profile by default
         elif arg.startswith("--figure-format="):
             config["figure_format"] = arg.split("=", 1)[1]
         elif arg.startswith("--figure-bg="):
@@ -2156,32 +2397,35 @@ def main():
         print_build_summary(config)
         print()
     
-    # Build document
-    build_document(
-        config["source_file"],
-        config["profile"],
-        config["use_png"],
-        config["include_si_refs"],
-        config.get("frontmatter_file"),
-        config.get("font"),
-        config.get("fontsize"),
-        config.get("citation_style"),
-        config.get("si_file"),
-        config.get("is_si", False),
-        config.get("linespacing"),
-        config.get("paragraph_style"),
-        config.get("linenumbers"),
-        config.get("pagenumbers"),
-        config.get("numbered_headings"),
-        config.get("language"),
-        config.get("tex_mode"),
-        config.get("figure_format"),
-        config.get("figure_background"),
-        config.get("papersize"),
-        config.get("margins"),
-        config.get("visualize_captions", False),
-        config.get("caption_style", "plain"),
-    )
+    # Build document or garden
+    if config.get("digital_garden"):
+        build_digital_garden(config["source_file"], config)
+    else:
+        build_document(
+            config["source_file"],
+            config["profile"],
+            config["use_png"],
+            config["include_si_refs"],
+            config.get("frontmatter_file"),
+            config.get("font"),
+            config.get("fontsize"),
+            config.get("citation_style"),
+            config.get("si_file"),
+            config.get("is_si", False),
+            config.get("linespacing"),
+            config.get("paragraph_style"),
+            config.get("linenumbers"),
+            config.get("pagenumbers"),
+            config.get("numbered_headings"),
+            config.get("language"),
+            config.get("tex_mode"),
+            config.get("figure_format"),
+            config.get("figure_background"),
+            config.get("papersize"),
+            config.get("margins"),
+            config.get("visualize_captions", False),
+            config.get("caption_style", "plain"),
+        )
     
     print()
     print("✓ Build complete!")

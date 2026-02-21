@@ -136,6 +136,14 @@ The templates live in `resources/templater/` and look like this:
 - Keep figures in the `figures/` folder
 - The options (width, align) are optional - defaults work fine and you can delete them if you want
 
+**Advanced Placement Options:**
+- **Position (LaTeX only):** Use `pos=h|t|b|p|H` to control float placement.
+  - `h` (here), `t` (top), `b` (bottom), `p` (page), `H` (forced here).
+  - Example: `> [!figure] #fig:myfig pos=b` forces figure to bottom of page.
+- **Text Wrapping:** Use `wrap=l|r` to wrap text around the figure.
+  - `l` (left), `r` (right), `o` (outer), `i` (inner).
+  - Example: `> [!figure] #fig:myfig wrap=r width=50%` places figure on right with text wrapping around it.
+
 ### Tables
 
 **Easiest method:** Use the **Templater** plugin (click the `< %` icon) for a ready-to-use template.
@@ -281,3 +289,57 @@ For two-column profiles, add `span=full` to make figures or tables span both col
 |---|---|
 | 1 | 2 |
 ```
+
+---
+
+## Part 4: Managing Large Projects
+
+For theses, dissertations, or books, you might want to split your work into multiple files (e.g., one file per chapter). This plugin supports a **Master File** approach.
+
+### Master File Structure
+
+Create a "Master" Markdown file (e.g., `Master.md`) that serves as the backbone of your manuscript. Use Obsidian's **transclusion** syntax (`![[filename]]`) to include other files.
+
+**Example `Master.md`:**
+
+```markdown
+# Introduction
+![[01-Introduction.md]]
+
+# Methods
+![[02-Methods.md]]
+
+# Results
+![[03-Results.md]]
+
+# Discussion
+![[04-Discussion.md]]
+```
+
+When you build this `Master.md` file using the plugin, it will automatically:
+1.  **Resolve Transclusions:** Replace `![[01-Introduction.md]]` with the actual content of that file.
+2.  **Adjust Heading Levels:** (Optional) If your chapters start with H1 (`#`), you can structure your Master file to respect that or shift levels if needed.
+3.  **Merge Bibliography:** Collect citations from all included files into a single reference list.
+
+### Single File Export (PDF/DOCX)
+
+You can use the same `Master.md` to generate a standard single-file output (PDF or Word):
+
+1.  Open `Master.md`.
+2.  Open the **Command Palette** (`Cmd/Ctrl + P`) and run `MD Manuscript: Build current file`.
+3.  Select a profile (e.g., `pdf-default` or `docx-manuscript`).
+4.  The plugin will merge all chapters and produce a single `Master.pdf` or `Master.docx`.
+
+### Digital Garden Export (HTML/Web)
+
+If you want to publish your notes as a **Digital Garden** (e.g., using Obsidian Publish or a static site generator), you might want to keep the files separate but updated with the correct links.
+
+Use the **"Digital Garden Mode"**:
+
+1.  Enable the plugin `Digital Garden Mode`
+2.  The plugin will:
+    *   Process each included file independently.
+    *   Resolve internal links between chapters.
+    *   Generate individual HTML-ready Markdown files in the `export/` folder.
+    *   Preserve the file structure for web navigation.
+

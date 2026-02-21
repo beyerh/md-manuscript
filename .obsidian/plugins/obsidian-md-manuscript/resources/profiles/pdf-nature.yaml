@@ -33,6 +33,8 @@ variables:
     - \usepackage{xcolor}
     - \usepackage{pdflscape}
     - \usepackage{adjustbox}
+    - \usepackage{wrapfig}
+    - \usepackage{float}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}

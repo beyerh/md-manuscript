@@ -140,6 +140,16 @@ local function render_html_figure(image_src, caption_inlines, label, width, alig
       table.insert(styles, "display: block")
       table.insert(styles, "margin-left: auto")
       table.insert(classes, "align-right")
+    elseif align == "left-wrap" then
+      -- Float left for wrapping
+      table.insert(styles, "float: left")
+      table.insert(styles, "margin-right: 1em")
+      table.insert(classes, "float-left")
+    elseif align == "right-wrap" then
+      -- Float right for wrapping
+      table.insert(styles, "float: right")
+      table.insert(styles, "margin-left: 1em")
+      table.insert(classes, "float-right")
     end
   end
   
@@ -350,6 +360,8 @@ function BlockQuote(block)
   local label = nil
   local width_value = nil
   local align_value = nil
+  local wrap_value = nil
+  local pos_value = nil
   local image = nil
   local image_src = nil
   local caption_inlines = {}
@@ -373,6 +385,8 @@ function BlockQuote(block)
         label = text:match("#(fig:[%w%-_]+)")
         width_value = parse_width_value(text)
         align_value = text:match("align=(%w+)")
+        wrap_value = text:match("wrap=(%w+)")
+        pos_value = text:match("pos=(%w+)")
       end
 
       -- Find the image
@@ -449,8 +463,17 @@ function BlockQuote(block)
   -- Clean up alt text (remove multiple spaces, trim)
   alt_text = alt_text:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
   
-  -- Check for HTML caption style
-  if config.caption_style == "html" then
+  -- Handle wrap by modifying alignment if not explicitly set
+  if wrap_value then
+    if wrap_value == "l" or wrap_value == "i" then
+      align_value = "left-wrap"
+    elseif wrap_value == "r" or wrap_value == "o" then
+      align_value = "right-wrap"
+    end
+  end
+
+  -- Check for HTML caption style OR wrapping (which requires HTML)
+  if config.caption_style == "html" or (align_value and align_value:match("wrap")) then
     -- Strip existing prefix from caption inlines
     strip_prefix_from_inlines(caption_inlines)
     

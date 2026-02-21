@@ -32,6 +32,8 @@ variables:
     - \usepackage{lineno}
     - \usepackage{pdflscape}
     - \usepackage{adjustbox}
+    - \usepackage{wrapfig}
+    - \usepackage{float}
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.5\baselineskip}
     # Bold sans-serif headings

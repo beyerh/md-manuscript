@@ -28,6 +28,8 @@ metadata:
     - \usepackage{xcolor}
     - \usepackage{pdflscape}
     - \usepackage{adjustbox}
+    - \usepackage{wrapfig}
+    - \usepackage{float}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdonecolumn}{}
     - \providecommand{\mdtwocolumn}{}

@@ -420,7 +420,7 @@ function BlockQuote(block)
       cap_just = "raggedleft"
     end
     table.insert(latex, align_cmd)
-    table.insert(latex, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=false}\\fi")
+    table.insert(latex, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=off}\\fi")
 
     local w = img_attrs["width"]
     local wdim = width_to_latex_dimension(w)
@@ -452,7 +452,7 @@ function BlockQuote(block)
 
       -- Keep the Figure content as a single block (avoid triggering pandoc's
       -- multi-block figure minipage layout) by injecting alignment as RawInline.
-      local cap_setup = "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=false}\\fi"
+      local cap_setup = "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=off}\\fi"
       prepend_rawinline_to_first_para(fig.content, align_cmd .. cap_setup)
     end
 

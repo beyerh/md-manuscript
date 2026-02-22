@@ -9,6 +9,7 @@ import {
 	DropdownComponent,
 	ToggleComponent,
 	ButtonComponent,
+	FuzzySuggestModal,
 } from "obsidian";
 import { spawn, ChildProcess } from "child_process";
 import * as path from "path";
@@ -25,6 +26,8 @@ interface ManuscriptBuildSettings {
 	defaultFont: string;
 	defaultFontSize: string;
 	defaultCitationStyle: string;
+	defaultVisualizeCaptions: boolean;
+	defaultCaptionStyle: string;
 	showNotifications: boolean;
 	autoOpenExport: boolean;
 }
@@ -75,6 +78,8 @@ const DEFAULT_SETTINGS: ManuscriptBuildSettings = {
 	defaultFont: "",
 	defaultFontSize: "11pt",
 	defaultCitationStyle: "vancouver",
+	defaultVisualizeCaptions: false,
+	defaultCaptionStyle: "plain",
 	showNotifications: true,
 	autoOpenExport: false,
 };
@@ -95,7 +100,7 @@ const FONT_PRESETS: Record<string, string> = {
 	"computer-modern": "LaTeX Default (Compatibility)",
 };
 
-const FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"];
+const FONT_SIZES = ["9pt", "10pt", "11pt", "12pt", "13pt", "14pt", "15pt", "16pt"];
 
 // Line spacing presets
 const LINE_SPACING_PRESETS: Record<string, string> = {
@@ -768,6 +773,32 @@ export default class ManuscriptBuildPlugin extends Plugin {
 }
 
 // ============================================================================
+// File Suggest Modal
+// ============================================================================
+class FileSuggestModal extends FuzzySuggestModal<string> {
+	files: string[];
+	onChoose: (file: string) => void;
+
+	constructor(app: App, files: string[], onChoose: (file: string) => void) {
+		super(app);
+		this.files = files;
+		this.onChoose = onChoose;
+	}
+
+	getItems(): string[] {
+		return this.files;
+	}
+
+	getItemText(item: string): string {
+		return item;
+	}
+
+	onChooseItem(item: string, evt: MouseEvent | KeyboardEvent): void {
+		this.onChoose(item);
+	}
+}
+
+// ============================================================================
 // Build Modal
 // ============================================================================
 
@@ -777,8 +808,8 @@ class BuildModal extends Modal {
 	private lastConfig: BuildConfig | null = null;
 
 	// UI Components
-	private sourceDropdown: DropdownComponent;
-	private frontmatterDropdown: DropdownComponent;
+	private sourceButton: ButtonComponent;
+	private frontmatterButton: ButtonComponent;
 	private formatDropdown: DropdownComponent;
 	private profileDropdown: DropdownComponent;
 	private fontDropdown: DropdownComponent;
@@ -793,7 +824,7 @@ class BuildModal extends Modal {
 	private marginsDropdown: DropdownComponent;
 	private citationDropdown: DropdownComponent;
 	private siRefsToggle: ToggleComponent;
-	private siFileDropdown: DropdownComponent;
+	private siFileButton: ButtonComponent;
 	private siFileContainer: HTMLElement;
 	private isSiToggle: ToggleComponent;
 	private pngToggle: ToggleComponent;
@@ -842,40 +873,27 @@ class BuildModal extends Modal {
 				figureBackground: "white",
 				paperSize: "",
 				margins: "",
-				visualizeCaptions: false,
-				captionStyle: "plain",
+				visualizeCaptions: plugin.settings.defaultVisualizeCaptions,
+				captionStyle: plugin.settings.defaultCaptionStyle,
 				digitalGarden: false,
 			};
 		}
 	}
 
-	private updateFileDropdowns() {
+	private updateFileSelectors() {
 		const visibleFiles = this.showAllFiles
 			? this.allFiles
 			: this.allFiles.filter(f => !f.includes("/"));
 		
-		const update = (dropdown: DropdownComponent, currentValue: string | null, allowNone: boolean = false) => {
-			if (!dropdown) return;
-			
-			// Clear existing options
-			dropdown.selectEl.innerHTML = "";
-			
-			if (allowNone) dropdown.addOption("", "None");
-			
-			visibleFiles.forEach(f => dropdown.addOption(f, f));
-			
-			// Ensure current value is present if it exists in allFiles but hidden
-			if (currentValue && !visibleFiles.includes(currentValue) && this.allFiles.includes(currentValue)) {
-				 dropdown.addOption(currentValue, currentValue);
-			}
-			
-			// Restore value
-			if (currentValue !== null) dropdown.setValue(currentValue);
+		const update = (button: ButtonComponent, currentValue: string | null, allowNone: boolean = false) => {
+			if (!button) return;
+			const displayValue = currentValue ? currentValue : (allowNone ? "None" : "Select File...");
+			button.setButtonText(displayValue);
 		};
 
-		update(this.sourceDropdown, this.config.sourceFile);
-		update(this.frontmatterDropdown, this.config.frontmatterFile, true);
-		update(this.siFileDropdown, this.config.siFile);
+		update(this.sourceButton, this.config.sourceFile);
+		update(this.frontmatterButton, this.config.frontmatterFile, true);
+		update(this.siFileButton, this.config.siFile, true);
 	}
 
 	onOpen() {
@@ -939,7 +957,7 @@ class BuildModal extends Modal {
 				toggle.setValue(this.showAllFiles);
 				toggle.onChange((value) => {
 					this.showAllFiles = value;
-					this.updateFileDropdowns();
+					this.updateFileSelectors();
 				});
 			});
 
@@ -947,11 +965,14 @@ class BuildModal extends Modal {
 		new Setting(contentEl)
 			.setName("Source File")
 			.setDesc("The main document to build")
-			.addDropdown((dropdown) => {
-				this.sourceDropdown = dropdown;
-				// Initial population handled by updateFileDropdowns
-				dropdown.onChange((value) => {
-					this.config.sourceFile = value;
+			.addButton((btn) => {
+				this.sourceButton = btn;
+				btn.onClick(() => {
+					const visibleFiles = this.showAllFiles ? this.allFiles : this.allFiles.filter(f => !f.includes("/"));
+					new FileSuggestModal(this.app, visibleFiles, (file) => {
+						this.config.sourceFile = file;
+						this.updateFileSelectors();
+					}).open();
 				});
 			});
 
@@ -959,11 +980,15 @@ class BuildModal extends Modal {
 		new Setting(contentEl)
 			.setName("Frontmatter")
 			.setDesc("Optional file to prepend (title, authors, etc.)")
-			.addDropdown((dropdown) => {
-				this.frontmatterDropdown = dropdown;
-				// Initial population handled by updateFileDropdowns
-				dropdown.onChange((value) => {
-					this.config.frontmatterFile = value || null;
+			.addButton((btn) => {
+				this.frontmatterButton = btn;
+				btn.onClick(() => {
+					const visibleFiles = this.showAllFiles ? this.allFiles : this.allFiles.filter(f => !f.includes("/"));
+					const options = ["None", ...visibleFiles];
+					new FileSuggestModal(this.app, options, (file) => {
+						this.config.frontmatterFile = file === "None" ? null : file;
+						this.updateFileSelectors();
+					}).open();
 				});
 			});
 
@@ -1016,17 +1041,6 @@ class BuildModal extends Modal {
 		// LaTeX mode selection (only relevant when format is LaTeX)
 		this.latexModeContainer = outputGrid.createDiv();
 		this.latexModeContainer.addClass("manuscript-setting-compact");
-		// Note: The container itself becomes the grid item.
-		// The Setting inside should also be compact if we want the same styling, but if the container is the grid item, flex direction applies to container?
-		// No, CSS targets .manuscript-setting-compact which is usually the Setting element.
-		// So we apply the class to the Setting.
-		// BUT if we wrap it in a div, the DIV is the grid item.
-		// To fix layout, the DIV should just be a wrapper (display contents?) or handle the layout.
-		// Actually, if we apply "manuscript-setting-compact" to the Setting, it applies flex-direction: column.
-		// If the wrapper div is the grid item, the Setting is inside.
-		// We want the Setting to be the visual item.
-		// So we apply style to wrapper? Or make wrapper display: contents?
-		// Let's make the wrapper match the compact style.
 		
 		new Setting(this.latexModeContainer)
 			.setClass("manuscript-setting-compact")
@@ -1072,7 +1086,6 @@ class BuildModal extends Modal {
 			});
 
 		// Flattened Markdown options container
-		// We make this a grid too, separate from outputGrid to ensure it takes full width below
 		this.flattenedMdContainer = contentEl.createDiv({ cls: "manuscript-settings-grid" });
 		
 		// Digital Garden Mode (Flattened Markdown only)
@@ -1102,7 +1115,6 @@ class BuildModal extends Modal {
 				dropdown.setValue(this.config.figureFormat || "png");
 				dropdown.onChange((value) => {
 					this.config.figureFormat = value;
-					// Show/hide background option based on format
 					if (this.figureBackgroundContainer) {
 						this.figureBackgroundContainer.style.display = value !== "original" ? "block" : "none";
 					}
@@ -1124,7 +1136,6 @@ class BuildModal extends Modal {
 					this.config.figureBackground = value;
 				});
 			});
-		// Hide background option if format is "original"
 		this.figureBackgroundContainer.style.display = this.config.figureFormat !== "original" ? "block" : "none";
 
 		// Visualize Captions (Flattened Markdown only)
@@ -1153,7 +1164,6 @@ class BuildModal extends Modal {
 				});
 			});
 
-		// Show/hide PNG/LaTeX/Flattened MD options based on format (must be after containers are created)
 		this.updateFormatOptions(currentFormat);
 
 		// ─────────────────────────────────────────────────────────────────────
@@ -1185,7 +1195,7 @@ class BuildModal extends Modal {
 		new Setting(typeGrid)
 			.setClass("manuscript-setting-compact")
 			.setName("Font Size")
-			.setDesc("Base font size")
+			.setDesc("Base font size (Note: >12pt requires compatible profiles like Notes or Thesis)")
 			.addDropdown((dropdown) => {
 				this.fontSizeDropdown = dropdown;
 				FONT_SIZES.forEach((size) => {
@@ -1389,11 +1399,15 @@ class BuildModal extends Modal {
 			.setClass("manuscript-setting-compact")
 			.setName("SI File")
 			.setDesc("File containing SI references")
-			.addDropdown((dropdown) => {
-				this.siFileDropdown = dropdown;
-				// Initial population handled by updateFileDropdowns
-				dropdown.onChange((value) => {
-					this.config.siFile = value;
+			.addButton((btn) => {
+				this.siFileButton = btn;
+				btn.onClick(() => {
+					const visibleFiles = this.showAllFiles ? this.allFiles : this.allFiles.filter(f => !f.includes("/"));
+					const options = ["None", ...visibleFiles];
+					new FileSuggestModal(this.app, options, (file) => {
+						this.config.siFile = file === "None" ? null : file;
+						this.updateFileSelectors();
+					}).open();
 				});
 			});
 		// Show SI file container if SI refs is enabled
@@ -1442,7 +1456,7 @@ class BuildModal extends Modal {
 			});
 
 		// Initialize file dropdowns
-		this.updateFileDropdowns();
+		this.updateFileSelectors();
 	}
 
 	private restoreDefaults() {
@@ -1470,8 +1484,8 @@ class BuildModal extends Modal {
 		this.config.figureBackground = "white";
 		this.config.paperSize = "";
 		this.config.margins = "";
-		this.config.visualizeCaptions = false;
-		this.config.captionStyle = "plain";
+		this.config.visualizeCaptions = settings.defaultVisualizeCaptions;
+		this.config.captionStyle = settings.defaultCaptionStyle;
 		this.config.digitalGarden = false;
 
 		// Reset source file to sensible default
@@ -1493,8 +1507,6 @@ class BuildModal extends Modal {
 		}
 		const profileFormat = currentFormat === "latex" ? "pdf" : currentFormat;
 		
-		this.sourceDropdown?.setValue(this.config.sourceFile);
-		this.frontmatterDropdown?.setValue(this.config.frontmatterFile || "");
 		this.formatDropdown?.setValue(currentFormat);
 		this.populateProfiles(this.profileDropdown, profileFormat);
 		this.profileDropdown?.setValue(this.config.profile);
@@ -1511,7 +1523,6 @@ class BuildModal extends Modal {
 		this.citationDropdown?.setValue(this.config.citationStyle);
 		this.pngToggle?.setValue(this.config.usePng);
 		this.siRefsToggle?.setValue(this.config.includeSiRefs);
-		this.siFileDropdown?.setValue(this.config.siFile || "");
 		this.isSiToggle?.setValue(this.config.isSi);
 		this.figureFormatDropdown?.setValue(this.config.figureFormat);
 		this.figureBackgroundDropdown?.setValue(this.config.figureBackground);
@@ -1526,7 +1537,7 @@ class BuildModal extends Modal {
 			this.figureBackgroundContainer.style.display = "block";
 		}
 		
-		this.updateFileDropdowns();
+		this.updateFileSelectors();
 
 		new Notice("Settings restored to defaults");
 	}
@@ -1777,7 +1788,7 @@ class ManuscriptBuildSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Default Font Size")
-			.setDesc("Default font size for PDF builds")
+			.setDesc("Default font size for PDF builds (Note: >12pt requires compatible profiles like Notes or Thesis)")
 			.addDropdown((dropdown) => {
 				FONT_SIZES.forEach((size) => {
 					dropdown.addOption(size, size);
@@ -1801,6 +1812,31 @@ class ManuscriptBuildSettingTab extends PluginSettingTab {
 				dropdown.setValue(this.plugin.settings.defaultCitationStyle);
 				dropdown.onChange(async (value) => {
 					this.plugin.settings.defaultCitationStyle = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName("Default Visualize Captions")
+			.setDesc("Default setting for 'Visualize Captions' in Flattened Markdown builds")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.defaultVisualizeCaptions)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultVisualizeCaptions = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Default Caption Style")
+			.setDesc("Default setting for 'HTML Figures & Captions' in Flattened Markdown builds")
+			.addDropdown((dropdown) => {
+				dropdown.addOption("plain", "Plain Markdown");
+				dropdown.addOption("html", "HTML <figure>");
+				dropdown.setValue(this.plugin.settings.defaultCaptionStyle);
+				dropdown.onChange(async (value) => {
+					this.plugin.settings.defaultCaptionStyle = value;
 					await this.plugin.saveSettings();
 				});
 			});

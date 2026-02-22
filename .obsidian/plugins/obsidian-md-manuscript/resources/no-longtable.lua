@@ -124,13 +124,13 @@ function Table(tbl)
 
   if md_align == 'left' then
     table.insert(latex, '\\raggedright')
-    table.insert(latex, '\\ifcsname captionsetup\\endcsname\\captionsetup{justification=raggedright,singlelinecheck=false}\\fi')
+    table.insert(latex, '\\ifcsname captionsetup\\endcsname\\captionsetup{justification=raggedright,singlelinecheck=off}\\fi')
   elseif md_align == 'right' then
     table.insert(latex, '\\raggedleft')
-    table.insert(latex, '\\ifcsname captionsetup\\endcsname\\captionsetup{justification=raggedleft,singlelinecheck=false}\\fi')
+    table.insert(latex, '\\ifcsname captionsetup\\endcsname\\captionsetup{justification=raggedleft,singlelinecheck=off}\\fi')
   else
     table.insert(latex, '\\centering')
-    table.insert(latex, '\\ifcsname captionsetup\\endcsname\\captionsetup{justification=centering,singlelinecheck=false}\\fi')
+    table.insert(latex, '\\ifcsname captionsetup\\endcsname\\captionsetup{justification=centering,singlelinecheck=off}\\fi')
   end
   
   -- Caption if present (render full content to preserve formatting)
@@ -186,3 +186,7 @@ function Table(tbl)
   
   return pandoc.RawBlock('latex', table.concat(latex, '\n'))
 end
+
+return {
+  {Table = Table}
+}

@@ -4,17 +4,19 @@
     "type": "split",
     "children": [
       {
-        "id": "b3543d51a8c15645",
+        "id": "f452702f562caf63",
         "type": "tabs",
         "children": [
           {
-            "id": "a4caa3e41dbdff09",
+            "id": "d48d7872863af04f",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "type": "pdf",
+              "state": {
+                "file": "export/02-md-manuscript-maintext.pdf"
+              },
+              "icon": "lucide-file-text",
+              "title": "02-md-manuscript-maintext"
             }
           }
         ]
@@ -152,12 +154,13 @@
             "state": {
               "type": "outline",
               "state": {
+                "file": "export/02-md-manuscript-maintext.pdf",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline"
+              "title": "Outline of 02-md-manuscript-maintext"
             }
           },
           {
@@ -193,16 +196,18 @@
       "version-control:Open version control": false
     }
   },
-  "active": "a4caa3e41dbdff09",
+  "active": "d48d7872863af04f",
   "lastOpenFiles": [
+    "_temp_config.yaml",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "export/00-Thesis.pdf",
+    "export/02-md-manuscript-maintext.pdf",
+    "_temp_00-Thesis_merged.md",
     "export/Master.pdf",
     "M2205/Master.md",
     "M2205/01-Background.md",
     "M2205/02-Experiment1.md",
-    "_temp_config.yaml",
     "_temp_Master_merged.md",
-    "export/02-md-manuscript-maintext.pdf",
-    "_temp_02-md-manuscript-maintext_merged.md",
     "export",
     "export/garden/02-Methods_Results.md",
     "export/garden/03-Discussion.md",
@@ -228,8 +233,6 @@
     "export/garden/figures",
     "export/garden",
     "export/figures",
-    "export/00-Thesis.pdf",
-    "_temp_00-Thesis_merged.md",
     "examples/multi_file/03-Discussion.md",
     "examples/multi_file/02-Methods_Results.md",
     "examples/multi_file/01-Introduction.md",

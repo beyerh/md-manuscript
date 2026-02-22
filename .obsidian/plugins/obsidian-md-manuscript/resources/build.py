@@ -299,7 +299,7 @@ def get_profile_default_fontsize(profile: str) -> Optional[str]:
         return None
     return m.group(1).strip().strip('"\'')
 
-FONT_SIZES = ["9pt", "10pt", "11pt", "12pt"]
+FONT_SIZES = ["9pt", "10pt", "11pt", "12pt", "13pt", "14pt", "15pt", "16pt"]
 
 
 def get_profile_categories() -> Dict[str, List[str]]:

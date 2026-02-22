@@ -38,6 +38,10 @@ variables:
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}
+    - \makeatletter
+    - \renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}{-3.25ex \@plus -1ex \@minus -.2ex}{1.5ex \@plus .2ex}{\normalfont\normalsize\bfseries}}
+    - \renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\z@}{-3.25ex \@plus -1ex \@minus -.2ex}{1.5ex \@plus .2ex}{\normalfont\normalsize\bfseries}}
+    - \makeatother
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.4\baselineskip}
     # Sans-serif headings

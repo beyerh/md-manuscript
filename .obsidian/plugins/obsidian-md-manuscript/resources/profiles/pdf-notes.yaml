@@ -18,9 +18,9 @@ highlight-style: tango
 
 # --- Layout ---
 variables:
-  documentclass: article
+  documentclass: scrartcl
   papersize: a4
-  geometry: ["top=2cm", "bottom=2cm", "left=2.5cm", "right=2.5cm"]
+  geometry: ["top=2cm", "bottom=2.5cm", "left=2.5cm", "right=2.5cm", "footskip=1.5cm"]
   
   # Typography - Clean sans-serif for screen reading
   mainfont: "Libertinus Sans"
@@ -85,9 +85,11 @@ variables:
     - \titleformat{\section}{\Large\bfseries\sffamily\color{accent}}{\thesection}{1em}{}
     - \titleformat{\subsection}{\large\bfseries\sffamily\color{accent}}{\thesubsection}{1em}{}
     - \titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{accent}}{\thesubsubsection}{1em}{}
+    - \titleformat{\paragraph}[hang]{\normalfont\normalsize\bfseries\color{accent}}{\theparagraph}{1em}{}
     - \titlespacing*{\section}{0pt}{1.0\baselineskip}{0.4\baselineskip}
     - \titlespacing*{\subsection}{0pt}{0.8\baselineskip}{0.3\baselineskip}
     - \titlespacing*{\subsubsection}{0pt}{0.6\baselineskip}{0.2\baselineskip}
+    - \titlespacing*{\paragraph}{0pt}{0.4\baselineskip}{0.2\baselineskip}
     # Code block styling
     - \usepackage{fancyvrb}
     - \usepackage{framed}
@@ -104,6 +106,11 @@ variables:
       \AtBeginEnvironment{longtable}{\small\sffamily\setlength{\tabcolsep}{3pt}}
     - |
       \renewcommand{\arraystretch}{1.0}
+    # Headers and footers - using scrlayer-scrpage for KOMA-script classes
+    - \usepackage[automark]{scrlayer-scrpage}
+    - \clearpairofpagestyles
+    - \ofoot*{\pagemark}
+    - \pagestyle{scrheadings}
     # Better float placement
     - \renewcommand{\floatpagefraction}{0.8}
     - \renewcommand{\topfraction}{0.9}

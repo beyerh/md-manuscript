@@ -1,4 +1,4 @@
-> [!figure] #fig:yourfigurelabel width=100% align=center pos=!ht
+> [!figure] #fig:yourfigurelabel width=100% align=left pos=!ht
 > ![](figures/yourfigure.pdf)
 >
 > This is the **figure** caption...

@@ -412,6 +412,24 @@ local function style_table(tbl, opts)
   --
   --    Let's look at `no-longtable.lua` to see what it does.
   
+  -- Handle alignment via captionsetup if aligned left/right
+  if is_latex and opts.align then
+    local setup = nil
+    if opts.align == "left" then
+      setup = "\\captionsetup{justification=raggedright,singlelinecheck=off}"
+    elseif opts.align == "right" then
+      setup = "\\captionsetup{justification=raggedleft,singlelinecheck=off}"
+    end
+    
+    if setup then
+      return {
+        pandoc.RawBlock("latex", "\\begingroup" .. setup),
+        tbl,
+        pandoc.RawBlock("latex", "\\endgroup")
+      }
+    end
+  end
+
   return tbl
 end
 

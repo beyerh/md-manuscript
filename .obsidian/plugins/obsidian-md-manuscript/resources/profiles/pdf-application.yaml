@@ -1,0 +1,86 @@
+# pdf-application.yaml - Application/CV Style
+# Best for: Job applications, CVs, cover letters
+
+profile:
+  name: "Application & CV"
+  description: "Professional style for job applications and CVs"
+  format: pdf
+
+# --- PDF Engine ---
+pdf-engine: tectonic
+
+filters:
+  - resources/html-formatting.lua
+  - resources/metadata-to-latex.lua
+  - resources/color-text.lua
+  - resources/underline.lua
+  - resources/figure-callouts.lua
+  - resources/table-callouts.lua
+  - pandoc-crossref
+  - citeproc
+# Note: metadata-to-latex.lua is also in _base.yaml but listed here
+# because this profile overrides base filters
+
+# --- Layout ---
+variables:
+  documentclass: article
+  papersize: a4
+  geometry: ["top=2.5cm", "bottom=2.5cm", "left=1.5cm", "right=1.5cm"]
+  fontsize: 11pt
+  
+  # Typography
+  mainfont: "Libertinus Serif"
+  sansfont: "Libertinus Sans"
+  monofont: "Libertinus Mono"
+  linestretch: 1.0
+  indent: true
+  parskip: 0pt
+  parindent: 1.5em
+
+  # TOC and Numbering
+  toc: false
+  numbersections: false
+
+  # Link colors
+  colorlinks: true
+  linkcolor: primary
+  filecolor: linkblue
+  urlcolor: linkblue
+  citecolor: primary
+
+  header-includes:
+    - \usepackage{titlesec}
+    - \usepackage{fancyhdr}
+    - \usepackage{parskip}
+    - \usepackage{enumitem}
+    - \usepackage{xcolor}
+    - \usepackage{wrapfig}
+    - \usepackage{graphicx}
+    - \usepackage[normalem]{ulem}
+    - \usepackage{caption}
+    
+    # Colors
+    - \definecolor{primary}{RGB}{0, 51, 102}
+    - \definecolor{linkblue}{RGB}{0, 75, 140}
+    - \definecolor{secondary}{RGB}{102, 102, 102}
+
+    # Hyperref setup overrides
+    - \AtBeginDocument{\hypersetup{pdfpagemode=FullScreen}}
+    
+    # Title formats
+    - |
+      \titleformat{\section}
+        {\normalfont\Large\bfseries\color{primary}}{\thesection}{1em}{}[\titlerule]
+    - |
+      \titleformat{\subsection}
+        {\normalfont\large\bfseries\color{primary}}{\thesubsection}{1em}{}
+
+    # Header and Footer
+    - \pagestyle{fancy}
+    - \fancyhf{}
+    - \fancyhead[L]{\color{secondary}\small \headerleft}
+    - \fancyhead[R]{\color{secondary}\small \headerright}
+    - \fancyfoot[L]{\color{secondary}\small \documentdate}
+    - \fancyfoot[C]{\thepage}
+    - \renewcommand{\headrulewidth}{0.4pt}
+    - \renewcommand{\footrulewidth}{0.4pt}

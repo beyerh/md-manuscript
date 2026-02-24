@@ -97,11 +97,34 @@ end
 local function extract_caption_inlines_from_table_header_callout(block)
   -- For a header-only [!table] callout, treat all Para/Plain blocks after the
   -- first header line as caption content.
+  -- Also handles the case where caption is on the next line without an empty
+  -- separator (merged into the same Para via SoftBreak).
   local inlines = {}
   if block.t ~= "BlockQuote" then
     return nil
   end
 
+  -- Check if the first block contains caption inlines after a SoftBreak
+  local first = block.content[1]
+  if first and (first.t == "Para" or first.t == "Plain") then
+    local after_break = false
+    for _, inline in ipairs(first.content) do
+      if not after_break then
+        if inline.t == "SoftBreak" or inline.t == "LineBreak" then
+          after_break = true
+        end
+      else
+        -- Skip leading whitespace after the break
+        if #inlines == 0 and (inline.t == "Space" or inline.t == "SoftBreak" or inline.t == "LineBreak") then
+          -- skip
+        else
+          table.insert(inlines, inline)
+        end
+      end
+    end
+  end
+
+  -- Also collect from subsequent blocks (with empty line separator)
   for i = 2, #block.content do
     local b = block.content[i]
     if b.t == "Para" or b.t == "Plain" then
@@ -142,14 +165,12 @@ local function parse_options(header_text)
   -- Extract width (width=100% or width=\textwidth)
   local width = header_text:match("width=([%d%%%.\\%a]+)")
   if width then
-    -- Keep percentages in Pandoc-friendly form; convert later when computing fractions.
     opts.width = width
   end
   
   -- Extract fontsize
   local fontsize = header_text:match("fontsize=(%w+)")
   if fontsize then
-    -- Validate it's a known LaTeX size
     local valid_sizes = {
       tiny = true, scriptsize = true, footnotesize = true,
       small = true, normalsize = true, large = true,
@@ -167,7 +188,6 @@ local function parse_options(header_text)
   end
 
   -- Extract column widths (relative weights)
-  -- Example: columns=0.2,0.4,0.3,0.1  (will be normalized to sum=1)
   local columns = header_text:match("columns=([%d%.]+[%d%.,]*)")
   if columns then
     local col_widths = {}
@@ -180,7 +200,6 @@ local function parse_options(header_text)
   end
 
   -- Extract horizontal padding between columns
-  -- Example: colsep=4pt or colsep=2pt
   local colsep = header_text:match("colsep=([%d%.]+%a+)")
   if colsep then
     opts.colsep = colsep
@@ -203,7 +222,7 @@ local function parse_options(header_text)
     end
   end
 
-  -- Extract spanning behavior (two-column helpers)
+  -- Extract spanning behavior
   local span = header_text:match("span=(%w+)")
   if span == "full" then
     opts.span = span
@@ -230,189 +249,52 @@ local function style_table(tbl, opts)
       end
       return nil
     end
-    if width_str == "\\linewidth" then
+    if width_str == "\\linewidth" or width_str == "\\textwidth" then
       return 1.0
     end
-    if width_str == "\\textwidth" then
-      return 1.0
-    end
-    local num = width_str:match("^([%d%.]+)\\linewidth$")
+    local num = width_str:match("^([%d%.]+)\\linewidth$") or width_str:match("^([%d%.]+)\\textwidth$")
     if num then
       return tonumber(num)
-    end
-    local num_tw = width_str:match("^([%d%.]+)\\textwidth$")
-    if num_tw then
-      return tonumber(num_tw)
     end
     return nil
   end
 
-  -- Preserve existing attrs, set ID for pandoc-crossref, and attach our alignment
-  -- so downstream filters (e.g. no-longtable.lua) can honor it.
-  do
-    local id = (opts.label) or (tbl.attr and tbl.attr.identifier) or ""
-    local classes = (tbl.attr and tbl.attr.classes) or {}
-    local attrs = {}
-    if tbl.attr and tbl.attr.attributes then
-      for k, v in pairs(tbl.attr.attributes) do
-        attrs[k] = v
-      end
-    end
-    if opts.align ~= nil and opts.align ~= "" then
-      attrs["md-align"] = opts.align
-    end
-    if opts.span ~= nil and opts.span ~= "" then
-      attrs["md-span"] = opts.span
-    end
-    if opts.pos ~= nil and opts.pos ~= "" then
-      attrs["md-pos"] = opts.pos
-    end
-    if opts.wrap ~= nil and opts.wrap ~= "" then
-      attrs["md-wrap"] = opts.wrap
-    end
-    if id ~= "" or #classes > 0 or next(attrs) ~= nil then
-      tbl.attr = pandoc.Attr(id, classes, attrs)
+  -- Preserve existing attrs and set metadata for other filters
+  local id = (opts.label) or (tbl.attr and tbl.attr.identifier) or ""
+  local classes = (tbl.attr and tbl.attr.classes) or {}
+  local attrs = {}
+  if tbl.attr and tbl.attr.attributes then
+    for k, v in pairs(tbl.attr.attributes) do
+      attrs[k] = v
     end
   end
+  if opts.align ~= nil and opts.align ~= "" then attrs["md-align"] = opts.align end
+  if opts.span ~= nil and opts.span ~= "" then attrs["md-span"] = opts.span end
+  if opts.pos ~= nil and opts.pos ~= "" then attrs["md-pos"] = opts.pos end
+  if opts.wrap ~= nil and opts.wrap ~= "" then attrs["md-wrap"] = opts.wrap end
+  
+  tbl.attr = pandoc.Attr(id, classes, attrs)
 
   local is_latex = (FORMAT and (FORMAT:match("latex") or FORMAT:match("pdf"))) ~= nil
 
-  -- Width control via colspec widths (safe with longtable).
-  -- If columns=... is provided, use it as relative weights.
-  -- If width=... is a numeric fraction of \linewidth, scale total width.
+  -- Apply column widths
   if is_latex and tbl.colspecs and #tbl.colspecs > 0 then
     local ncols = #tbl.colspecs
-    local weights = nil
-
-    if opts.columns and #opts.columns == ncols then
-      weights = opts.columns
-    else
+    local weights = opts.columns or {}
+    if #weights ~= ncols then
       weights = {}
-      for _ = 1, ncols do
-        table.insert(weights, 1 / ncols)
-      end
+      for _ = 1, ncols do table.insert(weights, 1 / ncols) end
     end
 
-    local width_frac = parse_width_fraction(opts.width)
-    if width_frac == nil then
-      width_frac = 1.0
-    end
-
+    local width_frac = parse_width_fraction(opts.width) or 1.0
     local new_colspecs = {}
     for i, cs in ipairs(tbl.colspecs) do
-      local align = cs[1]
-      local w = weights[i] * width_frac
-      new_colspecs[i] = { align, w }
+      new_colspecs[i] = { cs[1], weights[i] * width_frac }
     end
     tbl.colspecs = new_colspecs
   end
 
-  local needs_styling = is_latex and (opts.align or opts.fontsize or opts.spacing or opts.colsep or opts.family)
-  if not needs_styling then
-    return tbl
-  end
-
-  -- For wrap or float environments, we can't just wrap in \begingroup ... \endgroup
-  -- because longtable (default pandoc table) floats on its own but doesn't respect [pos].
-  -- And wrapfigure doesn't work with longtable easily.
-  -- HOWEVER, if the user requests pos= or wrap=, they likely want a floating environment (table/table*)
-  -- or wraptext environment, which means we should probably treat the content as a tabular
-  -- inside a table environment, NOT a longtable.
-  --
-  -- But converting Pandoc Table AST to raw LaTeX tabular is hard.
-  --
-  -- Strategy:
-  -- If pos is set, or span=full, we assume the user accepts that the table might not break across pages
-  -- (which is true for floating tables anyway).
-  -- But wait, Pandoc emits longtable by default. Longtable does NOT float.
-  -- To make it float (pos=h/t/b), we typically need `\begin{table} ... \end{table}` wrapping a `tabular`.
-  -- Pandoc doesn't easily let us switch to `tabular` without writing a custom writer or modifying the Table AST significantly.
-  --
-  -- A common trick: If we want a floating table, we might be able to wrap the longtable in a table environment?
-  -- No, longtable inside table environment is forbidden.
-  --
-  -- If we want to support `pos`, we might need to rely on the fact that `longtable` supports some placement if it's NOT a longtable?
-  -- No, longtable is designed to break pages.
-  --
-  -- Let's look at how we handled figures. We create RawBlock latex.
-  -- For tables, we have a Table block.
-  --
-  -- If we use `pos`, we are asking for a float.
-  -- If we use `wrap`, we are asking for a wrap float.
-  --
-  -- One option: `\begin{floatingtable}[pos] ... \end{floatingtable}` ? No such standard env.
-  --
-  -- Actually, `pandoc-crossref` or other filters often struggle with this.
-  --
-  -- However, if we simply want to inject `\begin{table}[pos]` around it, we must ensure the inner table is NOT a longtable.
-  -- But Pandoc generates longtable.
-  --
-  -- A known workaround for Pandoc is to disable longtable (e.g. by using a filter that removes headers/widths? No).
-  -- Or we can just use `\begingroup` properties for fonts/spacing, but placement `pos` is tricky with longtable.
-  --
-  -- Longtable does not support [htbp]. It always places "here" and breaks pages.
-  --
-  -- If the user specifically asks for `pos=t` (top), they want a float.
-  -- To get a float, we MUST NOT use longtable.
-  --
-  -- How to force Pandoc to NOT use longtable for a specific table?
-  -- If we are in `no-longtable.lua` mode, it converts Table to simple tabulars if possible?
-  --
-  -- Let's check `no-longtable.lua` if it exists.
-  -- I saw `no-longtable.lua` in the file list earlier.
-  -- If I can detect `pos` here, maybe I should signal `no-longtable.lua` to convert this table?
-  -- Or maybe I can do it here.
-  --
-  -- Actually, `no-longtable.lua` usually runs *after* or *before*?
-  -- If this filter runs before, we can modify the table to "un-longtable" it?
-  --
-  -- Simpler approach:
-  -- If `pos` is requested, we can try to wrap the table in `\begin{table}[pos] ... \end{table}`
-  -- AND hopefully Pandoc will render the inner table as `tabular` if we trick it?
-  -- Unlikely.
-  --
-  -- WAIT. If I look at `figure-callouts.lua`, it constructs RawBlock("latex", ...).
-  -- It handles the image inclusion manually `\includegraphics`.
-  -- For tables, "manual inclusion" means writing `\begin{tabular}...`. That's extremely hard to do from Lua without re-implementing the table writer.
-  --
-  -- Alternative:
-  -- Just handle `begingroup/endgroup` style for now, and IGNORE `pos` implementation details
-  -- UNLESS we can confirm how to make it float.
-  --
-  -- BUT, if the user specifically asked for "update templater files ... to include a sensible default for position placement",
-  -- they expect it to work.
-  --
-  -- If I add `pos=!ht`, I imply it works.
-  --
-  -- Let's check `no-longtable.lua`. It might hold the key.
-  -- If `no-longtable.lua` converts tables to non-longtables, then wrapping them in `table` env is possible.
-
-  local result = {}
-  
-  -- If we have placement or wrap options, we might need to be careful about longtable.
-  -- Standard Pandoc LaTeX writer uses longtable.
-  -- Longtable cannot be inside \begin{table} or \begin{wrapfigure}.
-  --
-  -- If the user requests `pos` or `wrap` or `span=full` (which implies table* float),
-  -- we ideally want a floating environment.
-  --
-  -- Current implementation only adds \begingroup ... \endgroup.
-  --
-  -- Let's stick to the current scope: Add the *option parsing* to the Lua filter (which I did above),
-  -- and then implement the logic.
-  --
-  -- Since reimplementing table writing is complex, I will implement a "best effort" support:
-  -- 1. If `pos` or `wrap` is present, we wrap the table in a float env (table/table*/wraptable).
-  -- 2. AND we must ensure the inner table renders as `tabular`, not `longtable`.
-  --    How? We can strip the `Header` from the Table (if acceptable)?
-  --    Or maybe set `classes` to something that `no-longtable` recognizes?
-  --
-  --    Actually, standard Pandoc behavior: if a table has a caption, it uses longtable.
-  --    If it has no caption, it uses longtable (in recent versions) or tabular?
-  --
-  --    Let's look at `no-longtable.lua` to see what it does.
-  
-  -- Handle alignment via captionsetup if aligned left/right
+  -- Apply alignment and caption styling
   if is_latex and opts.align then
     local setup = nil
     if opts.align == "left" then
@@ -440,15 +322,9 @@ function Blocks(blocks)
 
   for _, blk in ipairs(blocks) do
     if blk.t == "BlockQuote" and is_table_callout(blk) and not blockquote_contains_table(blk) then
-      -- Figure-like table header callout:
-      -- > [!table] #tbl:label width=... columns=...
-      -- > Caption text...
-      -- (next block is the actual Markdown table, outside the blockquote)
       pending_opts = parse_options(stringify(blk.content[1]))
       pending_caption_inlines = extract_caption_inlines_from_table_header_callout(blk)
     elseif pending_opts ~= nil and blk.t == "RawBlock" and (blk.format == "latex" or blk.format == "tex") then
-      -- Allow LaTeX raw blocks (e.g. \begin{landscape}) between the [!table] header callout
-      -- and the actual Markdown table.
       table.insert(out, blk)
     elseif blk.t == "Table" and pending_opts ~= nil then
       if pending_caption_inlines ~= nil then
@@ -459,9 +335,7 @@ function Blocks(blocks)
       if styled ~= nil and styled.t ~= nil then
         table.insert(out, styled)
       elseif type(styled) == "table" then
-        for _, b in ipairs(styled) do
-          table.insert(out, b)
-        end
+        for _, b in ipairs(styled) do table.insert(out, b) end
       end
 
       pending_opts = nil
@@ -474,6 +348,56 @@ function Blocks(blocks)
   return out
 end
 
+local function process_citation_spacing(inlines)
+  local i = 1
+  while i < #inlines do
+    local current = inlines[i]
+    if current.t == "Cite" and #current.citations == 1 then
+      local id = current.citations[1].id
+      if id:match("^[Tt]bl:") or id:match("^[Ff]ig:") then
+        -- Handle suffix inside Cite
+        local citation = current.citations[1]
+        if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
+          table.remove(citation.suffix, 1)
+        end
+
+        -- Handle suffix outside Cite (narrative style)
+        local next_inline = inlines[i+1]
+        local third_inline = inlines[i+2]
+        if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
+           if #third_inline.text <= 2 then
+             table.remove(inlines, i+1)
+           end
+        end
+      end
+    end
+    i = i + 1
+  end
+  return inlines
+end
+
+function Para(para)
+  para.content = process_citation_spacing(para.content)
+  return para
+end
+
+function Plain(plain)
+  plain.content = process_citation_spacing(plain.content)
+  return plain
+end
+
+function Strong(strong)
+  strong.content = process_citation_spacing(strong.content)
+  return strong
+end
+
+function Emph(emph)
+  emph.content = process_citation_spacing(emph.content)
+  return emph
+end
+
 return {
-  {Blocks = Blocks}
+  {Meta = function(meta) return nil end},
+  {Blocks = Blocks},
+  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph}
 }

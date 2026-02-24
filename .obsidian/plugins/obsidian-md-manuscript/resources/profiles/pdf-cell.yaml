@@ -34,6 +34,8 @@ variables:
     - \usepackage{adjustbox}
     - \usepackage{wrapfig}
     - \usepackage{float}
+    - \usepackage[normalem]{ulem}
+    - \usepackage{caption}
     - \setlength{\parindent}{0pt}
     - \setlength{\parskip}{0.5\baselineskip}
     - \makeatletter

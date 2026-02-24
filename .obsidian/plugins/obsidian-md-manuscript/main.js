@@ -104,10 +104,11 @@ var PAPER_SIZE_PRESETS = {
   letter: "US Letter"
 };
 var MARGIN_PRESETS = {
-  "": "Profile Default",
-  standard: "Standard (2.5cm)",
-  narrow: "Narrow (1.27cm)",
-  wide: "Wide (3.0cm)"
+  "": { name: "Profile Default", top: "", bottom: "", left: "", right: "" },
+  standard: { name: "Standard (2.5cm)", top: "2.5cm", bottom: "2.5cm", left: "2.5cm", right: "2.5cm" },
+  narrow: { name: "Narrow (1.27cm)", top: "1.27cm", bottom: "1.27cm", left: "1.27cm", right: "1.27cm" },
+  wide: { name: "Wide (3.0cm)", top: "3cm", bottom: "3cm", left: "3cm", right: "3cm" },
+  custom: { name: "Custom", top: "", bottom: "", left: "", right: "" }
 };
 var CITATION_STYLE_NAMES = {
   vancouver: "Vancouver",
@@ -374,6 +375,10 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       figureBackground: "white",
       paperSize: "",
       margins: "",
+      marginTop: "",
+      marginBottom: "",
+      marginLeft: "",
+      marginRight: "",
       visualizeCaptions: false,
       captionStyle: "plain",
       digitalGarden: false
@@ -409,6 +414,10 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
           figureBackground: data.figure_background || "white",
           paperSize: data.papersize || "",
           margins: data.margins || "",
+          marginTop: data.margin_top || "",
+          marginBottom: data.margin_bottom || "",
+          marginLeft: data.margin_left || "",
+          marginRight: data.margin_right || "",
           visualizeCaptions: data.visualize_captions || false,
           captionStyle: data.caption_style || "plain",
           digitalGarden: data.digital_garden || false
@@ -444,6 +453,10 @@ var ManuscriptBuildPlugin = class extends import_obsidian.Plugin {
       figure_background: config.figureBackground || null,
       papersize: config.paperSize || null,
       margins: config.margins || null,
+      margin_top: config.marginTop || null,
+      margin_bottom: config.marginBottom || null,
+      margin_left: config.marginLeft || null,
+      margin_right: config.marginRight || null,
       visualize_captions: config.visualizeCaptions || false,
       caption_style: config.captionStyle || "plain",
       digital_garden: config.digitalGarden || false
@@ -565,8 +578,17 @@ Error: ${err.message}`, true);
     if (config.paperSize) {
       args.push(`--papersize=${config.paperSize}`);
     }
-    if (config.margins) {
-      args.push(`--margins=${config.margins}`);
+    if (config.marginTop) {
+      args.push(`--margin-top=${config.marginTop}`);
+    }
+    if (config.marginBottom) {
+      args.push(`--margin-bottom=${config.marginBottom}`);
+    }
+    if (config.marginLeft) {
+      args.push(`--margin-left=${config.marginLeft}`);
+    }
+    if (config.marginRight) {
+      args.push(`--margin-right=${config.marginRight}`);
     }
     if (config.citationStyle) {
       args.push(`--csl=${config.citationStyle}`);
@@ -660,6 +682,10 @@ var BuildModal = class extends import_obsidian.Modal {
         figureBackground: "white",
         paperSize: "",
         margins: "",
+        marginTop: "",
+        marginBottom: "",
+        marginLeft: "",
+        marginRight: "",
         visualizeCaptions: plugin.settings.defaultVisualizeCaptions,
         captionStyle: plugin.settings.defaultCaptionStyle,
         digitalGarden: false
@@ -906,13 +932,59 @@ var BuildModal = class extends import_obsidian.Modal {
     });
     new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Margins").setDesc("Override document margins").addDropdown((dropdown) => {
       this.marginsDropdown = dropdown;
-      Object.entries(MARGIN_PRESETS).forEach(([key, name]) => {
-        dropdown.addOption(key, name);
+      Object.entries(MARGIN_PRESETS).forEach(([key, preset]) => {
+        dropdown.addOption(key, preset.name);
       });
       dropdown.setValue(this.config.margins);
       dropdown.onChange((value) => {
+        var _a2, _b2, _c, _d;
         this.config.margins = value;
+        if (value && MARGIN_PRESETS[value] && value !== "custom") {
+          const preset = MARGIN_PRESETS[value];
+          this.config.marginTop = preset.top;
+          this.config.marginBottom = preset.bottom;
+          this.config.marginLeft = preset.left;
+          this.config.marginRight = preset.right;
+          (_a2 = this.marginTopInput) == null ? void 0 : _a2.setValue(preset.top);
+          (_b2 = this.marginBottomInput) == null ? void 0 : _b2.setValue(preset.bottom);
+          (_c = this.marginLeftInput) == null ? void 0 : _c.setValue(preset.left);
+          (_d = this.marginRightInput) == null ? void 0 : _d.setValue(preset.right);
+        }
       });
+    });
+    const setCustomMargins = () => {
+      var _a2;
+      this.config.margins = "custom";
+      (_a2 = this.marginsDropdown) == null ? void 0 : _a2.setValue("custom");
+    };
+    new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Custom Margins").setDesc("Top, Bottom, Left, Right (e.g. 2cm, 1in)").addText((text) => {
+      this.marginTopInput = text;
+      text.setPlaceholder("Top").setValue(this.config.marginTop).onChange((v) => {
+        this.config.marginTop = v;
+        setCustomMargins();
+      });
+      text.inputEl.style.width = "65px";
+    }).addText((text) => {
+      this.marginBottomInput = text;
+      text.setPlaceholder("Bottom").setValue(this.config.marginBottom).onChange((v) => {
+        this.config.marginBottom = v;
+        setCustomMargins();
+      });
+      text.inputEl.style.width = "65px";
+    }).addText((text) => {
+      this.marginLeftInput = text;
+      text.setPlaceholder("Left").setValue(this.config.marginLeft).onChange((v) => {
+        this.config.marginLeft = v;
+        setCustomMargins();
+      });
+      text.inputEl.style.width = "65px";
+    }).addText((text) => {
+      this.marginRightInput = text;
+      text.setPlaceholder("Right").setValue(this.config.marginRight).onChange((v) => {
+        this.config.marginRight = v;
+        setCustomMargins();
+      });
+      text.inputEl.style.width = "65px";
     });
     new import_obsidian.Setting(typeGrid).setClass("manuscript-setting-compact").setName("Line Numbers").setDesc("Three-state: Default / On / Off").addDropdown((dropdown) => {
       this.lineNumbersDropdown = dropdown;
@@ -1030,7 +1102,7 @@ var BuildModal = class extends import_obsidian.Modal {
     this.updateFileSelectors();
   }
   restoreDefaults() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _i, _j, _k, _l, _m, _n, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y;
     const mdFiles = this.allFiles;
     const settings = this.plugin.settings;
     this.showAllFiles = false;
@@ -1052,6 +1124,10 @@ var BuildModal = class extends import_obsidian.Modal {
     this.config.figureBackground = "white";
     this.config.paperSize = "";
     this.config.margins = "";
+    this.config.marginTop = "";
+    this.config.marginBottom = "";
+    this.config.marginLeft = "";
+    this.config.marginRight = "";
     this.config.visualizeCaptions = settings.defaultVisualizeCaptions;
     this.config.captionStyle = settings.defaultCaptionStyle;
     this.config.digitalGarden = false;
@@ -1079,15 +1155,19 @@ var BuildModal = class extends import_obsidian.Modal {
     (_j = this.languageDropdown) == null ? void 0 : _j.setValue(this.config.language);
     (_k = this.paperSizeDropdown) == null ? void 0 : _k.setValue(this.config.paperSize);
     (_l = this.marginsDropdown) == null ? void 0 : _l.setValue(this.config.margins);
-    (_m = this.citationDropdown) == null ? void 0 : _m.setValue(this.config.citationStyle);
-    (_n = this.pngToggle) == null ? void 0 : _n.setValue(this.config.usePng);
-    (_o = this.siRefsToggle) == null ? void 0 : _o.setValue(this.config.includeSiRefs);
-    (_p = this.isSiToggle) == null ? void 0 : _p.setValue(this.config.isSi);
-    (_q = this.figureFormatDropdown) == null ? void 0 : _q.setValue(this.config.figureFormat);
-    (_r = this.figureBackgroundDropdown) == null ? void 0 : _r.setValue(this.config.figureBackground);
-    (_s = this.visualizeCaptionsToggle) == null ? void 0 : _s.setValue(this.config.visualizeCaptions);
-    (_t = this.captionStyleToggle) == null ? void 0 : _t.setValue(this.config.captionStyle === "html");
-    (_u = this.digitalGardenToggle) == null ? void 0 : _u.setValue(this.config.digitalGarden);
+    (_m = this.marginTopInput) == null ? void 0 : _m.setValue(this.config.marginTop);
+    (_n = this.marginBottomInput) == null ? void 0 : _n.setValue(this.config.marginBottom);
+    (_o = this.marginLeftInput) == null ? void 0 : _o.setValue(this.config.marginLeft);
+    (_p = this.marginRightInput) == null ? void 0 : _p.setValue(this.config.marginRight);
+    (_q = this.citationDropdown) == null ? void 0 : _q.setValue(this.config.citationStyle);
+    (_r = this.pngToggle) == null ? void 0 : _r.setValue(this.config.usePng);
+    (_s = this.siRefsToggle) == null ? void 0 : _s.setValue(this.config.includeSiRefs);
+    (_t = this.isSiToggle) == null ? void 0 : _t.setValue(this.config.isSi);
+    (_u = this.figureFormatDropdown) == null ? void 0 : _u.setValue(this.config.figureFormat);
+    (_v = this.figureBackgroundDropdown) == null ? void 0 : _v.setValue(this.config.figureBackground);
+    (_w = this.visualizeCaptionsToggle) == null ? void 0 : _w.setValue(this.config.visualizeCaptions);
+    (_x = this.captionStyleToggle) == null ? void 0 : _x.setValue(this.config.captionStyle === "html");
+    (_y = this.digitalGardenToggle) == null ? void 0 : _y.setValue(this.config.digitalGarden);
     this.updateFormatOptions(currentFormat);
     this.siFileContainer.style.display = "none";
     if (this.figureBackgroundContainer) {

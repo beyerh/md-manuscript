@@ -15,14 +15,10 @@ local stringify = pandoc.utils.stringify
 local is_twocolumn = false
 
 local function meta_list_contains(meta_value, needle)
-  if meta_value == nil then
-    return false
-  end
+  if meta_value == nil then return false end
   if type(meta_value) == "table" and meta_value.t == "MetaList" then
     for _, item in ipairs(meta_value) do
-      if stringify(item) == needle then
-        return true
-      end
+      if stringify(item) == needle then return true end
     end
     return false
   end
@@ -36,44 +32,26 @@ end
 
 local function parse_width_value(header_text)
   local width = header_text:match("width=([%d%%%.\\%a]+)")
-  if not width then
-    return nil
-  end
+  if not width then return nil end
 
-  -- Prefer Pandoc-native width values (percentages or absolute lengths).
-  -- Pandoc understands percentages like "50%" and converts them appropriately
-  -- for LaTeX/PDF (typically relative to \linewidth).
-  if width:match("%%$") then
-    return width
-  end
-
-  -- Map common LaTeX width macros to percentages.
+  if width:match("%%$") then return width end
   if width == "\\linewidth" or width == "linewidth" or width == "\\textwidth" or width == "textwidth" then
     return "100%"
   end
 
-  -- Map numeric factors like 0.5\linewidth or 0.9\textwidth to percentages.
   local factor = width:match("^([%d%.]+)\\linewidth$") or width:match("^([%d%.]+)linewidth$")
-  if not factor then
-    factor = width:match("^([%d%.]+)\\textwidth$") or width:match("^([%d%.]+)textwidth$")
-  end
+  if not factor then factor = width:match("^([%d%.]+)\\textwidth$") or width:match("^([%d%.]+)textwidth$") end
   if factor then
     local f = tonumber(factor)
-    if f then
-      return string.format("%.0f%%", f * 100)
-    end
+    if f then return string.format("%.0f%%", f * 100) end
   end
 
-  -- If a bare number is provided, interpret <= 1 as a fraction of full width.
   local bare = tonumber(width)
   if bare then
-    if bare <= 1 then
-      return string.format("%.0f%%", bare * 100)
-    end
+    if bare <= 1 then return string.format("%.0f%%", bare * 100) end
     return tostring(bare)
   end
 
-  -- Otherwise, keep as-is (e.g. "8cm", "120mm").
   return width
 end
 
@@ -85,54 +63,32 @@ local function render_inlines_as_latex(inlines)
 end
 
 local function width_to_latex_dimension(width_str)
-  if not width_str or width_str == "" then
-    return "\\textwidth"
-  end
+  if not width_str or width_str == "" then return "\\textwidth" end
 
   if width_str:match("%%$") then
     local pct = tonumber(width_str:match("^([%d%.]+)%%$"))
     if pct then
-      if pct >= 100 then
-        return "\\textwidth"
-      end
+      if pct >= 100 then return "\\textwidth" end
       return string.format("%.4f\\textwidth", pct / 100)
     end
   end
 
-  if width_str == "\\linewidth" or width_str == "linewidth" then
-    return "\\textwidth"
-  end
-  if width_str == "\\textwidth" or width_str == "textwidth" then
+  if width_str == "\\linewidth" or width_str == "linewidth" or width_str == "\\textwidth" or width_str == "textwidth" then
     return "\\textwidth"
   end
 
-  local factor = width_str:match("^([%d%.]+)\\linewidth$") or width_str:match("^([%d%.]+)linewidth$")
+  local factor = width_str:match("^([%d%.]+)\\linewidth$") or width_str:match("^([%d%.]+)linewidth$") or width_str:match("^([%d%.]+)\\textwidth$") or width_str:match("^([%d%.]+)textwidth$")
   if factor then
     local f = tonumber(factor)
     if f then
-      if f >= 1 then
-        return "\\textwidth"
-      end
-      return string.format("%.4f\\textwidth", f)
-    end
-  end
-
-  local factor_tw = width_str:match("^([%d%.]+)\\textwidth$") or width_str:match("^([%d%.]+)textwidth$")
-  if factor_tw then
-    local f = tonumber(factor_tw)
-    if f then
-      if f >= 1 then
-        return "\\textwidth"
-      end
+      if f >= 1 then return "\\textwidth" end
       return string.format("%.4f\\textwidth", f)
     end
   end
 
   local bare = tonumber(width_str)
   if bare then
-    if bare <= 1 then
-      return string.format("%.4f\\textwidth", bare)
-    end
+    if bare <= 1 then return string.format("%.4f\\textwidth", bare) end
     return tostring(bare)
   end
 
@@ -150,9 +106,7 @@ local function replace_first_image_in_blocks(blocks, new_image)
         end
       end
     elseif b.t == "Div" and b.content then
-      if replace_first_image_in_blocks(b.content, new_image) then
-        return true
-      end
+      if replace_first_image_in_blocks(b.content, new_image) then return true end
     end
   end
   return false
@@ -165,97 +119,41 @@ local function prepend_rawinline_to_first_para(blocks, raw_latex)
       blocks[bi] = b
       return true
     elseif b.t == "Div" and b.content then
-      if prepend_rawinline_to_first_para(b.content, raw_latex) then
-        return true
-      end
+      if prepend_rawinline_to_first_para(b.content, raw_latex) then return true end
     end
   end
   return false
 end
 
--- Check if a block is a figure callout
 local function is_figure_callout(block)
-  if block.t ~= "BlockQuote" then
-    return false
-  end
-  
-  local content = block.content
-  if #content == 0 then
-    return false
-  end
-  
-  -- First element should be a Para starting with [!figure]
-  local first = content[1]
-  if (first.t ~= "Para" and first.t ~= "Plain") or #first.content == 0 then
-    return false
-  end
-  
-  local text = stringify(first)
-  return text:match("%[!figure%]")
+  if block.t ~= "BlockQuote" or #block.content == 0 then return false end
+  local first = block.content[1]
+  if (first.t ~= "Para" and first.t ~= "Plain") or #first.content == 0 then return false end
+  return stringify(first):match("%[!figure%]")
 end
 
--- Main filter function
 function BlockQuote(block)
-  if not is_figure_callout(block) then
-    return nil
-  end
+  if not is_figure_callout(block) then return nil end
   
-  local content = block.content
-  local label = nil
-  local width_value = nil
-  local align_value = nil
-  local span_value = nil
-  local pos_value = nil
-  local wrap_value = nil
-  local image = nil
+  local label, width_value, align_value, span_value, pos_value, wrap_value, image
   local caption_inlines = {}
   local found_image = false
 
-  local function block_inlines(blk)
+  for _, blk in ipairs(block.content) do
     if blk.t == "Para" or blk.t == "Plain" then
-      return blk.content
-    end
-    return nil
-  end
-
-  -- Parse all blocks in the callout
-  for i, blk in ipairs(content) do
-    local inlines = block_inlines(blk)
-    if inlines then
       local text = stringify(blk)
-
       if text:match("%[!figure%]") then
         label = text:match("#([%w%-_:]+)")
-        if width_value == nil then
-          width_value = parse_width_value(text)
-        end
-
-        if align_value == nil then
-          local a = text:match("align=(%w+)")
-          if a == "left" or a == "center" or a == "right" then
-            align_value = a
-          end
-        end
-
-        if span_value == nil then
-          local s = text:match("span=(%w+)")
-          if s == "full" then
-            span_value = s
-          end
-        end
-
-        if pos_value == nil then
-          pos_value = text:match("pos=([%a!]+)") or text:match("placement=([%a!]+)")
-        end
-
-        if wrap_value == nil then
-          wrap_value = text:match("wrap=([a-zA-Z]+)")
-        end
+        width_value = parse_width_value(text)
+        align_value = text:match("align=(%w+)")
+        span_value = text:match("span=full") and "full" or nil
+        pos_value = text:match("pos=([%a!]+)") or text:match("placement=([%a!]+)")
+        wrap_value = text:match("wrap=([a-zA-Z]+)")
       end
 
       local image_pos = nil
       if not found_image then
-        for idx, inline in ipairs(inlines) do
+        for idx, inline in ipairs(blk.content) do
           if inline.t == "Image" then
             image = inline
             found_image = true
@@ -266,204 +164,119 @@ function BlockQuote(block)
       end
 
       if found_image then
-        local start_idx = 1
-        if image_pos ~= nil then
-          start_idx = image_pos + 1
-        end
-
-        if start_idx <= #inlines then
-          if #caption_inlines > 0 then
-            table.insert(caption_inlines, pandoc.Space())
-          end
-          for j = start_idx, #inlines do
-            table.insert(caption_inlines, inlines[j])
+        local start = (image_pos or 0) + 1
+        for j = start, #blk.content do
+          local el = blk.content[j]
+          if #caption_inlines == 0 and (el.t == "Space" or el.t == "SoftBreak" or el.t == "LineBreak") then
+            -- skip leading whitespace between image and caption
+          else
+            table.insert(caption_inlines, el)
           end
         end
       end
     end
   end
   
-  -- Remove trailing space from caption
-  if #caption_inlines > 0 and caption_inlines[#caption_inlines].t == "Space" then
-    table.remove(caption_inlines)
-  end
-  
-  -- If no image found, return unchanged
-  if not image then
-    return nil
-  end
+  if #caption_inlines > 0 and caption_inlines[#caption_inlines].t == "Space" then table.remove(caption_inlines) end
+  if not image then return nil end
 
   local fig_id = label or (image.attr and image.attr.identifier) or ""
-
   local is_latex = (FORMAT and (FORMAT:match("latex") or FORMAT:match("pdf"))) ~= nil
 
-  -- Create image with caption as alt text
-  -- Preserve existing classes/attributes, but ensure a sane default width in LaTeX/PDF.
-  local img_classes = image.attr and image.attr.classes or {}
   local img_attrs = {}
   if image.attr and image.attr.attributes then
-    for k, v in pairs(image.attr.attributes) do
-      img_attrs[k] = v
-    end
+    for k, v in pairs(image.attr.attributes) do img_attrs[k] = v end
   end
+  if is_latex then img_attrs["width"] = width_value or img_attrs["width"] or "100%" end
 
-  if is_latex then
-    if width_value ~= nil then
-      img_attrs["width"] = width_value
-    elseif img_attrs["width"] == nil then
-      img_attrs["width"] = "100%"
-    end
-  end
-
-  local img_attr = pandoc.Attr("", img_classes, img_attrs)
-
-  -- Create new image with caption inlines and label
-  local new_image = pandoc.Image(caption_inlines, image.src, image.title, img_attr)
+  local new_image = pandoc.Image(caption_inlines, image.src, image.title, pandoc.Attr("", image.attr.classes, img_attrs))
   
-
-  -- Build a real Figure node using pandoc.read so the result is a proper
-  -- Pandoc 2.x userdata object (important: LaTeX writer otherwise may drop captions).
-  local placeholder_md = "![x](" .. image.src .. ")"
-  if fig_id ~= "" then
-    placeholder_md = placeholder_md .. "{#" .. fig_id .. "}"
-  end
-
-  -- Ensure width survives even if Figure internals differ across pandoc versions.
   if is_latex then
-    local w = img_attrs["width"]
-    if w ~= nil and w ~= "" then
-      if fig_id ~= "" then
-        placeholder_md = "![x](" .. image.src .. "){#" .. fig_id .. " width=" .. w .. "}"
-      else
-        placeholder_md = "![x](" .. image.src .. "){width=" .. w .. "}"
-      end
+    -- Handle wrapfigure
+    if wrap_value then
+      local pos_char = wrap_value:sub(1,1):upper()
+      local wdim = width_to_latex_dimension(img_attrs["width"])
+      if wdim == "\\textwidth" then wdim = "0.5\\textwidth" end
+      
+      local latex = {
+        "\\begin{wrapfigure}{" .. pos_char .. "}{" .. wdim .. "}",
+        "\\centering",
+        "\\includegraphics[width=\\linewidth]{" .. image.src .. "}"
+      }
+      if #caption_inlines > 0 then table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}") end
+      if fig_id ~= "" then table.insert(latex, "\\label{" .. fig_id .. "}") end
+      table.insert(latex, "\\end{wrapfigure}")
+      return pandoc.RawBlock("latex", table.concat(latex, "\n"))
+    end
+
+    -- Handle standard floats with pos or span
+    if span_value == "full" or pos_value then
+      local env = span_value == "full" and "figure*" or "figure"
+      local placement = pos_value and ("[" .. pos_value .. "]") or (span_value == "full" and "[t]" or "")
+      local cap_just = align_value == "left" and "raggedright" or (align_value == "right" and "raggedleft" or "centering")
+      local align_cmd = align_value == "left" and "\\raggedright" or (align_value == "right" and "\\raggedleft" or "\\centering")
+      
+      local latex = {
+        "\\begin{" .. env .. "}" .. placement,
+        align_cmd,
+        "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=off}\\fi",
+        "\\includegraphics[width=" .. width_to_latex_dimension(img_attrs["width"]) .. "]{" .. image.src .. "}"
+      }
+      if #caption_inlines > 0 then table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}") end
+      if fig_id ~= "" then table.insert(latex, "\\label{" .. fig_id .. "}") end
+      table.insert(latex, "\\end{" .. env .. "}")
+      return pandoc.RawBlock("latex", table.concat(latex, "\n"))
+    end
+
+    -- Standard figure alignment injection
+    local placeholder_md = "![x](" .. image.src .. ")" .. (fig_id ~= "" and ("{#" .. fig_id .. "}") or "")
+    local doc = pandoc.read(placeholder_md, "markdown+implicit_figures")
+    local fig = doc.blocks[1]
+    if fig and fig.t == "Figure" then
+      fig.caption.long = { pandoc.Plain(caption_inlines) }
+      if fig_id ~= "" then fig.attr = pandoc.Attr(fig_id, {}, span_value == "full" and {["md-span"]="full"} or {}) end
+      replace_first_image_in_blocks(fig.content, new_image)
+      
+      local cap_just = align_value == "left" and "raggedright" or (align_value == "right" and "raggedleft" or "centering")
+      local align_cmd = align_value == "left" and "\\raggedright" or (align_value == "right" and "\\raggedleft" or "\\centering")
+      prepend_rawinline_to_first_para(fig.content, align_cmd .. "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=off}\\fi")
+      return fig
     end
   end
 
-  local doc = pandoc.read(placeholder_md, "markdown+implicit_figures")
-  local fig = doc.blocks[1]
-
-  if fig and fig.t == "Figure" then
-  fig.caption.long = { pandoc.Plain(caption_inlines) }
-  if fig_id ~= "" then
-    local attrs = {}
-    if span_value == "full" then
-      attrs["md-span"] = "full"
-    end
-    fig.attr = pandoc.Attr(fig_id, {}, attrs)
-  end
-
-  -- Replace the placeholder image with our real image (attrs/title/alt)
-  if fig.content then
-    replace_first_image_in_blocks(fig.content, new_image)
-  end
-
-  -- Handle wrapfigure (LaTeX only)
-  if is_latex and wrap_value then
-    local latex = {}
-    -- Default to uppercase 'R' (floating right) if value is unrecognized,
-    -- but usually user specifies l/L/r/R/i/I/o/O.
-    -- Lowercase = force exact position (no float).
-    -- Uppercase = allow floating.
-    local pos_char = "R"
-
-    if wrap_value == "left" or wrap_value == "l" then pos_char = "l"
-    elseif wrap_value == "Left" or wrap_value == "L" then pos_char = "L"
-    elseif wrap_value == "right" or wrap_value == "r" then pos_char = "r"
-    elseif wrap_value == "Right" or wrap_value == "R" then pos_char = "R"
-    elseif wrap_value == "inner" or wrap_value == "i" then pos_char = "i"
-    elseif wrap_value == "Inner" or wrap_value == "I" then pos_char = "I"
-    elseif wrap_value == "outer" or wrap_value == "o" then pos_char = "o"
-    elseif wrap_value == "Outer" or wrap_value == "O" then pos_char = "O"
-    end
-    
-    local w = img_attrs["width"]
-    local wdim = width_to_latex_dimension(w)
-    if wdim == "\\textwidth" then wdim = "0.5\\textwidth" end -- Default to half if full width specified for wrap
-    
-    table.insert(latex, "\\begin{wrapfigure}{" .. pos_char .. "}{" .. wdim .. "}")
-    table.insert(latex, "\\centering")
-    table.insert(latex, "\\includegraphics[width=\\linewidth]{" .. image.src .. "}") -- Use linewidth inside wrapfig
-    
-    if #caption_inlines > 0 then
-      table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}")
-    end
-    if fig_id ~= "" then
-      table.insert(latex, "\\label{" .. fig_id .. "}")
-    end
-    table.insert(latex, "\\end{wrapfigure}")
-    return pandoc.RawBlock("latex", table.concat(latex, "\n"))
-  end
-
-  -- Handle standard figure placement (LaTeX only)
-  if is_latex and (span_value == "full" or pos_value) then
-    local latex = {}
-    local env = "figure"
-    if span_value == "full" then env = "figure*" end
-    
-    local placement = ""
-    if pos_value then
-      placement = "[" .. pos_value .. "]"
-    elseif span_value == "full" then
-      placement = "[t]" -- Default for figure*
-    end
-
-    table.insert(latex, "\\begin{" .. env .. "}" .. placement)
-
-    local align_cmd = "\\centering"
-    local cap_just = "centering"
-    if align_value == "left" then
-      align_cmd = "\\raggedright"
-      cap_just = "raggedright"
-    elseif align_value == "right" then
-      align_cmd = "\\raggedleft"
-      cap_just = "raggedleft"
-    end
-    table.insert(latex, align_cmd)
-    table.insert(latex, "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=off}\\fi")
-
-    local w = img_attrs["width"]
-    local wdim = width_to_latex_dimension(w)
-    table.insert(latex, "\\includegraphics[width=" .. wdim .. "]{" .. image.src .. "}")
-
-    if #caption_inlines > 0 then
-      table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}")
-    end
-    if fig_id ~= "" then
-      table.insert(latex, "\\label{" .. fig_id .. "}")
-    end
-    table.insert(latex, "\\end{" .. env .. "}")
-    return pandoc.RawBlock("latex", table.concat(latex, "\n"))
-  end
-
-    if is_latex and align_value ~= nil and fig.content ~= nil then
-      local align_cmd = nil
-      local cap_just = nil
-      if align_value == "left" then
-        align_cmd = "\\raggedright"
-        cap_just = "raggedright"
-      elseif align_value == "right" then
-        align_cmd = "\\raggedleft"
-        cap_just = "raggedleft"
-      else
-        align_cmd = "\\centering"
-        cap_just = "centering"
-      end
-
-      -- Keep the Figure content as a single block (avoid triggering pandoc's
-      -- multi-block figure minipage layout) by injecting alignment as RawInline.
-      local cap_setup = "\\ifcsname captionsetup\\endcsname\\captionsetup{justification=" .. cap_just .. ",singlelinecheck=off}\\fi"
-      prepend_rawinline_to_first_para(fig.content, align_cmd .. cap_setup)
-    end
-
-    return fig
-  end
-
-  -- Fallback
   return pandoc.Para{new_image}
 end
 
+local function process_citation_spacing(inlines)
+  local i = 1
+  while i < #inlines do
+    local current = inlines[i]
+    if current.t == "Cite" and #current.citations == 1 then
+      local id = current.citations[1].id
+      if id:match("^[Tt]bl:") or id:match("^[Ff]ig:") then
+        local citation = current.citations[1]
+        if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
+          table.remove(citation.suffix, 1)
+        end
+        local next_inline = inlines[i+1]
+        local third_inline = inlines[i+2]
+        if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
+           if #third_inline.text <= 2 then table.remove(inlines, i+1) end
+        end
+      end
+    end
+    i = i + 1
+  end
+  return inlines
+end
+
+function Para(para) para.content = process_citation_spacing(para.content) return para end
+function Plain(plain) plain.content = process_citation_spacing(plain.content) return plain end
+function Strong(strong) strong.content = process_citation_spacing(strong.content) return strong end
+function Emph(emph) emph.content = process_citation_spacing(emph.content) return emph end
+
 return {
-  Meta = Meta,
-  BlockQuote = BlockQuote
+  {Meta = Meta},
+  {BlockQuote = BlockQuote},
+  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph}
 }

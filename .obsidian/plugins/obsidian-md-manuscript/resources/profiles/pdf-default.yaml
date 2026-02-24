@@ -35,6 +35,8 @@ variables:
     - \usepackage{adjustbox}
     - \usepackage{wrapfig}
     - \usepackage{float}
+    - \usepackage[normalem]{ulem}
+
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}
@@ -46,7 +48,7 @@ variables:
     - \setlength{\parskip}{0pt}
     # Bold caption labels (Figure 1:, Table 1:)
     - \usepackage{caption}
-    - \captionsetup{labelfont=bf,labelsep=colon}
+    - \captionsetup{format=plain,labelfont=bf,labelsep=colon}
     # Better float placement (prevent excessive whitespace)
     - \renewcommand{\floatpagefraction}{0.8}
     - \renewcommand{\topfraction}{0.9}

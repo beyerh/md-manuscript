@@ -18,7 +18,9 @@ reader: markdown+mark+raw_html+raw_tex+implicit_figures
 # --- Filters ---
 # Custom filter to convert longtable to tabular for twocolumn compatibility
 filters:
+  - resources/html-formatting.lua
   - resources/color-text.lua
+  - resources/underline.lua
   - resources/figure-callouts.lua
   - resources/table-callouts.lua
   - pandoc-crossref
@@ -48,6 +50,7 @@ variables:
     - \usepackage{adjustbox}
     - \usepackage{wrapfig}
     - \usepackage{float}
+    - \usepackage[normalem]{ulem}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \usepackage{cuted}
     - \providecommand{\mdtwocolumnstart}{\begin{strip}}

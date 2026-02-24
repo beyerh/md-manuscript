@@ -54,6 +54,10 @@ interface BuildConfig {
 	figureBackground: string;
 	paperSize: string;
 	margins: string;
+	marginTop: string;
+	marginBottom: string;
+	marginLeft: string;
+	marginRight: string;
 	visualizeCaptions: boolean;
 	captionStyle: string;
 	digitalGarden: boolean;
@@ -142,11 +146,20 @@ const PAPER_SIZE_PRESETS: Record<string, string> = {
 	letter: "US Letter",
 };
 
-const MARGIN_PRESETS: Record<string, string> = {
-	"": "Profile Default",
-	standard: "Standard (2.5cm)",
-	narrow: "Narrow (1.27cm)",
-	wide: "Wide (3.0cm)",
+interface MarginPreset {
+	name: string;
+	top: string;
+	bottom: string;
+	left: string;
+	right: string;
+}
+
+const MARGIN_PRESETS: Record<string, MarginPreset> = {
+	"": { name: "Profile Default", top: "", bottom: "", left: "", right: "" },
+	standard: { name: "Standard (2.5cm)", top: "2.5cm", bottom: "2.5cm", left: "2.5cm", right: "2.5cm" },
+	narrow: { name: "Narrow (1.27cm)", top: "1.27cm", bottom: "1.27cm", left: "1.27cm", right: "1.27cm" },
+	wide: { name: "Wide (3.0cm)", top: "3cm", bottom: "3cm", left: "3cm", right: "3cm" },
+	custom: { name: "Custom", top: "", bottom: "", left: "", right: "" },
 };
 
 // Citation styles are loaded dynamically from resources/citation_styles/
@@ -498,6 +511,10 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			figureBackground: "white",
 			paperSize: "",
 			margins: "",
+			marginTop: "",
+			marginBottom: "",
+			marginLeft: "",
+			marginRight: "",
 			visualizeCaptions: false,
 			captionStyle: "plain",
 			digitalGarden: false,
@@ -534,6 +551,10 @@ export default class ManuscriptBuildPlugin extends Plugin {
 					figureBackground: data.figure_background || "white",
 					paperSize: data.papersize || "",
 					margins: data.margins || "",
+					marginTop: data.margin_top || "",
+					marginBottom: data.margin_bottom || "",
+					marginLeft: data.margin_left || "",
+					marginRight: data.margin_right || "",
 					visualizeCaptions: data.visualize_captions || false,
 					captionStyle: data.caption_style || "plain",
 					digitalGarden: data.digital_garden || false,
@@ -570,6 +591,10 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			figure_background: config.figureBackground || null,
 			papersize: config.paperSize || null,
 			margins: config.margins || null,
+			margin_top: config.marginTop || null,
+			margin_bottom: config.marginBottom || null,
+			margin_left: config.marginLeft || null,
+			margin_right: config.marginRight || null,
 			visualize_captions: config.visualizeCaptions || false,
 			caption_style: config.captionStyle || "plain",
 			digital_garden: config.digitalGarden || false,
@@ -718,8 +743,17 @@ export default class ManuscriptBuildPlugin extends Plugin {
 			args.push(`--papersize=${config.paperSize}`);
 		}
 
-		if (config.margins) {
-			args.push(`--margins=${config.margins}`);
+		if (config.marginTop) {
+			args.push(`--margin-top=${config.marginTop}`);
+		}
+		if (config.marginBottom) {
+			args.push(`--margin-bottom=${config.marginBottom}`);
+		}
+		if (config.marginLeft) {
+			args.push(`--margin-left=${config.marginLeft}`);
+		}
+		if (config.marginRight) {
+			args.push(`--margin-right=${config.marginRight}`);
 		}
 
 		if (config.citationStyle) {
@@ -822,6 +856,10 @@ class BuildModal extends Modal {
 	private languageDropdown: DropdownComponent;
 	private paperSizeDropdown: DropdownComponent;
 	private marginsDropdown: DropdownComponent;
+	private marginTopInput: any;
+	private marginBottomInput: any;
+	private marginLeftInput: any;
+	private marginRightInput: any;
 	private citationDropdown: DropdownComponent;
 	private siRefsToggle: ToggleComponent;
 	private siFileButton: ButtonComponent;
@@ -873,6 +911,10 @@ class BuildModal extends Modal {
 				figureBackground: "white",
 				paperSize: "",
 				margins: "",
+				marginTop: "",
+				marginBottom: "",
+				marginLeft: "",
+				marginRight: "",
 				visualizeCaptions: plugin.settings.defaultVisualizeCaptions,
 				captionStyle: plugin.settings.defaultCaptionStyle,
 				digitalGarden: false,
@@ -1262,13 +1304,55 @@ class BuildModal extends Modal {
 			.setDesc("Override document margins")
 			.addDropdown((dropdown) => {
 				this.marginsDropdown = dropdown;
-				Object.entries(MARGIN_PRESETS).forEach(([key, name]) => {
-					dropdown.addOption(key, name);
+				Object.entries(MARGIN_PRESETS).forEach(([key, preset]) => {
+					dropdown.addOption(key, preset.name);
 				});
 				dropdown.setValue(this.config.margins);
 				dropdown.onChange((value) => {
 					this.config.margins = value;
+					if (value && MARGIN_PRESETS[value] && value !== "custom") {
+						const preset = MARGIN_PRESETS[value];
+						this.config.marginTop = preset.top;
+						this.config.marginBottom = preset.bottom;
+						this.config.marginLeft = preset.left;
+						this.config.marginRight = preset.right;
+						this.marginTopInput?.setValue(preset.top);
+						this.marginBottomInput?.setValue(preset.bottom);
+						this.marginLeftInput?.setValue(preset.left);
+						this.marginRightInput?.setValue(preset.right);
+					}
 				});
+			});
+
+		const setCustomMargins = () => {
+			this.config.margins = "custom";
+			this.marginsDropdown?.setValue("custom");
+		};
+
+		// Custom Margins
+		new Setting(typeGrid)
+			.setClass("manuscript-setting-compact")
+			.setName("Custom Margins")
+			.setDesc("Top, Bottom, Left, Right (e.g. 2cm, 1in)")
+			.addText((text) => {
+				this.marginTopInput = text;
+				text.setPlaceholder("Top").setValue(this.config.marginTop).onChange(v => { this.config.marginTop = v; setCustomMargins(); });
+				text.inputEl.style.width = "65px";
+			})
+			.addText((text) => {
+				this.marginBottomInput = text;
+				text.setPlaceholder("Bottom").setValue(this.config.marginBottom).onChange(v => { this.config.marginBottom = v; setCustomMargins(); });
+				text.inputEl.style.width = "65px";
+			})
+			.addText((text) => {
+				this.marginLeftInput = text;
+				text.setPlaceholder("Left").setValue(this.config.marginLeft).onChange(v => { this.config.marginLeft = v; setCustomMargins(); });
+				text.inputEl.style.width = "65px";
+			})
+			.addText((text) => {
+				this.marginRightInput = text;
+				text.setPlaceholder("Right").setValue(this.config.marginRight).onChange(v => { this.config.marginRight = v; setCustomMargins(); });
+				text.inputEl.style.width = "65px";
 			});
 
 		// Line numbers
@@ -1484,6 +1568,10 @@ class BuildModal extends Modal {
 		this.config.figureBackground = "white";
 		this.config.paperSize = "";
 		this.config.margins = "";
+		this.config.marginTop = "";
+		this.config.marginBottom = "";
+		this.config.marginLeft = "";
+		this.config.marginRight = "";
 		this.config.visualizeCaptions = settings.defaultVisualizeCaptions;
 		this.config.captionStyle = settings.defaultCaptionStyle;
 		this.config.digitalGarden = false;
@@ -1520,6 +1608,10 @@ class BuildModal extends Modal {
 		this.languageDropdown?.setValue(this.config.language);
 		this.paperSizeDropdown?.setValue(this.config.paperSize);
 		this.marginsDropdown?.setValue(this.config.margins);
+		this.marginTopInput?.setValue(this.config.marginTop);
+		this.marginBottomInput?.setValue(this.config.marginBottom);
+		this.marginLeftInput?.setValue(this.config.marginLeft);
+		this.marginRightInput?.setValue(this.config.marginRight);
 		this.citationDropdown?.setValue(this.config.citationStyle);
 		this.pngToggle?.setValue(this.config.usePng);
 		this.siRefsToggle?.setValue(this.config.includeSiRefs);

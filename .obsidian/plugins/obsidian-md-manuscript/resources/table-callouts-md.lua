@@ -96,15 +96,17 @@ local function render_html_table(table_block, caption_inlines, label, width, ali
   local html_parts = {}
   table.insert(html_parts, '<figure' .. id_attr .. class_attr .. style_attr .. '>')
   
-  -- Caption (top for tables usually)
-  table.insert(html_parts, '  <figcaption>')
-  table.insert(html_parts, '    <strong>' .. table_prefix .. ' ' .. number_str .. '.</strong> ')
+  -- Caption start with styling to distinguish from main text
+  table.insert(html_parts, '  <figcaption style="font-size: 0.9em; color: #555; margin-bottom: 0.5em; line-height: 1.5; font-style: normal; display: block;">')
   
-  -- Caption text
+  -- Bold prefix and caption text merged into one string to ensure they are on the same line
   local caption_doc = pandoc.Pandoc({pandoc.Plain(caption_inlines)})
   local caption_html = pandoc.write(caption_doc, "html")
-  caption_html = caption_html:gsub("^<p>", ""):gsub("</p>$", ""):gsub("^\n", ""):gsub("\n$", "")
-  table.insert(html_parts, caption_html)
+  -- Strip ALL block-level tags and newlines
+  caption_html = caption_html:gsub("<%/?p[^>]*>", ""):gsub("<%/?div[^>]*>", ""):gsub("\n", " "):gsub("^%s*", ""):gsub("%s*$", "")
+  
+  local full_caption_html = '    <strong style="color: #333;">' .. table_prefix .. ' ' .. number_str .. '.</strong> ' .. caption_html
+  table.insert(html_parts, full_caption_html)
   
   table.insert(html_parts, '  </figcaption>')
   
@@ -121,7 +123,6 @@ local function render_html_table(table_block, caption_inlines, label, width, ali
       for i, spec in ipairs(colspecs) do
         if widths[i] then
           -- spec is {alignment, width}
-          -- We create a new spec with updated width
           colspecs[i] = {spec[1], widths[i]}
         end
       end
@@ -252,6 +253,40 @@ function Meta(meta)
   if meta["is_si"] and meta["is_si"] == true then
     config.is_si = true
   end
+
+  -- Read table offset
+  if meta["table-offset"] then
+    local offset = tonumber(stringify(meta["table-offset"]))
+    if offset then
+      table_counter = offset
+    end
+  end
+  
+  -- Read global labels map
+  if meta["global-labels"] then
+    local globals = meta["global-labels"]
+    if type(globals) == "table" then
+      for k, v in pairs(globals) do
+        local key = tostring(k)
+        if key:match("^tbl:") then
+          -- Value is a MetaMap with 'num' and 'file'
+          if type(v) == "table" then
+            local num = tonumber(stringify(v.num))
+            local file = stringify(v.file)
+            if num then
+              table_labels[key] = { num = num, file = file }
+            end
+          else
+            -- Fallback for old simple number values
+            local val = tonumber(stringify(v))
+            if val then
+              table_labels[key] = { num = val }
+            end
+          end
+        end
+      end
+    end
+  end
   
   return nil
 end
@@ -354,7 +389,7 @@ function Blocks(blocks)
       -- Increment table counter and store label
       table_counter = table_counter + 1
       if pending_opts.label then
-        table_labels[pending_opts.label] = table_counter
+        table_labels[pending_opts.label] = { num = table_counter }
       end
       
       -- Output the caption as a bold paragraph (ONLY if not HTML style)
@@ -453,47 +488,95 @@ end
 function Cite(cite)
   for _, citation in ipairs(cite.citations) do
     local id = citation.id
+    
     -- Check for table references (case-insensitive)
-    local tbl_label = id:match("^[Tt]bl:(.+)$")
-    if tbl_label then
-      local full_label = "tbl:" .. tbl_label
-      local num = table_labels[full_label]
-      if num then
-        local number_str = config.is_si and ("S" .. num) or tostring(num)
-        return pandoc.Str(config.table_prefix .. " " .. number_str)
-      else
-        -- Label not found, return as-is but without @ symbol
-        return pandoc.Str(config.table_prefix .. " " .. tbl_label)
-      end
-    end
-  end
-  return nil  -- Let other filters handle non-table citations
-end
-
--- Also handle Strong elements containing citations (for **@Tbl:label** syntax)
-function Strong(strong)
-  if #strong.content == 1 and strong.content[1].t == "Cite" then
-    local cite = strong.content[1]
-    for _, citation in ipairs(cite.citations) do
-      local id = citation.id
-      local tbl_label = id:match("^[Tt]bl:(.+)$")
-      if tbl_label then
-        local full_label = "tbl:" .. tbl_label
-        local num = table_labels[full_label]
-        if num then
-          local number_str = config.is_si and ("S" .. num) or tostring(num)
-          return pandoc.Str(config.table_prefix .. " " .. number_str)
+    local tbl_id = id:match("^[Tt]bl:(.+)$")
+    if tbl_id then
+      -- Also handle suffix (e.g. "@Tbl:label A")
+      local suffix = pandoc.utils.stringify(citation.suffix)
+      -- Remove leading space from suffix to get "Table 1A" instead of "Table 1 A"
+      suffix = suffix:gsub("^%s+", "")
+      
+      local full_label = "tbl:" .. tbl_id
+      local label_info = table_labels[full_label]
+      
+      if label_info and label_info.num then
+        local number_str = config.is_si and ("S" .. label_info.num) or tostring(label_info.num)
+        -- Link text includes the prefix, number, and suffix
+        local link_text = config.table_prefix .. " " .. number_str .. suffix
+        
+        local url = ""
+        if label_info.file and label_info.file ~= "" then
+          url = label_info.file .. ".md#" .. full_label
         else
-          return pandoc.Str(config.table_prefix .. " " .. tbl_label)
+          url = "#" .. full_label
         end
+        
+        return pandoc.Link({pandoc.Str(link_text)}, url)
+      else
+        -- Fallback if label not found
+        return pandoc.Str(config.table_prefix .. " " .. tbl_id .. suffix)
       end
     end
   end
   return nil
 end
 
+-- Process inlines to catch spaces and suffixes following a figure/table link
+-- that were parsed as separate inlines (narrative citations)
+local function process_inlines(inlines)
+  local i = 1
+  while i < #inlines do
+    local current = inlines[i]
+    if current.t == "Link" and #current.content > 0 then
+      local link_text = pandoc.utils.stringify(current.content)
+      -- Check if this is a figure/table link we generated
+      if link_text:match("^" .. config.table_prefix) or link_text:match("^Figure") then
+        local next_inline = inlines[i+1]
+        local third_inline = inlines[i+2]
+        
+        -- Look for [Link] [Space] [Str("A")]
+        if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
+           -- Check if third_inline looks like a sub-label (single letter or number)
+           if #third_inline.text <= 2 then
+             -- Merge the string into the link
+             table.insert(current.content, pandoc.Str(third_inline.text))
+             -- Remove the space and string from the inlines list
+             table.remove(inlines, i+2)
+             table.remove(inlines, i+1)
+           end
+        end
+      end
+    end
+    i = i + 1
+  end
+  return inlines
+end
+
+-- Process all inlines in the document
+function Para(para)
+  para.content = process_inlines(para.content)
+  return para
+end
+
+function Plain(plain)
+  plain.content = process_inlines(plain.content)
+  return plain
+end
+
+function Strong(strong)
+  strong.content = process_inlines(strong.content)
+  return strong
+end
+
+function Emph(emph)
+  emph.content = process_inlines(emph.content)
+  return emph
+end
+
 return {
   {Meta = Meta},
   {Blocks = Blocks},
-  {Cite = Cite, Strong = Strong}
+  {Cite = Cite},
+  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph}
 }

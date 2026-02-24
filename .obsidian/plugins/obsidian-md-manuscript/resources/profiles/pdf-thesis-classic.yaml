@@ -50,6 +50,7 @@ variables:
     - \usepackage{adjustbox}
     - \usepackage{wrapfig}
     - \usepackage{float}
+    - \usepackage[normalem]{ulem}
     - \definecolor{CTsemi}{RGB}{128,0,0}
     - \definecolor{CTnumber}{RGB}{180,180,180}
     - \providecommand{\mdtwocolumnstart}{}
@@ -75,7 +76,7 @@ variables:
     # Fullwidth environment for figures/tables spanning margins
     - \usepackage{changepage}
     # Elegant captions with color
-    - \usepackage[font=small,labelfont={bf,color=CTsemi},format=hang]{caption}
+    - \usepackage[font=small,labelfont={bf,color=CTsemi},format=plain]{caption}
     # No-indent style environment
     - \newenvironment{noindentstyle}{\setlength{\parindent}{0pt}}{\setlength{\parindent}{1em}}
     # Two-column environment (no-op for compatibility)

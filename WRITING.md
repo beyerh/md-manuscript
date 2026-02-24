@@ -44,12 +44,16 @@ Create headers using hash symbols (`#`). More hashes = smaller heading:
 
 #### Lists
 
+**IMPORTANT:** Pandoc requires a **blank line before the first list item**. If you forget this, the list may not be recognized and will appear as continuation text of the previous paragraph.
+
 **Unordered lists** use asterisks, plus signs, or hyphens:
 
 ```markdown
+Some text before the list.
+
 * Item 1
 * Item 2
-  * Sub-item 2.1
+  * Sub-item 2.1 (indent with 2+ spaces)
   * Sub-item 2.2
 * Item 3
 ```
@@ -57,10 +61,52 @@ Create headers using hash symbols (`#`). More hashes = smaller heading:
 **Ordered lists** use numbers:
 
 ```markdown
+Introduction paragraph.
+
 1. First item
 2. Second item
 3. Third item
 ```
+
+**Tight vs. Loose lists:**
+
+Pandoc distinguishes between "tight" (compact) and "loose" (paragraph-spaced) lists:
+
+```markdown
+<!-- TIGHT list (no blank lines between items) -->
+
+- Item A
+- Item B
+- Item C
+
+<!-- LOOSE list (blank lines between items) -->
+
+- Item A
+
+- Item B
+
+- Item C
+```
+
+**Multi-line list items:**
+
+Indent continuation lines by 2+ spaces to keep them part of the same item:
+
+```markdown
+- First item that continues
+  on the next line with proper indentation
+- Second item with multiple paragraphs:
+  
+  This is a second paragraph within the same list item.
+  Indent it by 2+ spaces.
+  
+- Third item
+```
+
+**Common mistakes:**
+- Forgetting the blank line before the list → list won't be recognized
+- Not indenting continuation lines → breaks the list structure
+- Mixing tight and loose styles → inconsistent spacing
 
 #### Links and Images
 
@@ -97,14 +143,37 @@ def hello():
 
 #### Paragraphs and Line Breaks
 
-- **New paragraph:** Leave a blank line between paragraphs
-- **Line break:** End a line with two spaces or use `\` (backslash)
+Pandoc Markdown has **three different mechanisms** for controlling line breaks and spacing:
+
+**1. Hard line break (no extra spacing):**
+- End a line with `\` (backslash) **OR** two trailing spaces
+- Both methods are identical — use whichever you prefer
+- Creates a line break without starting a new paragraph
+- No extra vertical space is added
+
+```markdown
+Line one\
+Line two\
+Line three
+```
+
+**2. New paragraph (adds paragraph spacing):**
+- Leave a blank line between paragraphs
+- Adds vertical space controlled by the profile's paragraph spacing setting
 
 ```markdown
 This is paragraph one.
 
 This is paragraph two.
 ```
+
+**3. Manual spacing:**
+- Use `<br>` for an explicit line break in HTML-compatible output
+
+**Common use cases:**
+- **Addresses:** Use `\` to keep lines together without paragraph gaps
+- **Poetry/lyrics:** Use `\` for line breaks within stanzas
+- **Normal text:** Use blank lines to separate paragraphs
 
 ---
 

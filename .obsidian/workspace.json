@@ -4,19 +4,41 @@
     "type": "split",
     "children": [
       {
-        "id": "f452702f562caf63",
+        "id": "6ffeebde54689f78",
         "type": "tabs",
         "children": [
           {
-            "id": "d48d7872863af04f",
+            "id": "f49c7a74a3deff53",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "application/Beyer_application_Bochum.md",
+                "mode": "source",
+                "source": false,
+                "annotationGutterFolded": false,
+                "annotationGutterWidth": 300
+              },
+              "icon": "lucide-file",
+              "title": "Beyer_application_Bochum"
+            }
+          }
+        ]
+      },
+      {
+        "id": "1e424b15ca033940",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fd68271e21e1d795",
             "type": "leaf",
             "state": {
               "type": "pdf",
               "state": {
-                "file": "export/02-md-manuscript-maintext.pdf"
+                "file": "export/Beyer_application_Bochum.pdf"
               },
               "icon": "lucide-file-text",
-              "title": "02-md-manuscript-maintext"
+              "title": "Beyer_application_Bochum"
             }
           }
         ]
@@ -154,13 +176,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "export/02-md-manuscript-maintext.pdf",
+                "file": "export/Beyer_application_Bochum.pdf",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 02-md-manuscript-maintext"
+              "title": "Outline of Beyer_application_Bochum"
             }
           },
           {
@@ -196,53 +218,53 @@
       "version-control:Open version control": false
     }
   },
-  "active": "d48d7872863af04f",
+  "active": "fd68271e21e1d795",
   "lastOpenFiles": [
+    "application/Beyer_application_Bochum.md",
     "_temp_config.yaml",
-    "_temp_02-md-manuscript-maintext_merged.md",
-    "export/00-Thesis.pdf",
-    "export/02-md-manuscript-maintext.pdf",
-    "_temp_00-Thesis_merged.md",
-    "export/Master.pdf",
-    "M2205/Master.md",
-    "M2205/01-Background.md",
-    "M2205/02-Experiment1.md",
-    "_temp_Master_merged.md",
+    "_temp_Beyer_application_Bochum_merged.md",
+    "export/Beyer_application_Bochum.pdf",
     "export",
-    "export/garden/02-Methods_Results.md",
-    "export/garden/03-Discussion.md",
-    "export/garden/Index.md",
-    "examples/multi_file/00-Thesis.md",
-    "_temp_03-Discussion_merged.md",
-    "_temp_garden_03-Discussion.md",
-    "_temp_02-Methods_Results_merged.md",
-    "_temp_garden_02-Methods_Results.md",
-    "export/garden/01-Introduction.md",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "export/test_html.pdf",
+    "_temp_test_html_merged.md",
+    "application/ausschreibung.pdf",
+    "application/Beyer_application_Bochum_backup.md",
+    "application/Beyer_application_Bochum copy.md",
+    "application/Hannes_Beyer.png",
+    "export/md-application.pdf",
+    "examples/md-application.md",
+    "_temp_md-application_merged.md",
+    "application/template_application.md",
+    "export/02-md-manuscript-maintext.pdf",
+    "figures/profile.png",
+    "figures/figure2.pdf",
+    "figures/figure1.pdf",
+    "figures/plugin_button.jpg",
+    "figures",
+    "03-md-manuscript_supp_info.md",
+    "02-md-manuscript-maintext.md",
+    "_temp_00-Master_merged.md",
+    "_temp_md-manuscript-maintext_merged.md",
+    "01-md-manuscript-frontmatter.md",
+    "application/profile_bw.jpg",
+    "figures-temp/profile_bw.jpg",
+    "_temp_03-md-manuscript_supp_info_merged.md",
+    "export/garden/garden_03-Experiment1.md",
+    "export/garden/garden_02-Background.md",
+    "export/garden/garden_01-Course-Information.md",
+    "export/garden/garden_00-Master.md",
+    "02-Background.md",
+    "export/garden/garden_08-References.md",
+    "_temp_garden_08-References_merged.md",
+    "_temp_garden_08-References.md",
+    "export/garden/garden_07-Experiment5.md",
+    "_temp_garden_07-Experiment5_merged.md",
     "export/garden/figures/figure1.png",
     "export/garden/figures/cloning_strategies.png",
     "export/garden/figures/figure2.png",
     "export/garden/figures/mammalian_cell_plasmid.png",
     "export/garden/figures/tetracycline.png",
-    "export/garden/figures/photoswitches.png",
-    "export/garden/figures/inteins_plasms_membrane.png",
-    "export/garden/figures/inteins.png",
-    "export/garden/figures/inteins_applications.png",
-    "export/garden/figures/intein_mechanism.png",
-    "_temp_01-Introduction_merged.md",
-    "_temp_garden_01-Introduction.md",
-    "export/garden/figures",
-    "export/garden",
-    "export/figures",
-    "examples/multi_file/03-Discussion.md",
-    "examples/multi_file/02-Methods_Results.md",
-    "examples/multi_file/01-Introduction.md",
-    "examples/multi_file",
-    "Script.md",
-    "export/garden/00-index.md",
-    "export/Master_flat.md",
-    "export/garden/07-References.md",
-    "_temp_07-References_merged.md",
-    "Untitled.canvas",
-    "templater"
+    "Untitled.canvas"
   ]
 }

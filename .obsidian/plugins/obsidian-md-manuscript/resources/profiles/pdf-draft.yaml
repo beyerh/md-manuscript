@@ -35,6 +35,8 @@ variables:
     - \usepackage{adjustbox}
     - \usepackage{wrapfig}
     - \usepackage{float}
+    - \usepackage[normalem]{ulem}
+    - \usepackage{caption}
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}

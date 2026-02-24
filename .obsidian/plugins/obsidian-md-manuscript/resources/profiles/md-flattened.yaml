@@ -17,10 +17,10 @@ profile:
 # Enable mark extension for ==highlighted text== and raw_html for <font color> tags
 reader: markdown+mark+raw_html+raw_tex+implicit_figures
 
-# --- Output Settings ---
-# Use markdown_strict with extensions for clean, portable output
-# This preserves standard $...$ math syntax while handling raw HTML naturally
-writer: markdown_strict+pipe_tables+raw_html+strikeout+superscript+subscript+tex_math_dollars
+# Output Settings ---
+# Use gfm (GitHub Flavored Markdown) for better compatibility with web renderers
+# and robust emphasis/link parsing.
+writer: gfm+raw_html+tex_math_dollars
 
 # Prevent line wrapping (important for clean output)
 wrap: none
@@ -28,12 +28,14 @@ columns: 10000
 
 # --- Filters ---
 # Order matters:
-# 1. figure-callouts-md.lua - Convert figure callouts to standard markdown
-# 2. table-callouts-md.lua - Convert table callouts to standard markdown  
-# 3. pandoc-crossref - Resolve cross-references
-# 4. citeproc - Process citations and generate bibliography
-# 5. strip-latex.lua - Remove remaining LaTeX code
+# 1. html-formatting.lua - Normalize HTML formatting tags to AST equivalents
+# 2. figure-callouts-md.lua - Convert figure callouts to standard markdown
+# 3. table-callouts-md.lua - Convert table callouts to standard markdown  
+# 4. pandoc-crossref - Resolve cross-references
+# 5. citeproc - Process citations and generate bibliography
+# 6. strip-latex.lua - Remove remaining LaTeX code
 filters:
+  - resources/html-formatting.lua
   - resources/figure-callouts-md.lua
   - resources/table-callouts-md.lua
   - pandoc-crossref

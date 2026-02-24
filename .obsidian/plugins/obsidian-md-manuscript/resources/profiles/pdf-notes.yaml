@@ -39,7 +39,7 @@ variables:
   
   # Section numbering
   numbersections: true
-  secnumdepth: 3
+  secnumdepth: 4
   
   header-includes:
     - \usepackage{xcolor}
@@ -47,6 +47,8 @@ variables:
     - \usepackage{adjustbox}
     - \usepackage{wrapfig}
     - \usepackage{float}
+    - \usepackage[normalem]{ulem}
+
     - \providecolor{CTsemi}{RGB}{0,0,0}
     - \providecommand{\mdtwocolumnstart}{}
     - \providecommand{\mdtwocolumnend}{}
@@ -86,6 +88,7 @@ variables:
     - \titleformat{\subsection}{\large\bfseries\sffamily\color{accent}}{\thesubsection}{1em}{}
     - \titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{accent}}{\thesubsubsection}{1em}{}
     - \titleformat{\paragraph}[hang]{\normalfont\normalsize\bfseries\color{accent}}{\theparagraph}{1em}{}
+    - \titleformat{\subparagraph}[hang]{\normalfont\normalsize\bfseries\color{accent}}{}{1em}{}
     - \titlespacing*{\section}{0pt}{1.0\baselineskip}{0.4\baselineskip}
     - \titlespacing*{\subsection}{0pt}{0.8\baselineskip}{0.3\baselineskip}
     - \titlespacing*{\subsubsection}{0pt}{0.6\baselineskip}{0.2\baselineskip}
@@ -96,7 +99,7 @@ variables:
     - \definecolor{shadecolor}{RGB}{248,248,248}
     # Caption styling
     - \usepackage{caption}
-    - \captionsetup{labelfont={bf,color=accent},labelsep=colon,font=small}
+    - \captionsetup{labelfont={bf,color=accent},labelsep=colon,font=small,format=plain}
     # Table styling - smaller sans-serif font, better fit
     - \usepackage{array}
     - \usepackage{longtable}

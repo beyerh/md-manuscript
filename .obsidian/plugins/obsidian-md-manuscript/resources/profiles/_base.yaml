@@ -7,7 +7,10 @@ reader: markdown+mark+raw_html+raw_tex+implicit_figures
 
 # --- Bibliography ---
 filters:
+  - resources/html-formatting.lua
+  - resources/metadata-to-latex.lua
   - resources/color-text.lua
+  - resources/underline.lua
   - resources/figure-callouts.lua
   - resources/table-callouts.lua
   - pandoc-crossref

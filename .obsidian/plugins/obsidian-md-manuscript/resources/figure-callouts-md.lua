@@ -61,6 +61,40 @@ function Meta(meta)
   if meta["is_si"] and meta["is_si"] == true then
     config.is_si = true
   end
+
+  -- Read figure offset
+  if meta["figure-offset"] then
+    local offset = tonumber(stringify(meta["figure-offset"]))
+    if offset then
+      figure_counter = offset
+    end
+  end
+  
+  -- Read global labels map
+  if meta["global-labels"] then
+    local globals = meta["global-labels"]
+    if type(globals) == "table" then
+      for k, v in pairs(globals) do
+        local key = tostring(k)
+        if key:match("^fig:") then
+          -- Value is a MetaMap with 'num' and 'file'
+          if type(v) == "table" then
+            local num = tonumber(stringify(v.num))
+            local file = stringify(v.file)
+            if num then
+              figure_labels[key] = { num = num, file = file }
+            end
+          else
+            -- Fallback for old simple number values
+            local val = tonumber(stringify(v))
+            if val then
+              figure_labels[key] = { num = val }
+            end
+          end
+        end
+      end
+    end
+  end
   
   return nil
 end
@@ -174,26 +208,22 @@ local function render_html_figure(image_src, caption_inlines, label, width, alig
   table.insert(blocks, pandoc.RawBlock("html", '<figure' .. id_attr .. class_attr .. style_attr .. '>'))
   
   -- Image as Markdown (so Digital Garden detects the file)
-  -- We do not add attributes (like width=100%) here because that causes Pandoc
-  -- to render as HTML <img ...> instead of Markdown ![...](...), which
-  -- breaks Digital Garden's file upload detection.
-  -- Styling should be handled via CSS (e.g. figure img { width: 100%; })
   local img = pandoc.Image({pandoc.Str("Figure " .. number_str)}, image_src, "")
-  table.insert(blocks, pandoc.Para({img}))
+  -- Use Plain instead of Para to avoid extra paragraph spacing/newlines
+  table.insert(blocks, pandoc.Plain({img}))
   
-  -- Caption start
-  table.insert(blocks, pandoc.RawBlock("html", '<figcaption>'))
+  -- Caption start with styling to distinguish from main text
+  -- Note: using display: block and line-height for cleaner appearance
+  table.insert(blocks, pandoc.RawBlock("html", '<figcaption style="font-size: 0.9em; color: #555; margin-top: 0.5em; line-height: 1.5; font-style: normal; display: block;">'))
   
-  -- Bold prefix
-  table.insert(blocks, pandoc.RawBlock("html", '<strong>' .. figure_prefix .. ' ' .. number_str .. '.</strong> '))
-  
-  -- Caption text (rendered to HTML)
+  -- Bold prefix and caption text merged into one RawBlock to ensure they are on the same line
   local caption_doc = pandoc.Pandoc({pandoc.Plain(caption_inlines)})
   local caption_html = pandoc.write(caption_doc, "html")
-  -- Strip potential <p> tags
-  caption_html = caption_html:gsub("^<p>", ""):gsub("</p>$", ""):gsub("^\n", ""):gsub("\n$", "")
+  -- Strip ALL block-level tags and newlines
+  caption_html = caption_html:gsub("<%/?p[^>]*>", ""):gsub("<%/?div[^>]*>", ""):gsub("\n", " "):gsub("^%s*", ""):gsub("%s*$", "")
   
-  table.insert(blocks, pandoc.RawBlock("html", caption_html))
+  local full_caption_html = '<strong style="color: #333;">' .. figure_prefix .. ' ' .. number_str .. '.</strong> ' .. caption_html
+  table.insert(blocks, pandoc.RawBlock("html", full_caption_html))
   
   -- End
   table.insert(blocks, pandoc.RawBlock("html", '</figcaption>'))
@@ -438,7 +468,7 @@ function BlockQuote(block)
   -- Increment figure counter and store label mapping
   figure_counter = figure_counter + 1
   if label then
-    figure_labels[label] = figure_counter
+    figure_labels[label] = { num = figure_counter }
   end
 
   -- Convert image path
@@ -537,47 +567,103 @@ end
 function Cite(cite)
   for _, citation in ipairs(cite.citations) do
     local id = citation.id
+    
     -- Check for figure references (case-insensitive)
-    local fig_label = id:match("^[Ff]ig:(.+)$")
-    if fig_label then
-      local full_label = "fig:" .. fig_label
-      local num = figure_labels[full_label]
-      if num then
-        local number_str = config.is_si and ("S" .. num) or tostring(num)
-        return pandoc.Str(config.figure_prefix .. " " .. number_str)
-      else
-        -- Label not found, return as-is but without @ symbol
-        return pandoc.Str(config.figure_prefix .. " " .. fig_label)
+    local fig_id = id:match("^[Ff]ig:(.+)$")
+    if fig_id then
+      -- Split ID in case the space is part of the ID (happens with some parsers)
+      local base_id, id_suffix = fig_id:match("^([^%s]+)%s+(.+)$")
+      if not base_id then
+        base_id = fig_id
+        id_suffix = ""
       end
-    end
-  end
-  return nil  -- Let other filters handle non-figure citations
-end
 
--- Also handle Strong elements containing citations (for **@Fig:label** syntax)
-function Strong(strong)
-  if #strong.content == 1 and strong.content[1].t == "Cite" then
-    local cite = strong.content[1]
-    for _, citation in ipairs(cite.citations) do
-      local id = citation.id
-      local fig_label = id:match("^[Ff]ig:(.+)$")
-      if fig_label then
-        local full_label = "fig:" .. fig_label
-        local num = figure_labels[full_label]
-        if num then
-          local number_str = config.is_si and ("S" .. num) or tostring(num)
-          return pandoc.Str(config.figure_prefix .. " " .. number_str)
+      -- Also handle suffix in citation metadata (standard Pandoc)
+      local suffix = pandoc.utils.stringify(citation.suffix)
+      
+      -- Combine suffixes and remove leading space
+      local combined_suffix = (id_suffix .. suffix):gsub("^%s+", "")
+      
+      local full_label = "fig:" .. base_id
+      local label_info = figure_labels[full_label]
+      
+      if label_info and label_info.num then
+        local number_str = config.is_si and ("S" .. label_info.num) or tostring(label_info.num)
+        -- Link text includes the prefix, number, and suffix (no space between number and suffix)
+        local link_text = config.figure_prefix .. " " .. number_str .. combined_suffix
+        
+        local url = ""
+        if label_info.file and label_info.file ~= "" then
+          url = label_info.file .. ".md#" .. full_label
         else
-          return pandoc.Str(config.figure_prefix .. " " .. fig_label)
+          url = "#" .. full_label
         end
+        
+        return pandoc.Link({pandoc.Str(link_text)}, url)
+      else
+        -- Fallback if label not found
+        return pandoc.Str(config.figure_prefix .. " " .. fig_id .. suffix)
       end
     end
   end
   return nil
 end
 
+-- Process inlines to catch spaces and suffixes following a figure/table link
+-- that were parsed as separate inlines (narrative citations)
+local function process_inlines(inlines)
+  local i = 1
+  while i < #inlines do
+    local current = inlines[i]
+    if current.t == "Link" and #current.content > 0 then
+      local link_text = pandoc.utils.stringify(current.content)
+      -- Check if this is a figure/table link we generated
+      if link_text:match("^" .. config.figure_prefix) or link_text:match("^Table") then
+        local next_inline = inlines[i+1]
+        local third_inline = inlines[i+2]
+        
+        -- Look for [Link] [Space] [Str("A")]
+        if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
+           -- Check if third_inline looks like a sub-label (single letter or number)
+           if #third_inline.text <= 2 then
+             -- Merge the string into the link
+             table.insert(current.content, pandoc.Str(third_inline.text))
+             -- Remove the space and string from the inlines list
+             table.remove(inlines, i+2)
+             table.remove(inlines, i+1)
+           end
+        end
+      end
+    end
+    i = i + 1
+  end
+  return inlines
+end
+
+-- Process all inlines in the document
+function Para(para)
+  para.content = process_inlines(para.content)
+  return para
+end
+
+function Plain(plain)
+  plain.content = process_inlines(plain.content)
+  return plain
+end
+
+function Strong(strong)
+  strong.content = process_inlines(strong.content)
+  return strong
+end
+
+function Emph(emph)
+  emph.content = process_inlines(emph.content)
+  return emph
+end
+
 return {
   {Meta = Meta},
   {BlockQuote = BlockQuote},
-  {Cite = Cite, Strong = Strong}
+  {Cite = Cite},
+  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph}
 }

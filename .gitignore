@@ -3,6 +3,7 @@ export/
 
 # Converted PNG figures (generated from PDFs)
 figures/*.png
+!figures/profile.png
 
 # Temporary build files
 _temp_merged.md

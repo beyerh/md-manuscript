@@ -20,7 +20,7 @@ reader: markdown+mark+raw_html+raw_tex+implicit_figures
 # Output Settings ---
 # Use gfm (GitHub Flavored Markdown) for better compatibility with web renderers
 # and robust emphasis/link parsing.
-writer: gfm+raw_html+tex_math_dollars
+writer: gfm-tex_math_gfm+raw_html+tex_math_dollars
 
 # Prevent line wrapping (important for clean output)
 wrap: none
@@ -67,3 +67,5 @@ metadata:
   number-tables: true
   keep-color-as-html: true
   keep-highlighting: true
+  visualize-captions: true
+  caption-style: html

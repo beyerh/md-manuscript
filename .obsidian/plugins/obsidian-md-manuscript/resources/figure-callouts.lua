@@ -194,11 +194,12 @@ function BlockQuote(block)
   if is_latex then
     -- Handle wrapfigure
     if wrap_value then
-      local pos_char = wrap_value:sub(1,1):upper()
+      local pos_char = wrap_value:sub(1,1):lower()
       local wdim = width_to_latex_dimension(img_attrs["width"])
       if wdim == "\\textwidth" then wdim = "0.5\\textwidth" end
       
       local latex = {
+        "\\leavevmode",
         "\\begin{wrapfigure}{" .. pos_char .. "}{" .. wdim .. "}",
         "\\centering",
         "\\includegraphics[width=\\linewidth]{" .. image.src .. "}"
@@ -275,8 +276,19 @@ function Plain(plain) plain.content = process_citation_spacing(plain.content) re
 function Strong(strong) strong.content = process_citation_spacing(strong.content) return strong end
 function Emph(emph) emph.content = process_citation_spacing(emph.content) return emph end
 
+local function Header_wfclear(header)
+  local is_latex = (FORMAT and (FORMAT:match("latex") or FORMAT:match("pdf"))) ~= nil
+  if not is_latex then return nil end
+
+  return {
+    pandoc.RawBlock("latex", "\\ifcsname WFclear\\endcsname\\WFclear\\fi"),
+    header
+  }
+end
+
 return {
   {Meta = Meta},
   {BlockQuote = BlockQuote},
+  {Header = Header_wfclear},
   {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph}
 }

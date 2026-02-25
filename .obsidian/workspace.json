@@ -6,6 +6,7 @@
       {
         "id": "20dd2e359b9cfcb1",
         "type": "tabs",
+        "dimension": 49.8134328358209,
         "children": [
           {
             "id": "6fe85cc7257c7aa5",
@@ -13,14 +14,33 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "02-Background.md",
+                "file": "application/Beyer_application_Bochum.md",
                 "mode": "source",
                 "source": false,
                 "annotationGutterFolded": false,
                 "annotationGutterWidth": 300
               },
               "icon": "lucide-file",
-              "title": "02-Background"
+              "title": "Beyer_application_Bochum"
+            }
+          }
+        ]
+      },
+      {
+        "id": "e6695339cf760eee",
+        "type": "tabs",
+        "dimension": 50.18656716417911,
+        "children": [
+          {
+            "id": "505e487f2c8ad9d3",
+            "type": "leaf",
+            "state": {
+              "type": "pdf",
+              "state": {
+                "file": "export/Beyer_application_Bochum.pdf"
+              },
+              "icon": "lucide-file-text",
+              "title": "Beyer_application_Bochum"
             }
           }
         ]
@@ -158,13 +178,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "02-Background.md",
+                "file": "application/Beyer_application_Bochum.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of 02-Background"
+              "title": "Outline of Beyer_application_Bochum"
             }
           },
           {
@@ -182,7 +202,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 200,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -203,36 +224,37 @@
   "active": "6fe85cc7257c7aa5",
   "lastOpenFiles": [
     "_temp_config.yaml",
+    "_temp_Beyer_application_Bochum_merged.md",
+    "_temp_02-md-manuscript-maintext_merged.md",
+    "export/02-md-manuscript-maintext.pdf",
+    "export/Beyer_application_Bochum.pdf",
+    "application/Beyer_application_Bochum.md",
+    "application/Beyer_application_Bochum_backup.md",
+    "application/Hannes_Beyer.png",
+    "export/template_application.pdf",
+    "application/template_application.md",
+    "_temp_template_application_merged.md",
+    "application/profile_bw.jpg",
+    "export",
     "_temp_00-Master_merged.md",
     "export/00-Master.pdf",
     "02-Background.md",
     "03-Experiment1.md",
     "00-Master.md",
-    "application/Beyer_application_Bochum.md",
     "export/00-Master.tex",
-    "export",
-    "export/Beyer_application_Bochum.pdf",
-    "_temp_Beyer_application_Bochum_merged.md",
-    "_temp_02-md-manuscript-maintext_merged.md",
     "export/test_html.pdf",
     "_temp_test_html_merged.md",
     "application/ausschreibung.pdf",
-    "application/Beyer_application_Bochum_backup.md",
     "application/Beyer_application_Bochum copy.md",
-    "application/Hannes_Beyer.png",
     "export/md-application.pdf",
     "examples/md-application.md",
     "_temp_md-application_merged.md",
-    "application/template_application.md",
-    "export/02-md-manuscript-maintext.pdf",
     "figures/profile.png",
-    "figures/figure2.pdf",
     "figures/plugin_button.jpg",
     "03-md-manuscript_supp_info.md",
     "02-md-manuscript-maintext.md",
     "_temp_md-manuscript-maintext_merged.md",
     "01-md-manuscript-frontmatter.md",
-    "application/profile_bw.jpg",
     "figures-temp/profile_bw.jpg",
     "_temp_03-md-manuscript_supp_info_merged.md",
     "export/garden/garden_03-Experiment1.md",
@@ -241,7 +263,6 @@
     "export/garden/garden_00-Master.md",
     "export/garden/garden_08-References.md",
     "_temp_garden_08-References_merged.md",
-    "_temp_garden_08-References.md",
     "export/garden/figures/figure1.png",
     "export/garden/figures/cloning_strategies.png",
     "export/garden/figures/figure2.png",

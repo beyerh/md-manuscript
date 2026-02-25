@@ -13,7 +13,7 @@ profile:
 pdf-engine: tectonic
 
 # --- Reader/Writer ---
-reader: markdown+mark+raw_html+raw_tex+implicit_figures
+reader: markdown-blank_before_header+mark+raw_html+raw_tex+implicit_figures
 
 # --- Filters ---
 # Custom filter to convert longtable to tabular for twocolumn compatibility

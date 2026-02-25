@@ -3,7 +3,7 @@
 
 # --- Input/Output Settings ---
 # Enable mark extension for ==highlighted text== and raw_html for <font color> tags
-reader: markdown+mark+raw_html+raw_tex+implicit_figures
+reader: markdown-blank_before_header+mark+raw_html+raw_tex+implicit_figures
 
 # --- Bibliography ---
 filters:

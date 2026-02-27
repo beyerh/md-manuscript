@@ -14,14 +14,14 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "application/Beyer_application_Bochum.md",
+                "file": "application/2026_Bochum.md",
                 "mode": "source",
                 "source": false,
                 "annotationGutterFolded": false,
                 "annotationGutterWidth": 300
               },
               "icon": "lucide-file",
-              "title": "Beyer_application_Bochum"
+              "title": "2026_Bochum"
             }
           }
         ]
@@ -29,18 +29,16 @@
       {
         "id": "e6695339cf760eee",
         "type": "tabs",
-        "dimension": 50.18656716417911,
+        "dimension": 50.1865671641791,
         "children": [
           {
             "id": "505e487f2c8ad9d3",
             "type": "leaf",
             "state": {
-              "type": "pdf",
-              "state": {
-                "file": "export/Beyer_application_Bochum.pdf"
-              },
-              "icon": "lucide-file-text",
-              "title": "Beyer_application_Bochum"
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
             }
           }
         ]
@@ -178,7 +176,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "application/Beyer_application_Bochum.md",
+                "file": "export/Beyer_application_Bochum.pdf",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
@@ -221,16 +219,24 @@
       "version-control:Open version control": false
     }
   },
-  "active": "6fe85cc7257c7aa5",
+  "active": "beb314a26d857518",
   "lastOpenFiles": [
+    "application/2026_Bochum_revised.md",
+    "application/Beyer_cover_letter_Bochum.md",
+    "application/2026_Bochum.md",
+    "application/Beyer_cover_letter_Bochum_optimized.md",
+    "application/Beyer_application_Bochum.md",
+    "examples/md-application.md",
     "_temp_config.yaml",
     "_temp_Beyer_application_Bochum_merged.md",
+    "export/Beyer_application_Bochum.pdf",
+    "examples/md-manuscript-maintext.md",
+    "examples/multi_file/00-Thesis.md",
+    "examples/multi_file/01-Introduction.md",
+    "application/Hannes_Beyer.png",
+    "application/Beyer_application_Bochum_backup.md",
     "_temp_02-md-manuscript-maintext_merged.md",
     "export/02-md-manuscript-maintext.pdf",
-    "export/Beyer_application_Bochum.pdf",
-    "application/Beyer_application_Bochum.md",
-    "application/Beyer_application_Bochum_backup.md",
-    "application/Hannes_Beyer.png",
     "export/template_application.pdf",
     "application/template_application.md",
     "_temp_template_application_merged.md",
@@ -247,7 +253,6 @@
     "application/ausschreibung.pdf",
     "application/Beyer_application_Bochum copy.md",
     "export/md-application.pdf",
-    "examples/md-application.md",
     "_temp_md-application_merged.md",
     "figures/profile.png",
     "figures/plugin_button.jpg",
@@ -257,12 +262,6 @@
     "01-md-manuscript-frontmatter.md",
     "figures-temp/profile_bw.jpg",
     "_temp_03-md-manuscript_supp_info_merged.md",
-    "export/garden/garden_03-Experiment1.md",
-    "export/garden/garden_02-Background.md",
-    "export/garden/garden_01-Course-Information.md",
-    "export/garden/garden_00-Master.md",
-    "export/garden/garden_08-References.md",
-    "_temp_garden_08-References_merged.md",
     "export/garden/figures/figure1.png",
     "export/garden/figures/cloning_strategies.png",
     "export/garden/figures/figure2.png",

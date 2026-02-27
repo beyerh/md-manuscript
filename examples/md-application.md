@@ -31,7 +31,7 @@ picturepath: figures/profile.png
 
 # Curriculum vitae
 
-## Personal Information
+## Personal Information {.unnumbered .unlisted}
 
 \begin{wrapfigure}{r}{0.20\textwidth}
 \centering
@@ -54,14 +54,14 @@ Example Street 1 \
 
 **Date of birth:** 01.01.1990
 
-## Scientific Career and Academic Record
+## Scientific Career and Academic Record {.unnumbered .unlisted}
 
 - **01/22 -- present:** Assistant Professor (W1), Department of Sciences, University of Example, Country.
 - **06/19 -- 12/21:** Postdoctoral Researcher, Institute of Advanced Studies, University of Abroad, Country.
 - **01/15 -- 05/19:** Ph.D. candidate, Department of Sciences, University of Example, Country (Dr. rer. nat., summa cum laude).
 - **10/09 -- 12/14:** Diploma/M.Sc. in Natural Sciences, University of Example, Country.
 
-## Community Services
+## Community Services {.unnumbered .unlisted}
 
 - **Since 2023:** Member of the National Scientific Society.
 - **Since 2020:** Reviewer for Journal of Important Science.
@@ -133,3 +133,6 @@ Describe your teaching philosophy, experience, and plans for the target institut
 - Your pedagogical approach
 - Courses you would offer at Bachelor's and Master's level
 - Plans for student supervision and mentoring
+
+# Appendix
+\thispagestyle{empty}

@@ -67,5 +67,3 @@ metadata:
   number-tables: true
   keep-color-as-html: true
   keep-highlighting: true
-  visualize-captions: true
-  caption-style: html

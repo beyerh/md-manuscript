@@ -1051,7 +1051,6 @@ def convert_figures_for_web(
         # Just copy original figures to export if requested
         if copy_to_export and figures_dir.exists():
             export_figures_dir.mkdir(parents=True, exist_ok=True)
-            import shutil
             for fig_file in figures_dir.iterdir():
                 if fig_file.is_file():
                     shutil.copy2(fig_file, export_figures_dir / fig_file.name)
@@ -1061,49 +1060,56 @@ def convert_figures_for_web(
     if not figures_dir.exists():
         return
     
-    pdf_files = list(figures_dir.glob("*.pdf"))
-    if not pdf_files:
-        return
-    
-    format_info = FIGURE_FORMAT_PRESETS.get(figure_format, FIGURE_FORMAT_PRESETS["png"])
-    bg_info = FIGURE_BACKGROUND_PRESETS.get(figure_background, FIGURE_BACKGROUND_PRESETS["white"])
-    
-    print(f"   Converting PDF figures to {format_info['name']} ({bg_info['name']} background)...")
-    
     # Create export figures directory if copying
     if copy_to_export:
         export_figures_dir.mkdir(parents=True, exist_ok=True)
     
-    for pdf_file in pdf_files:
-        try:
-            output_file = pdf_file.with_suffix(f".{format_info['ext']}")
-            
-            # Build ImageMagick command with correct order:
-            # magick -density DPI input.pdf [processing options] output.png
-            cmd = ["magick", "-density", str(density), str(pdf_file)]
-            
-            # Handle background
-            if figure_background == "transparent":
-                cmd.extend(["-background", "none", "-alpha", "set"])
-            else:
-                cmd.extend(["-background", bg_info["color"], "-alpha", "remove", "-alpha", "off"])
-            
-            # Add quality for lossy formats
-            if figure_format in ("webp", "jpg"):
-                cmd.extend(["-quality", str(quality)])
-            
-            cmd.append(str(output_file))
-            
-            subprocess.run(cmd, capture_output=True, check=False)
-            
-            # Copy to export directory if requested
-            if copy_to_export and output_file.exists():
-                import shutil
-                shutil.copy2(output_file, export_figures_dir / output_file.name)
-        except Exception as e:
-            print(f"   Warning: Failed to convert {pdf_file.name}: {e}")
+    format_info = FIGURE_FORMAT_PRESETS.get(figure_format, FIGURE_FORMAT_PRESETS["png"])
+    bg_info = FIGURE_BACKGROUND_PRESETS.get(figure_background, FIGURE_BACKGROUND_PRESETS["white"])
     
+    # Convert PDF figures to web-friendly format
+    pdf_files = list(figures_dir.glob("*.pdf"))
+    if pdf_files:
+        print(f"   Converting PDF figures to {format_info['name']} ({bg_info['name']} background)...")
+        
+        for pdf_file in pdf_files:
+            try:
+                output_file = pdf_file.with_suffix(f".{format_info['ext']}")
+                
+                # Build ImageMagick command with correct order:
+                # magick -density DPI input.pdf [processing options] output.png
+                cmd = ["magick", "-density", str(density), str(pdf_file)]
+                
+                # Handle background
+                if figure_background == "transparent":
+                    cmd.extend(["-background", "none", "-alpha", "set"])
+                else:
+                    cmd.extend(["-background", bg_info["color"], "-alpha", "remove", "-alpha", "off"])
+                
+                # Add quality for lossy formats
+                if figure_format in ("webp", "jpg"):
+                    cmd.extend(["-quality", str(quality)])
+                
+                cmd.append(str(output_file))
+                
+                subprocess.run(cmd, capture_output=True, check=False)
+                
+                # Copy to export directory if requested
+                if copy_to_export and output_file.exists():
+                    shutil.copy2(output_file, export_figures_dir / output_file.name)
+            except Exception as e:
+                print(f"   Warning: Failed to convert {pdf_file.name}: {e}")
+    
+    # Copy non-PDF figures (PNG, JPG, WebP, etc.) directly to export
     if copy_to_export:
+        non_pdf_exts = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg")
+        non_pdf_files = [f for f in figures_dir.iterdir() 
+                         if f.is_file() and f.suffix.lower() in non_pdf_exts]
+        if non_pdf_files:
+            for fig_file in non_pdf_files:
+                shutil.copy2(fig_file, export_figures_dir / fig_file.name)
+            print(f"   Copied {len(non_pdf_files)} non-PDF figures to export/figures/")
+        
         print(f"   Copied converted figures to export/figures/")
 
 
@@ -2312,8 +2318,8 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         "margin_bottom": None,
         "margin_left": None,
         "margin_right": None,
-        "visualize_captions": False,
-        "caption_style": "plain",
+        "visualize_captions": None,
+        "caption_style": None,
     }
     
     for arg in args:
@@ -2396,6 +2402,19 @@ def parse_arguments() -> Tuple[Optional[Dict[str, Any]], bool, bool]:
         elif arg == "si":
             config["source_file"] = SUPPINFO
             config["is_si"] = True
+    
+    # Apply defaults for markdown/garden builds: captions ON by default
+    if config.get("profile") == "md-flattened" or config.get("digital_garden"):
+        if config["visualize_captions"] is None:
+            config["visualize_captions"] = True
+        if config["caption_style"] is None:
+            config["caption_style"] = "html"
+    
+    # Apply fallback defaults for non-markdown builds
+    if config["visualize_captions"] is None:
+        config["visualize_captions"] = False
+    if config["caption_style"] is None:
+        config["caption_style"] = "plain"
     
     if config["source_file"]:
         return config, False, False

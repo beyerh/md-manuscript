@@ -505,14 +505,13 @@ function Cite(cite)
         -- Link text includes the prefix, number, and suffix
         local link_text = config.table_prefix .. " " .. number_str .. suffix
         
-        local url = ""
         if label_info.file and label_info.file ~= "" then
-          url = label_info.file .. ".md#" .. full_label
+          -- Return Obsidian wikilink for cross-file reference
+          return pandoc.RawInline('markdown', '[[' .. label_info.file .. '#' .. full_label .. '|' .. link_text .. ']]')
         else
-          url = "#" .. full_label
+          -- Local link
+          return pandoc.Link({pandoc.Str(link_text)}, "#" .. full_label)
         end
-        
-        return pandoc.Link({pandoc.Str(link_text)}, url)
       else
         -- Fallback if label not found
         return pandoc.Str(config.table_prefix .. " " .. tbl_id .. suffix)

@@ -1306,12 +1306,12 @@ def build_digital_garden(source_file: str, config: Dict[str, Any]):
         nav_links = "\n\n---\n\n"
         if prev_file:
             prev_stem = f"garden_{prev_file.stem}"
-            nav_links += f"[← Previous]({prev_stem}.md) "
+            nav_links += f"[[{prev_stem}|← Previous]] "
         if prev_file and next_file:
             nav_links += " | "
         if next_file:
             next_stem = f"garden_{next_file.stem}"
-            nav_links += f"[Next →]({next_stem}.md)"
+            nav_links += f"[[{next_stem}|Next →]]"
         
         if prev_file or next_file:
             content += nav_links

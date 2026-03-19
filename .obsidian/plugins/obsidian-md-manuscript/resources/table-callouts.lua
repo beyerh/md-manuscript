@@ -294,18 +294,40 @@ local function style_table(tbl, opts)
     tbl.colspecs = new_colspecs
   end
 
-  -- Apply alignment and caption styling
-  if is_latex and opts.align then
-    local setup = nil
-    if opts.align == "left" then
-      setup = "\\captionsetup{justification=raggedright,singlelinecheck=off}"
-    elseif opts.align == "right" then
-      setup = "\\captionsetup{justification=raggedleft,singlelinecheck=off}"
+  -- Collect LaTeX setup commands for begingroup wrapper
+  if is_latex then
+    local setup_cmds = {}
+
+    -- Font size
+    if opts.fontsize then
+      table.insert(setup_cmds, "\\" .. opts.fontsize)
     end
-    
-    if setup then
+
+    -- Font family
+    if opts.family then
+      table.insert(setup_cmds, "\\" .. opts.family)
+    end
+
+    -- Row spacing (arraystretch)
+    if opts.spacing then
+      table.insert(setup_cmds, "\\renewcommand{\\arraystretch}{" .. tostring(opts.spacing) .. "}")
+    end
+
+    -- Column padding (tabcolsep)
+    if opts.colsep then
+      table.insert(setup_cmds, "\\setlength{\\tabcolsep}{" .. opts.colsep .. "}")
+    end
+
+    -- Caption alignment
+    if opts.align == "left" then
+      table.insert(setup_cmds, "\\captionsetup{justification=raggedright,singlelinecheck=off}")
+    elseif opts.align == "right" then
+      table.insert(setup_cmds, "\\captionsetup{justification=raggedleft,singlelinecheck=off}")
+    end
+
+    if #setup_cmds > 0 then
       return {
-        pandoc.RawBlock("latex", "\\begingroup" .. setup),
+        pandoc.RawBlock("latex", "\\begingroup" .. table.concat(setup_cmds, "")),
         tbl,
         pandoc.RawBlock("latex", "\\endgroup")
       }

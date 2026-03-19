@@ -36,7 +36,7 @@ Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Representativ
 
 # Supplementary Tables
 
-> [!table] #tbl:s1 width=100% align=left
+> [!table] #tbl:s1 width=100% align=left fontsize=footnotesize
 >
 > **Primers used in this study.** Sequences are listed 5' to 3'.
 

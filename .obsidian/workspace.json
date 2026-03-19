@@ -4,35 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "20dd2e359b9cfcb1",
+        "id": "851178ccac5b310d",
         "type": "tabs",
-        "dimension": 49.8134328358209,
         "children": [
           {
-            "id": "6fe85cc7257c7aa5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "export/garden/garden_07-Experiment5.md",
-                "mode": "source",
-                "source": false,
-                "annotationGutterFolded": false,
-                "annotationGutterWidth": 300
-              },
-              "icon": "lucide-file",
-              "title": "garden_07-Experiment5"
-            }
-          }
-        ]
-      },
-      {
-        "id": "e6695339cf760eee",
-        "type": "tabs",
-        "dimension": 50.1865671641791,
-        "children": [
-          {
-            "id": "505e487f2c8ad9d3",
+            "id": "d02199cef4cd54c9",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -219,15 +195,21 @@
       "version-control:Open version control": false
     }
   },
-  "active": "6fe85cc7257c7aa5",
+  "active": "d02199cef4cd54c9",
   "lastOpenFiles": [
-    "export/garden/garden_08-References.md",
+    "export/03-md-manuscript_supp_info.pdf",
+    "03-md-manuscript_supp_info.md",
+    "_temp_config.yaml",
+    "_temp_03-md-manuscript_supp_info_merged.md",
+    "01-md-manuscript-frontmatter.md",
+    "export",
+    "02-md-manuscript-maintext.md",
     "export/garden/garden_07-Experiment5.md",
+    "export/garden/garden_08-References.md",
     "export/garden/garden_03-Experiment1.md",
     "export/garden/garden_00-Master.md",
     "07-Experiment5.md",
     "_temp_labels_garden_08-References.json",
-    "_temp_config.yaml",
     "_temp_garden_08-References_merged.md",
     "_temp_garden_08-References.md",
     "_temp_labels_garden_07-Experiment5.json",
@@ -250,10 +232,6 @@
     "_temp_garden_03-Experiment1.md",
     "export/garden/garden_02-Background.md",
     "_temp_labels_garden_02-Background.json",
-    "_temp_garden_02-Background_merged.md",
-    "_temp_garden_02-Background.md",
-    "export/garden/garden_01-Course-Information.md",
-    "_temp_labels_garden_01-Course-Information.json",
     "export/garden/figures/transposases.webp",
     "export/garden/figures/seap_formula.png",
     "export/garden/figures/TetR_systems.png",
@@ -264,9 +242,6 @@
     "export/garden/figures/figure2.webp",
     "export/garden/figures/mammalian_cell_plasmid.png",
     "export/garden/figures/optogenetic_switch_mechanism.png",
-    "_temp_garden_01-Course-Information_merged.md",
-    "_temp_garden_01-Course-Information.md",
-    "export/Beyer_application_Bochum.pdf",
     "Untitled.canvas"
   ]
 }

@@ -14,6 +14,10 @@ local stringify = pandoc.utils.stringify
 
 local is_twocolumn = false
 
+-- Storage to pass wrapfig parameters from BlockQuote (pass 2) to Blocks (pass 5)
+local wrapfig_store = {}
+local wrapfig_store_idx = 0
+
 local function meta_list_contains(meta_value, needle)
   if meta_value == nil then return false end
   if type(meta_value) == "table" and meta_value.t == "MetaList" then
@@ -135,7 +139,7 @@ end
 function BlockQuote(block)
   if not is_figure_callout(block) then return nil end
   
-  local label, width_value, align_value, span_value, pos_value, wrap_value, image
+  local label, width_value, align_value, span_value, pos_value, wrap_value, wrap_lines, wrap_nblocks, image
   local caption_inlines = {}
   local found_image = false
 
@@ -149,6 +153,10 @@ function BlockQuote(block)
         span_value = text:match("span=full") and "full" or nil
         pos_value = text:match("pos=([%a!]+)") or text:match("placement=([%a!]+)")
         wrap_value = text:match("wrap=([a-zA-Z]+)")
+        local lines_str = text:match("lines=(%d+)")
+        if lines_str then wrap_lines = tonumber(lines_str) end
+        local wbstr = text:match("wrapblocks=(%d+)")
+        if wbstr then wrap_nblocks = tonumber(wbstr) end
       end
 
       local image_pos = nil
@@ -198,15 +206,30 @@ function BlockQuote(block)
       local wdim = width_to_latex_dimension(img_attrs["width"])
       if wdim == "\\textwidth" then wdim = "0.5\\textwidth" end
       
+      local wrap_begin
+      if wrap_lines then
+        wrap_begin = "\\begin{wrapfigure}[" .. tostring(wrap_lines) .. "]{" .. pos_char .. "}{" .. wdim .. "}"
+      else
+        wrap_begin = "\\begin{wrapfigure}{" .. pos_char .. "}{" .. wdim .. "}"
+      end
       local latex = {
         "\\leavevmode",
-        "\\begin{wrapfigure}{" .. pos_char .. "}{" .. wdim .. "}",
+        wrap_begin,
         "\\centering",
         "\\includegraphics[width=\\linewidth]{" .. image.src .. "}"
       }
       if #caption_inlines > 0 then table.insert(latex, "\\caption{" .. render_inlines_as_latex(caption_inlines) .. "}") end
       if fig_id ~= "" then table.insert(latex, "\\label{" .. fig_id .. "}") end
       table.insert(latex, "\\end{wrapfigure}")
+      -- Store data for Blocks pass which replaces wrapfig with minipage
+      table.insert(wrapfig_store, {
+        pos = pos_char,
+        width = wdim,
+        src = image.src,
+        caption_latex = #caption_inlines > 0 and render_inlines_as_latex(caption_inlines) or nil,
+        label = fig_id ~= "" and fig_id or nil,
+        wrapblocks = wrap_nblocks
+      })
       return pandoc.RawBlock("latex", table.concat(latex, "\n"))
     end
 
@@ -262,7 +285,10 @@ local function process_citation_spacing(inlines)
         local next_inline = inlines[i+1]
         local third_inline = inlines[i+2]
         if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
-           if #third_inline.text <= 2 then table.remove(inlines, i+1) end
+          -- Match 1-2 uppercase letters (sub-figure label) optionally followed by punctuation
+          if third_inline.text:match("^[A-Z][A-Z]?$") or third_inline.text:match("^[A-Z][A-Z]?[^A-Za-z0-9]") then
+            table.remove(inlines, i+1)
+          end
         end
       end
     end
@@ -286,9 +312,112 @@ local function Header_wfclear(header)
   }
 end
 
+-- Replace wrapfig + following paragraph with side-by-side minipage layout.
+-- This guarantees full-width content after the figure, since minipage does not
+-- have wrapfig's line-counting zone that leaks into vspace/enumerate.
+local function make_minipage_latex(fw, content_blocks)
+  local content_latex = pandoc.write(pandoc.Pandoc(content_blocks), "latex")
+  content_latex = content_latex:gsub("%s+$", "")
+
+  local figw
+  if fw.width == "\\textwidth" or fw.width == "\\linewidth" then
+    figw = 1.0
+  else
+    local num = fw.width:match("^([%d%.]+)")
+    figw = num and tonumber(num) or 0.4
+  end
+  local gap = 0.025
+  local txtw = math.max(0.1, 1.0 - figw - gap)
+  local txtw_str = string.format("%.4f\\textwidth", txtw)
+
+  local L = {}
+  table.insert(L, "\\noindent%")
+  if fw.pos == "l" then
+    table.insert(L, "\\begin{minipage}[t]{" .. fw.width .. "}")
+    table.insert(L, "\\centering\\vspace{0pt}")
+    table.insert(L, "\\includegraphics[width=\\linewidth]{" .. fw.src .. "}")
+    if fw.caption_latex then table.insert(L, "\\captionof{figure}{" .. fw.caption_latex .. "}") end
+    if fw.label then table.insert(L, "\\label{" .. fw.label .. "}") end
+    table.insert(L, "\\end{minipage}%")
+    table.insert(L, "\\hspace{" .. string.format("%.4f", gap) .. "\\textwidth}%")
+    table.insert(L, "\\begin{minipage}[t]{" .. txtw_str .. "}")
+    table.insert(L, "\\vspace{0pt}")
+    table.insert(L, content_latex)
+    table.insert(L, "\\end{minipage}")
+  else
+    table.insert(L, "\\begin{minipage}[t]{" .. txtw_str .. "}")
+    table.insert(L, "\\vspace{0pt}")
+    table.insert(L, content_latex)
+    table.insert(L, "\\end{minipage}%")
+    table.insert(L, "\\hspace{" .. string.format("%.4f", gap) .. "\\textwidth}%")
+    table.insert(L, "\\begin{minipage}[t]{" .. fw.width .. "}")
+    table.insert(L, "\\centering\\vspace{0pt}")
+    table.insert(L, "\\includegraphics[width=\\linewidth]{" .. fw.src .. "}")
+    if fw.caption_latex then table.insert(L, "\\captionof{figure}{" .. fw.caption_latex .. "}") end
+    if fw.label then table.insert(L, "\\label{" .. fw.label .. "}") end
+    table.insert(L, "\\end{minipage}")
+  end
+  return pandoc.RawBlock("latex", table.concat(L, "\n"))
+end
+
+-- Replace wrapfig + following block(s) with side-by-side minipage layout.
+-- Use wrapblocks=N in the figure callout to include N consecutive blocks in
+-- the right minipage (default: 1 paragraph/plain block).
+local function Blocks_minipage_wrap(blocks)
+  local is_latex = (FORMAT and (FORMAT:match("latex") or FORMAT:match("pdf"))) ~= nil
+  if not is_latex or #wrapfig_store == 0 then return nil end
+
+  local out = {}
+  local pending_data = nil
+  local pending_block = nil
+  local collecting = {}   -- blocks accumulating for the right minipage
+
+  for _, blk in ipairs(blocks) do
+    if blk.t == "RawBlock" and blk.format == "latex"
+        and blk.text:match("\\begin{wrapfigure}") then
+      wrapfig_store_idx = wrapfig_store_idx + 1
+      pending_data = wrapfig_store[wrapfig_store_idx]
+      pending_block = blk
+      collecting = {}
+
+    elseif pending_data ~= nil then
+      local nblocks = pending_data.wrapblocks
+      if nblocks then
+        -- wrapblocks=N: collect exactly N blocks of any type
+        table.insert(collecting, blk)
+        if #collecting >= nblocks then
+          table.insert(out, make_minipage_latex(pending_data, collecting))
+          pending_data = nil; pending_block = nil; collecting = {}
+        end
+      else
+        -- Default: accept only a single Para/Plain
+        if blk.t == "Para" or blk.t == "Plain" then
+          table.insert(out, make_minipage_latex(pending_data, {blk}))
+        else
+          table.insert(out, pending_block)  -- fallback: emit original wrapfig
+          table.insert(out, blk)
+        end
+        pending_data = nil; pending_block = nil; collecting = {}
+      end
+
+    else
+      table.insert(out, blk)
+    end
+  end
+
+  -- Flush any un-consumed pending wrapfig
+  if pending_block ~= nil then
+    table.insert(out, pending_block)
+    for _, b in ipairs(collecting) do table.insert(out, b) end
+  end
+
+  return out
+end
+
 return {
   {Meta = Meta},
   {BlockQuote = BlockQuote},
   {Header = Header_wfclear},
-  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph}
+  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph},
+  {Blocks = Blocks_minipage_wrap}
 }

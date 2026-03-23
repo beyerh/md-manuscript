@@ -4,17 +4,37 @@
     "type": "split",
     "children": [
       {
-        "id": "851178ccac5b310d",
+        "id": "9dc09c3d52114162",
         "type": "tabs",
         "children": [
           {
-            "id": "d02199cef4cd54c9",
+            "id": "5d6a65ecd5bbfcb4",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "New tab"
+              "type": "pdf",
+              "state": {
+                "file": "export/Exam.pdf"
+              },
+              "icon": "lucide-file-text",
+              "title": "Exam"
+            }
+          }
+        ]
+      },
+      {
+        "id": "e6a6d0a084c67704",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fed4ebdc5d7b65c2",
+            "type": "leaf",
+            "state": {
+              "type": "pdf",
+              "state": {
+                "file": "export/Exam.pdf"
+              },
+              "icon": "lucide-file-text",
+              "title": "Exam"
             }
           }
         ]
@@ -195,14 +215,21 @@
       "version-control:Open version control": false
     }
   },
-  "active": "d02199cef4cd54c9",
+  "active": "beb314a26d857518",
   "lastOpenFiles": [
+    "_temp_config.yaml",
+    "_temp_Exam_merged.md",
+    "export/Exam.pdf",
+    "exam/Exam.md",
+    "export",
+    "exam/Exam1_M4472_WS24_25.md",
+    "exam/intein_question.pdf",
+    "exam/BLUE_gene_switch.pdf",
+    "exam",
     "export/03-md-manuscript_supp_info.pdf",
     "03-md-manuscript_supp_info.md",
-    "_temp_config.yaml",
     "_temp_03-md-manuscript_supp_info_merged.md",
     "01-md-manuscript-frontmatter.md",
-    "export",
     "02-md-manuscript-maintext.md",
     "export/garden/garden_07-Experiment5.md",
     "export/garden/garden_08-References.md",
@@ -220,18 +247,11 @@
     "_temp_garden_06-Experiment4_merged.md",
     "_temp_garden_06-Experiment4.md",
     "export/garden/garden_05-Experiment3.md",
-    "_temp_labels_garden_05-Experiment3.json",
     "_temp_garden_05-Experiment3_merged.md",
     "_temp_garden_05-Experiment3.md",
     "export/garden/garden_04-Experiment2.md",
-    "_temp_labels_garden_04-Experiment2.json",
     "_temp_garden_04-Experiment2_merged.md",
     "_temp_garden_04-Experiment2.md",
-    "_temp_labels_garden_03-Experiment1.json",
-    "_temp_garden_03-Experiment1_merged.md",
-    "_temp_garden_03-Experiment1.md",
-    "export/garden/garden_02-Background.md",
-    "_temp_labels_garden_02-Background.json",
     "export/garden/figures/transposases.webp",
     "export/garden/figures/seap_formula.png",
     "export/garden/figures/TetR_systems.png",

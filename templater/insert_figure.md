@@ -8,6 +8,7 @@
   width=100%        Figure width: 100%, 50%, 0.5\linewidth, \textwidth
   align=center      Caption/figure alignment: left, center, right
   pos=!ht           Float placement: h=here, t=top, b=bottom, p=page, !=override, H=force here
-  wrap=r            Text wrapping: l/r/i/o (exact) or L/R/I/O (floating)
+  wrap=r            Text wrapping alongside figure: l=left, r=right (content after goes to full width automatically)
+  wrapblocks=2      Number of consecutive blocks to place alongside the figure (default: 1 paragraph)
   span=full         Span both columns in two-column layout
 -->

@@ -13,6 +13,8 @@
 local stringify = pandoc.utils.stringify
 
 local is_twocolumn = false
+local fig_prefix = "Figure"
+local tbl_prefix = "Table"
 
 -- Storage to pass wrapfig parameters from BlockQuote (pass 2) to Blocks (pass 5)
 local wrapfig_store = {}
@@ -31,6 +33,20 @@ end
 
 function Meta(meta)
   is_twocolumn = meta_list_contains(meta["classoption"], "twocolumn")
+  if meta["figPrefix"] then
+    if type(meta["figPrefix"]) == "table" and meta["figPrefix"][1] then
+      fig_prefix = stringify(meta["figPrefix"][1])
+    else
+      fig_prefix = stringify(meta["figPrefix"])
+    end
+  end
+  if meta["tblPrefix"] then
+    if type(meta["tblPrefix"]) == "table" and meta["tblPrefix"][1] then
+      tbl_prefix = stringify(meta["tblPrefix"][1])
+    else
+      tbl_prefix = stringify(meta["tblPrefix"])
+    end
+  end
   return nil
 end
 
@@ -129,6 +145,63 @@ local function prepend_rawinline_to_first_para(blocks, raw_latex)
   return false
 end
 
+local function process_citation_spacing(inlines)
+  local i = 1
+  while i < #inlines do
+    local current = inlines[i]
+    if current.t == "Cite" and #current.citations == 1 then
+      local id = current.citations[1].id
+      if id:match("^[Tt]bl:") or id:match("^[Ff]ig:") then
+        local citation = current.citations[1]
+        if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
+          table.remove(citation.suffix, 1)
+        end
+        local next_inline = inlines[i+1]
+        local third_inline = inlines[i+2]
+        if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
+          -- Match 1-2 letter sub-figure labels (e.g. "a", "B", "c).") but not words like "to"
+          if third_inline.text:match("^[A-Za-z][A-Z]?$") or third_inline.text:match("^[A-Za-z][A-Z]?[^A-Za-z0-9]") then
+            table.remove(inlines, i+1)
+          end
+        end
+      end
+    end
+    i = i + 1
+  end
+  return inlines
+end
+
+-- Resolve @Fig:/@Tbl: citations to raw LaTeX references inside captions that
+-- are rendered as raw LaTeX (pandoc-crossref cannot reach them there).
+local function resolve_caption_cites(inlines)
+  for i, inline in ipairs(inlines) do
+    if inline.t == "Cite" and #inline.citations == 1 then
+      local citation = inline.citations[1]
+      local id = citation.id
+      local prefix = nil
+      local norm_id = nil
+      if id:match("^[Ff]ig:") then
+        prefix = fig_prefix
+        norm_id = id:gsub("^[Ff]ig:", "fig:")
+      elseif id:match("^[Tt]bl:") then
+        prefix = tbl_prefix
+        norm_id = id:gsub("^[Tt]bl:", "tbl:")
+      end
+      if prefix then
+        if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
+          table.remove(citation.suffix, 1)
+        end
+        local suffix = ""
+        if #citation.suffix > 0 then
+          suffix = render_inlines_as_latex(citation.suffix)
+        end
+        inlines[i] = pandoc.RawInline("latex", prefix .. "~\\ref{" .. norm_id .. "}" .. suffix)
+      end
+    end
+  end
+  return inlines
+end
+
 local function is_figure_callout(block)
   if block.t ~= "BlockQuote" or #block.content == 0 then return false end
   local first = block.content[1]
@@ -190,6 +263,11 @@ function BlockQuote(block)
 
   local fig_id = label or (image.attr and image.attr.identifier) or ""
   local is_latex = (FORMAT and (FORMAT:match("latex") or FORMAT:match("pdf"))) ~= nil
+
+  caption_inlines = process_citation_spacing(caption_inlines)
+  if is_latex then
+    caption_inlines = resolve_caption_cites(caption_inlines)
+  end
 
   local img_attrs = {}
   if image.attr and image.attr.attributes then
@@ -269,32 +347,6 @@ function BlockQuote(block)
   end
 
   return pandoc.Para{new_image}
-end
-
-local function process_citation_spacing(inlines)
-  local i = 1
-  while i < #inlines do
-    local current = inlines[i]
-    if current.t == "Cite" and #current.citations == 1 then
-      local id = current.citations[1].id
-      if id:match("^[Tt]bl:") or id:match("^[Ff]ig:") then
-        local citation = current.citations[1]
-        if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
-          table.remove(citation.suffix, 1)
-        end
-        local next_inline = inlines[i+1]
-        local third_inline = inlines[i+2]
-        if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
-          -- Match 1-2 uppercase letters (sub-figure label) optionally followed by punctuation
-          if third_inline.text:match("^[A-Z][A-Z]?$") or third_inline.text:match("^[A-Z][A-Z]?[^A-Za-z0-9]") then
-            table.remove(inlines, i+1)
-          end
-        end
-      end
-    end
-    i = i + 1
-  end
-  return inlines
 end
 
 function Para(para) para.content = process_citation_spacing(para.content) return para end

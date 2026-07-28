@@ -387,7 +387,8 @@ local function process_citation_spacing(inlines)
         local next_inline = inlines[i+1]
         local third_inline = inlines[i+2]
         if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
-           if #third_inline.text <= 2 then
+           -- Match 1-2 letter sub-figure labels (e.g. "a", "B", "c).") but not words like "to"
+           if third_inline.text:match("^[A-Za-z][A-Z]?$") or third_inline.text:match("^[A-Za-z][A-Z]?[^A-Za-z0-9]") then
              table.remove(inlines, i+1)
            end
         end

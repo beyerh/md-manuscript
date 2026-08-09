@@ -16,6 +16,10 @@ local is_twocolumn = false
 local fig_prefix = "Figure"
 local tbl_prefix = "Table"
 
+-- Labels defined in companion documents (e.g. main text vs SI).
+-- label -> { num = "S3" } (num already includes the S prefix when applicable)
+local external_labels = {}
+
 -- Storage to pass wrapfig parameters from BlockQuote (pass 2) to Blocks (pass 5)
 local wrapfig_store = {}
 local wrapfig_store_idx = 0
@@ -45,6 +49,24 @@ function Meta(meta)
       tbl_prefix = stringify(meta["tblPrefix"][1])
     else
       tbl_prefix = stringify(meta["tblPrefix"])
+    end
+  end
+  -- Read external (cross-document) labels map
+  if meta["external-labels"] then
+    local exts = meta["external-labels"]
+    if type(exts) == "table" then
+      for k, v in pairs(exts) do
+        local key = tostring(k)
+        local num = nil
+        if type(v) == "table" then
+          num = stringify(v.num)
+        else
+          num = stringify(v)
+        end
+        if num and num ~= "" then
+          external_labels[key] = { num = num }
+        end
+      end
     end
   end
   return nil
@@ -145,6 +167,11 @@ local function prepend_rawinline_to_first_para(blocks, raw_latex)
   return false
 end
 
+local function is_sublabel_str(text)
+  -- Match 1-2 letter sub-figure labels (e.g. "a", "B", "c).") but not words like "to"
+  return text:match("^[A-Za-z][A-Z]?$") ~= nil or text:match("^[A-Za-z][A-Z]?[^A-Za-z0-9]") ~= nil
+end
+
 local function process_citation_spacing(inlines)
   local i = 1
   while i < #inlines do
@@ -159,12 +186,30 @@ local function process_citation_spacing(inlines)
         local next_inline = inlines[i+1]
         local third_inline = inlines[i+2]
         if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
-          -- Match 1-2 letter sub-figure labels (e.g. "a", "B", "c).") but not words like "to"
-          if third_inline.text:match("^[A-Za-z][A-Z]?$") or third_inline.text:match("^[A-Za-z][A-Z]?[^A-Za-z0-9]") then
+          if is_sublabel_str(third_inline.text) then
             table.remove(inlines, i+1)
           end
         end
       end
+    elseif current.t == "Span" and current.attr.classes:includes("extref") then
+      -- External (cross-document) reference already resolved to plain text:
+      -- merge a following sub-figure label into the span ("Figure 2" + "b")
+      local next_inline = inlines[i+1]
+      local third_inline = inlines[i+2]
+      if next_inline and next_inline.t == "Space" and third_inline and third_inline.t == "Str" then
+        if is_sublabel_str(third_inline.text) then
+          table.insert(current.content, pandoc.Str(third_inline.text))
+          table.remove(inlines, i+2)
+          table.remove(inlines, i+1)
+        end
+      end
+      -- Unwrap the marker span to avoid superfluous grouping in the output
+      local content = current.content
+      table.remove(inlines, i)
+      for j = #content, 1, -1 do
+        table.insert(inlines, i, content[j])
+      end
+      i = i + #content - 1
     end
     i = i + 1
   end
@@ -191,11 +236,18 @@ local function resolve_caption_cites(inlines)
         if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
           table.remove(citation.suffix, 1)
         end
-        local suffix = ""
-        if #citation.suffix > 0 then
-          suffix = render_inlines_as_latex(citation.suffix)
+        local ext = external_labels[norm_id]
+        if ext then
+          -- Cross-document reference: plain text (no hyperlink possible)
+          local text = prefix .. " " .. ext.num .. stringify(citation.suffix)
+          inlines[i] = pandoc.Str(text)
+        else
+          local suffix = ""
+          if #citation.suffix > 0 then
+            suffix = render_inlines_as_latex(citation.suffix)
+          end
+          inlines[i] = pandoc.RawInline("latex", prefix .. "~\\ref{" .. norm_id .. "}" .. suffix)
         end
-        inlines[i] = pandoc.RawInline("latex", prefix .. "~\\ref{" .. norm_id .. "}" .. suffix)
       end
     end
   end
@@ -207,6 +259,40 @@ local function is_figure_callout(block)
   local first = block.content[1]
   if (first.t ~= "Para" and first.t ~= "Plain") or #first.content == 0 then return false end
   return stringify(first):match("%[!figure%]")
+end
+
+-- Resolve in-text citations to figures/tables defined in companion documents
+-- (e.g. main text referencing SI figures). Local references are left for
+-- pandoc-crossref. Renders as plain text since separate PDFs cannot hyperlink.
+function Cite(cite)
+  if #cite.citations ~= 1 then return nil end
+  local citation = cite.citations[1]
+  local id = citation.id
+  local prefix = nil
+  local norm_id = nil
+  if id:match("^[Ff]ig:") then
+    prefix = fig_prefix
+    norm_id = id:gsub("^[Ff]ig:", "fig:")
+  elseif id:match("^[Tt]bl:") then
+    prefix = tbl_prefix
+    norm_id = id:gsub("^[Tt]bl:", "tbl:")
+  end
+  if not prefix then return nil end
+
+  local ext = external_labels[norm_id]
+  if not ext then return nil end
+
+  if #citation.suffix > 0 and citation.suffix[1].t == "Space" then
+    table.remove(citation.suffix, 1)
+  end
+  -- Wrap in a marked Span so process_citation_spacing (which runs at the
+  -- enclosing Para level, after this handler) can merge a following
+  -- sub-figure label ("Figure 2" + "b" -> "Figure 2b").
+  local content = { pandoc.Str(prefix .. " " .. ext.num) }
+  for _, inl in ipairs(citation.suffix) do
+    table.insert(content, inl)
+  end
+  return pandoc.Span(content, pandoc.Attr("", {"extref"}))
 end
 
 function BlockQuote(block)
@@ -470,6 +556,6 @@ return {
   {Meta = Meta},
   {BlockQuote = BlockQuote},
   {Header = Header_wfclear},
-  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph},
+  {Para = Para, Plain = Plain, Strong = Strong, Emph = Emph, Cite = Cite},
   {Blocks = Blocks_minipage_wrap}
 }

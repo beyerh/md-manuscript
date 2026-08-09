@@ -24,6 +24,7 @@ Both methods support:
 - Templates/examples
 - Custom fonts, citation styles, formatting options
 - Web-ready markdown export for digital gardens (Vercel, GitHub Pages, etc.)
+- Cross-document figure/table references between main text and supplementary information (e.g. `@Fig:figure2 b` in the SI renders as "Figure 2b", `@Fig:results` in the main text renders as "Figure S5") — resolved automatically at build time, see [WRITING.md](WRITING.md#cross-references)
 
 **Output:** All documents are created in the `export/` folder.
 

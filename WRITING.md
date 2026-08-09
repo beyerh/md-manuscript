@@ -252,10 +252,34 @@ The table template looks like this:
 ### Cross-References
 
 ```markdown
-**@Fig:results**  → "Figure 1"
-**@Tbl:data**     → "Table 1"
-[@smith2023]      → "(Smith 2023)"
+**@Fig:results**   → "Figure 1"
+**@Tbl:data**      → "Table 1"
+[@smith2023]       → "(Smith 2023)"
 ```
+
+**Sub-figure labels:** Add a single letter after the reference (no space is inserted in the output):
+
+```markdown
+@Fig:results b              → "Figure 1b"
+(@Fig:results c)            → "(Figure 1c)"
+(@Fig:data and @Fig:results d) → "(Figure 2 and Figure 1d)"
+```
+
+**References in captions:** You can reference other figures/tables inside a figure caption, e.g.:
+
+```markdown
+> [!figure] #fig:assembly width=100% align=left
+> ![](figures/assembly.pdf)
+>
+> **Assembly steps.** Wiring as depicted in @Fig:schematic.
+```
+
+**Cross-document references (main text ↔ supplementary information):** Figures and tables can be referenced across the main text and the SI file. References to figures/tables defined in the *other* document are resolved automatically at build time and rendered as plain text (separate PDFs cannot be hyperlinked):
+
+- In the **SI**, references to main-text figures/tables render with plain numbers: `@Fig:figure2 b` → "Figure 2b"
+- In the **main text**, references to SI figures/tables render with the S prefix: `@Fig:homogeneity` → "Figure S5", `@Tbl:parts` → "Table S1"
+
+This works for all output formats (PDF, LaTeX, Word, flattened Markdown) and requires no configuration: the build script scans the other Markdown files in the vault root for `[!figure]`/`[!table]` labels on every build, so numbers always stay in sync. Keep labels unique across the main text and SI.
 
 ### Mathematical Equations
 

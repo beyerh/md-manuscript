@@ -20,6 +20,10 @@ local stringify = pandoc.utils.stringify
 local figure_counter = 0
 local figure_labels = {}
 
+-- Labels defined in companion documents (e.g. main text vs SI).
+-- label -> rendered number string ("S3" or "3", prefix already applied)
+local external_labels = {}
+
 -- Configuration: can be set via metadata
 local config = {
   figure_format = "png",  -- png, webp, jpg, or original
@@ -95,7 +99,26 @@ function Meta(meta)
       end
     end
   end
-  
+
+  -- Read external (cross-document) labels map
+  if meta["external-labels"] then
+    local exts = meta["external-labels"]
+    if type(exts) == "table" then
+      for k, v in pairs(exts) do
+        local key = tostring(k)
+        local num = nil
+        if type(v) == "table" then
+          num = stringify(v.num)
+        else
+          num = stringify(v)
+        end
+        if num and num ~= "" then
+          external_labels[key] = num
+        end
+      end
+    end
+  end
+
   return nil
 end
 
@@ -601,6 +624,11 @@ function Cite(cite)
           return pandoc.Link({pandoc.Str(link_text)}, "#" .. full_label)
         end
       else
+        -- Cross-document reference to a companion file: plain text
+        local ext_num = external_labels[full_label]
+        if ext_num then
+          return pandoc.Str(config.figure_prefix .. " " .. ext_num .. combined_suffix)
+        end
         -- Fallback if label not found
         return pandoc.Str(config.figure_prefix .. " " .. fig_id .. suffix)
       end

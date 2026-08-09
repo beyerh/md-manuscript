@@ -1136,6 +1136,51 @@ def extract_si_citations(si_file: Optional[str] = None) -> str:
     return "; ".join(sorted(filtered))
 
 
+def scan_external_labels(source_file: str, is_si: bool) -> Dict[str, Dict[str, str]]:
+    """Scan other markdown files in the project root for figure/table labels.
+
+    Enables cross-document references (e.g. main text referencing SI figures
+    and vice versa). When building the SI document, external figures/tables
+    use plain numbers (main text); otherwise they get an S prefix
+    (supplementary).
+    """
+    external: Dict[str, Dict[str, str]] = {}
+    try:
+        src_path = Path(source_file).resolve()
+    except Exception:
+        return external
+
+    prefix = "" if is_si else "S"
+    for md_file in sorted(Path(".").glob("*.md")):
+        if md_file.name.startswith("_temp"):
+            continue
+        try:
+            if md_file.resolve() == src_path:
+                continue
+        except Exception:
+            pass
+        try:
+            content = md_file.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        fig_num = 0
+        tbl_num = 0
+        for line in content.splitlines():
+            if "[!figure]" in line:
+                fig_num += 1
+                match = re.search(r"#(fig:[a-zA-Z0-9_\-]+)", line)
+                if match:
+                    external[match.group(1)] = {"num": f"{prefix}{fig_num}"}
+            elif "[!table]" in line:
+                tbl_num += 1
+                match = re.search(r"#(tbl:[a-zA-Z0-9_\-]+)", line)
+                if match:
+                    external[match.group(1)] = {"num": f"{prefix}{tbl_num}"}
+
+    return external
+
+
 def resolve_transclusions(content: str, base_dir: Path) -> str:
     """Recursively resolve Obsidian transclusions ![[filename]]."""
     
@@ -1672,7 +1717,17 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
             with open(labels_meta_file, "w") as f:
                 json.dump(labels_data, f)
             cmd.extend(["--metadata-file", labels_meta_file])
-    
+
+    # Scan companion files for cross-document figure/table references
+    # (e.g. main text referencing SI figures and vice versa)
+    if fmt in ("pdf", "latex", "docx", "md"):
+        external_labels = scan_external_labels(source_file, is_si)
+        if external_labels:
+            external_labels_file = f"_temp_extlabels_{output_name}.json"
+            with open(external_labels_file, "w") as f:
+                json.dump({"external-labels": external_labels}, f)
+            cmd.extend(["--metadata-file", external_labels_file])
+
     # Run pandoc
     try:
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -1682,6 +1737,8 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
         for f in [temp_merged, config_file]:
             if f and Path(f).exists():
                 os.remove(f)
+        if 'external_labels_file' in locals() and Path(external_labels_file).exists():
+            os.remove(external_labels_file)
         if Path(SI_HEADER).exists():
             os.remove(SI_HEADER)
         sys.exit(1)
@@ -1694,6 +1751,8 @@ def build_document(source_file: str, profile: str, use_png: bool, include_si_ref
     cleanup_files = [temp_merged, config_file]
     if 'labels_meta_file' in locals() and Path(labels_meta_file).exists():
         cleanup_files.append(labels_meta_file)
+    if 'external_labels_file' in locals() and Path(external_labels_file).exists():
+        cleanup_files.append(external_labels_file)
         
     for f in cleanup_files:
         if f and Path(f).exists():
